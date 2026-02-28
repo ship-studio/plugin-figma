@@ -31,12 +31,12 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Asset Refinement
 
-- **ASSET-05**: Progressive asset disclosure in results UI — group by type (icons, illustrations, photos)
+- **ASSET-05**: Progressive asset disclosure in results UI -- group by type (icons, illustrations, photos)
 - **ASSET-06**: Collapsible tree preview in results screen
 
 ### Brief Enhancements
 
-- **INST-04**: Executable verification loop — checklist tied to actual extracted tokens and assets
+- **INST-04**: Executable verification loop -- checklist tied to actual extracted tokens and assets
 
 ### UX Polish
 
@@ -62,21 +62,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INST-01 | — | Pending |
-| INST-02 | — | Pending |
-| INST-03 | — | Pending |
-| ASSET-01 | — | Pending |
-| ASSET-02 | — | Pending |
-| ASSET-03 | — | Pending |
-| ASSET-04 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
+| INST-01 | Phase 6 | Pending |
+| INST-02 | Phase 6 | Pending |
+| INST-03 | Phase 6 | Pending |
+| ASSET-01 | Phase 7 | Pending |
+| ASSET-02 | Phase 7 | Pending |
+| ASSET-03 | Phase 7 | Pending |
+| ASSET-04 | Phase 7 | Pending |
+| UX-01 | Phase 6 | Pending |
+| UX-02 | Phase 8 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9 ⚠️
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after initial definition*
+*Last updated: 2026-02-28 after roadmap creation*
