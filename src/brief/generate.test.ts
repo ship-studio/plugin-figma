@@ -38,8 +38,8 @@ function makeExportResult(overrides: Partial<ExportResult> = {}): ExportResult {
   return {
     previewPath: '/Users/test/project/.shipstudio/assets/preview.png',
     assets: [
-      { filename: 'icon-arrow.svg', path: '/Users/test/project/.shipstudio/assets/icon-arrow.svg' },
-      { filename: 'hero.png', path: '/Users/test/project/.shipstudio/assets/hero.png' },
+      { filename: 'icon-arrow.svg', path: '/Users/test/project/.shipstudio/assets/icon-arrow.svg', nodeId: '2:1', assetType: 'icon' },
+      { filename: 'hero.png', path: '/Users/test/project/.shipstudio/assets/hero.png', nodeId: '2:2', assetType: 'image' },
     ],
     warnings: [],
     ...overrides,
@@ -609,15 +609,85 @@ describe('generateBrief', () => {
   // ── Assets section ──────────────────────────────────────────────
 
   describe('assets section', () => {
-    it('renders assets table with project-relative paths', () => {
+    it('renders 4-column assets table header', () => {
       const result = generateBrief(makeInput());
       expect(result.markdown).toContain('## Assets');
-      expect(result.markdown).toContain('| File | Type | Path |');
-      // Preview row
-      expect(result.markdown).toContain('| preview.png | Preview | .shipstudio/assets/preview.png |');
-      // Asset rows with type based on extension
-      expect(result.markdown).toContain('| icon-arrow.svg | SVG | .shipstudio/assets/icon-arrow.svg |');
-      expect(result.markdown).toContain('| hero.png | PNG | .shipstudio/assets/hero.png |');
+      expect(result.markdown).toContain('| File | Type | Location | Path |');
+    });
+
+    it('renders preview row with -- location', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toContain('| preview.png | Preview | -- | .shipstudio/assets/preview.png |');
+    });
+
+    it('renders Icon type for svg assets', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toContain('| icon-arrow.svg | Icon |');
+    });
+
+    it('renders Image type for image assets', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toContain('| hero.png | Image |');
+    });
+
+    it('renders Composition type for composition assets', () => {
+      const input = makeInput({
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'illustration.png', path: '/Users/test/project/.shipstudio/assets/illustration.png', nodeId: '5:1', assetType: 'composition' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| illustration.png | Composition |');
+    });
+
+    it('renders breadcrumb location from rootNodes', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Hero Section', type: 'FRAME', visible: true,
+        children: [
+          { id: '2:1', name: 'Header', type: 'FRAME', visible: true,
+            children: [
+              { id: '3:1', name: 'ArrowIcon', type: 'VECTOR', visible: true },
+            ],
+          },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'arrow-icon.svg', path: '/Users/test/project/.shipstudio/assets/arrow-icon.svg', nodeId: '3:1', assetType: 'icon' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| arrow-icon.svg | Icon | Hero Section > Header > ArrowIcon | .shipstudio/assets/arrow-icon.svg |');
+    });
+
+    it('renders -- location when nodeId has no breadcrumb match', () => {
+      const input = makeInput({
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'orphan.svg', path: '/Users/test/project/.shipstudio/assets/orphan.svg', nodeId: 'no-match', assetType: 'icon' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| orphan.svg | Icon | -- | .shipstudio/assets/orphan.svg |');
+    });
+
+    it('renders -- location when asset has no nodeId', () => {
+      const input = makeInput({
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'legacy.svg', path: '/Users/test/project/.shipstudio/assets/legacy.svg' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| legacy.svg |');
+      expect(result.markdown).toContain('| -- |');
     });
 
     it('strips projectPath prefix from asset paths', () => {
