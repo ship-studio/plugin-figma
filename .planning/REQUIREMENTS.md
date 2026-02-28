@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can enter their Figma personal access token in the plugin settings
-- [ ] **AUTH-02**: Plugin validates the token against the Figma API (`/v1/me`) on entry
-- [ ] **AUTH-03**: Plugin persists the token via Ship Studio plugin storage (survives sessions)
-- [ ] **AUTH-04**: User can update or remove their stored token
+- [x] **AUTH-01**: User can enter their Figma personal access token in the plugin settings
+- [x] **AUTH-02**: Plugin validates the token against the Figma API (`/v1/me`) on entry
+- [x] **AUTH-03**: Plugin persists the token via Ship Studio plugin storage (survives sessions)
+- [x] **AUTH-04**: User can update or remove their stored token
 
 ### Input
 
@@ -103,10 +103,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
 | INPT-01 | Phase 1 | Pending |
 | INPT-02 | Phase 1 | Complete |
 | INPT-03 | Phase 1 | Pending |
