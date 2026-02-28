@@ -53,10 +53,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Brief Formatting
 
-- [ ] **BREF-01**: Plugin formats extracted data into a structured markdown brief with clear sections (metadata, layout tree, tokens, components, asset references)
-- [ ] **BREF-02**: Brief is framework-agnostic — describes layout intent rather than framework-specific code
-- [ ] **BREF-03**: Brief references exported assets by their local file paths in the project
-- [ ] **BREF-04**: Plugin estimates token count and warns if brief exceeds ~12K tokens for a single component
+- [x] **BREF-01**: Plugin formats extracted data into a structured markdown brief with clear sections (metadata, layout tree, tokens, components, asset references)
+- [x] **BREF-02**: Brief is framework-agnostic — describes layout intent rather than framework-specific code
+- [x] **BREF-03**: Brief references exported assets by their local file paths in the project
+- [x] **BREF-04**: Plugin estimates token count and warns if brief exceeds ~12K tokens for a single component
 - [ ] **BREF-05**: Plugin copies the formatted brief to clipboard
 
 ### Plugin UI
@@ -129,10 +129,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASST-03 | Phase 4 | Complete |
 | ASST-04 | Phase 4 | Complete |
 | ASST-05 | Phase 4 | Complete |
-| BREF-01 | Phase 5 | Pending |
-| BREF-02 | Phase 5 | Pending |
-| BREF-03 | Phase 5 | Pending |
-| BREF-04 | Phase 5 | Pending |
+| BREF-01 | Phase 5 | Complete |
+| BREF-02 | Phase 5 | Complete |
+| BREF-03 | Phase 5 | Complete |
+| BREF-04 | Phase 5 | Complete |
 | BREF-05 | Phase 5 | Pending |
 | PLUI-01 | Phase 1 | Complete |
 | PLUI-02 | Phase 1 | Complete |

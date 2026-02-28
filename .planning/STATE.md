@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-28T17:52:42.336Z"
+last_updated: "2026-02-28T18:19:58Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 11
+  completed_plans: 10
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 4 of 5 (Image & Asset Export) -- COMPLETE
-Plan: 2 of 2 in current phase (04-02 complete)
-Status: Phase 4 complete -- ready for Phase 5 (brief assembly)
-Last activity: 2026-02-28 -- Completed 04-02-PLAN.md (asset export pipeline, download orchestrator, MainView wiring)
+Phase: 5 of 5 (Brief Assembly & Output)
+Plan: 1 of 2 in current phase (05-01 complete)
+Status: Phase 5 in progress -- brief generation pure function complete, UI wiring next
+Last activity: 2026-02-28 -- Completed 05-01-PLAN.md (generateBrief pure function with TDD)
 
-Progress: [####################] 90%
+Progress: [###################-] 95%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 7min
-- Total execution time: 1.1 hours
+- Total execution time: 1.15 hours
 
 **By Phase:**
 
@@ -44,10 +44,11 @@ Progress: [####################] 90%
 | 2 - Layout Extraction | 2/2 | 19min | 10min |
 | 3 - Design Data Extraction | 2/2 | 10min | 5min |
 | 4 - Image & Asset Export | 2/2 | 6min | 3min |
+| 5 - Brief Assembly & Output | 1/2 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (4min), 03-02 (6min), 04-01 (3min), 04-02 (3min)
-- Trend: Consistent 3-6min execution with no UI/checkpoint overhead
+- Last 5 plans: 03-02 (6min), 04-01 (3min), 04-02 (3min), 05-01 (3min)
+- Trend: Consistent 3min execution for pure-function plans
 
 *Updated after each plan completion*
 
@@ -98,6 +99,10 @@ Recent decisions affecting current work:
 - fetchImageFills uses inline type to avoid status field collision with error detection (04-02)
 - ExtractLayoutResult extended with fileKey for asset export consumption (04-02)
 - Asset export runs automatically after extraction -- no separate user action needed (04-02)
+- Node type displayed as title case (FRAME -> Frame) for readability in layout tree (05-01)
+- Date field optional on BriefInput for test determinism via date override (05-01)
+- INSTANCE nodes treated as leaf in brief tree -- no recursion into children (05-01)
+- Design Tokens heading omitted when all token subtypes are empty (05-01)
 
 ### Pending Todos
 
@@ -110,5 +115,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 04-02-PLAN.md (asset export pipeline, download orchestrator, MainView wiring)
-Resume file: .planning/phases/04-image-asset-export/04-02-SUMMARY.md
+Stopped at: Completed 05-01-PLAN.md (generateBrief pure function with TDD)
+Resume file: .planning/phases/05-brief-assembly-output/05-01-SUMMARY.md
