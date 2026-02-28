@@ -518,16 +518,6 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
-      {/* Extraction Spinner */}
-      {extracting && (
-        <div className="figma-plugin-section">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="figma-plugin-spinner" />
-            <span style={{ color: 'var(--text-secondary)' }}>Extracting layout...</span>
-          </div>
-        </div>
-      )}
-
       {/* Large Tree Warning */}
       {awaitingLargeTreeConfirm && largeTreeWarning && (
         <div className="figma-plugin-section">
@@ -546,26 +536,87 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
-      {/* Extraction Result */}
-      {extractionResult && extractionStats && (
+      {/* Progress indicator -- single spinner for all stages */}
+      {(extracting || exportingAssets || generatingBrief) && (
+        <div className="figma-plugin-section">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="figma-plugin-spinner" />
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {extracting
+                ? 'Extracting layout...'
+                : exportingAssets
+                  ? assetProgress?.phase === 'preview'
+                    ? 'Rendering preview...'
+                    : `Exporting assets (${assetProgress?.current ?? 0}/${assetProgress?.total ?? 0})...`
+                  : 'Generating brief...'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Brief Error */}
+      {briefError && (
+        <div className="figma-plugin-section">
+          <div className="figma-plugin-error">{briefError}</div>
+        </div>
+      )}
+
+      {/* Merged Result Card -- renders only when entire pipeline is complete */}
+      {briefResult && extractionResult && extractionStats && exportResult && (
         <div className="figma-plugin-section">
           <div className="figma-plugin-file-info">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            {/* Success header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
               <span style={{ color: '#38a169' }}>&#10003;</span>
-              <span style={{ fontWeight: 600, fontSize: '13px' }}>Layout extracted</span>
+              <span style={{ fontWeight: 600, fontSize: '13px' }}>Brief ready</span>
               {extractionResult.truncated && (
                 <span style={{ color: '#f59e0b', fontSize: '11px' }}>(truncated)</span>
               )}
             </div>
 
+            {/* Copy button -- most prominent, at top per user decision */}
+            <button
+              className="btn-primary"
+              onClick={handleCopyBrief}
+              style={{ width: '100%', marginBottom: '12px' }}
+            >
+              Copy Brief to Clipboard
+            </button>
+
             {/* Stats row */}
             <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
-              {extractionResult.nodeCount} layers &middot; {extractionStats.textNodes} text layers
+              {briefResult.stats.nodeCount} layers &middot;{' '}
+              {briefResult.stats.assetCount} assets &middot;{' '}
+              <span style={{
+                color: briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD
+                  ? '#f59e0b'
+                  : 'inherit',
+              }}>
+                ~{Math.round(briefResult.stats.estimatedTokens / 1000)}K tokens
+              </span>
             </div>
 
-            {/* Components found */}
+            {/* Composition count -- inline stat with amber color */}
+            {(() => {
+              const compCount = exportResult.assets.filter(a => a.assetType === 'composition').length;
+              return compCount > 0 ? (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#f59e0b' }}>
+                  {compCount} composition{compCount !== 1 ? 's' : ''} exported as PNG
+                </div>
+              ) : null;
+            })()}
+
+            {/* Token warning banner */}
+            {briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD && (
+              <div className="figma-plugin-warning" style={{ marginTop: '8px' }}>
+                <strong>This brief is large</strong>
+                <p>Consider extracting a smaller section for better results.</p>
+              </div>
+            )}
+
+            {/* Component badges */}
             {extractionStats.components.length > 0 && (
-              <div style={{ marginTop: '8px' }}>
+              <div style={{ marginTop: '10px' }}>
                 <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>Components</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {extractionStats.components.slice(0, 8).map((c) => (
@@ -592,6 +643,21 @@ export function MainView({ token }: MainViewProps) {
               </div>
             )}
 
+            {/* Asset warnings */}
+            {exportResult.warnings.length > 0 && (
+              <div style={{ marginTop: '8px', fontSize: '11px', color: '#f59e0b' }}>
+                {exportResult.warnings.length} warning{exportResult.warnings.length !== 1 ? 's' : ''}:
+                <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                  {exportResult.warnings.slice(0, 5).map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                  {exportResult.warnings.length > 5 && (
+                    <li>...and {exportResult.warnings.length - 5} more</li>
+                  )}
+                </ul>
+              </div>
+            )}
+
             {/* Tree preview toggle */}
             <button
               onClick={() => setShowTree(!showTree)}
@@ -607,115 +673,11 @@ export function MainView({ token }: MainViewProps) {
             >
               {showTree ? 'Hide tree' : 'Show tree preview'}
             </button>
-
             {showTree && (
               <div style={{ marginTop: '6px', padding: '8px', background: 'var(--bg-primary)', borderRadius: '4px', border: '1px solid var(--border)', maxHeight: '200px', overflowY: 'auto' }}>
                 <TreePreview nodes={extractionResult.rootNodes} />
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Asset Export Progress */}
-      {exportingAssets && assetProgress && (
-        <div className="figma-plugin-section">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="figma-plugin-spinner" />
-            <span style={{ color: 'var(--text-secondary)' }}>
-              {assetProgress.phase === 'preview'
-                ? 'Rendering preview...'
-                : `Downloading ${assetProgress.currentAsset} (${assetProgress.current}/${assetProgress.total})...`
-              }
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Asset Export Result */}
-      {exportResult && (
-        <div className="figma-plugin-section">
-          <div className="figma-plugin-file-info">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <span style={{ color: '#38a169' }}>&#10003;</span>
-              <span style={{ fontWeight: 600, fontSize: '13px' }}>Assets exported</span>
-            </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
-              {exportResult.previewPath ? 'Preview + ' : ''}{exportResult.assets.length} asset{exportResult.assets.length !== 1 ? 's' : ''} saved to .shipstudio/assets/
-            </div>
-            {exportResult.warnings.length > 0 && (
-              <div style={{ marginTop: '6px', fontSize: '11px', color: '#f59e0b' }}>
-                {exportResult.warnings.length} warning{exportResult.warnings.length !== 1 ? 's' : ''}:
-                <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-                  {exportResult.warnings.slice(0, 5).map((w, i) => (
-                    <li key={i}>{w}</li>
-                  ))}
-                  {exportResult.warnings.length > 5 && (
-                    <li>...and {exportResult.warnings.length - 5} more</li>
-                  )}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Brief Generation Spinner */}
-      {generatingBrief && (
-        <div className="figma-plugin-section">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="figma-plugin-spinner" />
-            <span style={{ color: 'var(--text-secondary)' }}>Generating brief...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Brief Error */}
-      {briefError && (
-        <div className="figma-plugin-section">
-          <div className="figma-plugin-error">{briefError}</div>
-        </div>
-      )}
-
-      {/* Brief Result */}
-      {briefResult && (
-        <div className="figma-plugin-section">
-          <div className="figma-plugin-file-info">
-            {/* Success header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <span style={{ color: '#38a169' }}>&#10003;</span>
-              <span style={{ fontWeight: 600, fontSize: '13px' }}>Brief ready</span>
-            </div>
-
-            {/* Summary stats */}
-            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
-              {briefResult.stats.nodeCount} layers &middot;{' '}
-              {briefResult.stats.assetCount} assets &middot;{' '}
-              <span style={{
-                color: briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD
-                  ? '#f59e0b'
-                  : 'inherit',
-              }}>
-                ~{Math.round(briefResult.stats.estimatedTokens / 1000)}K tokens
-              </span>
-            </div>
-
-            {/* Token warning banner */}
-            {briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD && (
-              <div className="figma-plugin-warning" style={{ marginTop: '8px' }}>
-                <strong>This brief is large</strong>
-                <p>Consider extracting a smaller section for better results.</p>
-              </div>
-            )}
-
-            {/* Copy button */}
-            <button
-              className="btn-primary"
-              onClick={handleCopyBrief}
-              style={{ width: '100%', marginTop: '12px' }}
-            >
-              Copy Brief to Clipboard
-            </button>
 
             {/* File save note */}
             <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
