@@ -1,11 +1,11 @@
-import { jsx as e, jsxs as a, Fragment as A } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export const jsx=R.createElement;export const jsxs=R.createElement;export const Fragment=R.Fragment;";
-import { useEffect as F, useCallback as b, useState as f, useRef as _ } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
-const L = window;
-function E() {
-  const t = L.__SHIPSTUDIO_REACT__, n = L.__SHIPSTUDIO_PLUGIN_CONTEXT_REF__;
-  return n && (t != null && t.useContext) ? t.useContext(n) : null;
+import { jsx as a, jsxs as d, Fragment as M } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export const jsx=R.createElement;export const jsxs=R.createElement;export const Fragment=R.Fragment;";
+import { useEffect as B, useCallback as b, useState as p, useRef as U } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
+const D = window;
+function W() {
+  const n = D.__SHIPSTUDIO_REACT__, i = D.__SHIPSTUDIO_PLUGIN_CONTEXT_REF__;
+  return i && (n != null && n.useContext) ? n.useContext(i) : null;
 }
-const P = "figma-plugin-styles", B = `
+const O = "figma-plugin-styles", Z = `
 .figma-plugin-overlay {
   position: fixed;
   inset: 0;
@@ -131,30 +131,30 @@ const P = "figma-plugin-styles", B = `
   to { transform: rotate(360deg); }
 }
 `;
-function D({ open: t, onClose: n, title: l, headerRight: d, children: s }) {
-  F(() => {
-    if (!t) return;
-    let i = document.getElementById(P);
-    return i || (i = document.createElement("style"), i.id = P, i.textContent = B, document.head.appendChild(i)), () => {
-      const o = document.getElementById(P);
-      o && o.remove();
+function Y({ open: n, onClose: i, title: r, headerRight: e, children: t }) {
+  B(() => {
+    if (!n) return;
+    let o = document.getElementById(O);
+    return o || (o = document.createElement("style"), o.id = O, o.textContent = Z, document.head.appendChild(o)), () => {
+      const s = document.getElementById(O);
+      s && s.remove();
     };
-  }, [t]), F(() => {
-    if (!t) return;
-    const i = (o) => {
-      o.key === "Escape" && n();
+  }, [n]), B(() => {
+    if (!n) return;
+    const o = (s) => {
+      s.key === "Escape" && i();
     };
-    return document.addEventListener("keydown", i), () => document.removeEventListener("keydown", i);
-  }, [t, n]);
-  const c = b(
-    (i) => {
-      i.target === i.currentTarget && n();
+    return document.addEventListener("keydown", o), () => document.removeEventListener("keydown", o);
+  }, [n, i]);
+  const l = b(
+    (o) => {
+      o.target === o.currentTarget && i();
     },
-    [n]
+    [i]
   );
-  return t ? /* @__PURE__ */ e("div", { className: "figma-plugin-overlay", onClick: c, children: /* @__PURE__ */ a("div", { className: "figma-plugin-modal", children: [
-    /* @__PURE__ */ a("div", { className: "figma-plugin-modal-header", children: [
-      /* @__PURE__ */ a(
+  return n ? /* @__PURE__ */ a("div", { className: "figma-plugin-overlay", onClick: l, children: /* @__PURE__ */ d("div", { className: "figma-plugin-modal", children: [
+    /* @__PURE__ */ d("div", { className: "figma-plugin-modal-header", children: [
+      /* @__PURE__ */ d(
         "svg",
         {
           width: "16",
@@ -166,83 +166,120 @@ function D({ open: t, onClose: n, title: l, headerRight: d, children: s }) {
           strokeLinecap: "round",
           strokeLinejoin: "round",
           children: [
-            /* @__PURE__ */ e("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
-            /* @__PURE__ */ e("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
-            /* @__PURE__ */ e("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
-            /* @__PURE__ */ e("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
+            /* @__PURE__ */ a("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
+            /* @__PURE__ */ a("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
+            /* @__PURE__ */ a("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
+            /* @__PURE__ */ a("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
           ]
         }
       ),
-      /* @__PURE__ */ e("span", { className: "figma-plugin-modal-title", children: l }),
-      d && /* @__PURE__ */ e("div", { style: { marginLeft: "auto", display: "flex", alignItems: "center" }, children: d })
+      /* @__PURE__ */ a("span", { className: "figma-plugin-modal-title", children: r }),
+      e && /* @__PURE__ */ a("div", { style: { marginLeft: "auto", display: "flex", alignItems: "center" }, children: e })
     ] }),
-    /* @__PURE__ */ e("div", { className: "figma-plugin-modal-body", children: s })
+    /* @__PURE__ */ a("div", { className: "figma-plugin-modal-body", children: t })
   ] }) }) : null;
 }
-const V = "https://api.figma.com/v1";
-async function R(t, n, l, d) {
-  const s = `${V}${n}`, c = Math.ceil(3e4 / 1e3), i = [
+const Q = "https://api.figma.com/v1";
+async function H(n, i, r, e) {
+  const t = `${Q}${i}`, l = Math.ceil(((e == null ? void 0 : e.timeout) ?? 3e4) / 1e3), o = [
     "-sS",
     "--max-time",
-    String(c),
+    String(l),
     "-H",
-    `X-Figma-Token: ${l}`,
-    s
-  ], o = await t.exec("curl", i, {
-    timeout: 12e4
+    `X-Figma-Token: ${r}`,
+    t
+  ], s = await n.exec("curl", o, {
+    timeout: (e == null ? void 0 : e.timeout) ?? 12e4
   });
-  if (o.exit_code !== 0)
-    throw new Error(`Figma API request failed: ${o.stderr || `exit code ${o.exit_code}`}`);
-  if (!o.stdout.trim())
+  if (s.exit_code !== 0)
+    throw new Error(`Figma API request failed: ${s.stderr || `exit code ${s.exit_code}`}`);
+  if (!s.stdout.trim())
     throw new Error("Empty response from Figma API");
-  let r;
+  let c;
   try {
-    r = JSON.parse(o.stdout);
+    c = JSON.parse(s.stdout);
   } catch {
-    throw new Error(`Invalid JSON from Figma API: ${o.stdout.slice(0, 200)}`);
+    throw new Error(`Invalid JSON from Figma API: ${s.stdout.slice(0, 200)}`);
   }
-  if (r.status && r.err)
-    throw r.status === 429 ? new Error("Rate limited by Figma API. Try again in a moment.") : r.status === 403 ? new Error("Invalid or expired token. Please update your Figma token.") : r.status === 404 ? new Error("File not found. Check that the URL is correct and you have access.") : new Error(`Figma API error: ${r.err}`);
-  return r;
+  if (c.status && c.err)
+    throw c.status === 429 ? new Error("Rate limited by Figma API. Try again in a moment.") : c.status === 403 ? new Error("Invalid or expired token. Please update your Figma token.") : c.status === 404 ? new Error("File not found. Check that the URL is correct and you have access.") : new Error(`Figma API error: ${c.err}`);
+  return c;
 }
-async function z(t, n) {
-  return R(t, "/me", n);
+async function V(n, i) {
+  return H(n, "/me", i);
 }
-async function H(t, n, l) {
-  const d = await R(t, `/files/${l}?depth=1`, n);
+async function ee(n, i, r) {
+  const e = await H(n, `/files/${r}?depth=1`, i);
   return {
-    name: d.name,
-    pages: d.document.children.filter((s) => s.type === "CANVAS").map((s) => ({ id: s.id, name: s.name }))
+    name: e.name,
+    pages: e.document.children.filter((t) => t.type === "CANVAS").map((t) => ({ id: t.id, name: t.name }))
   };
 }
-function M({ onTokenSaved: t }) {
-  const n = E(), l = (n == null ? void 0 : n.shell) ?? null, [d, s] = f(""), [c, i] = f(!1), [o, r] = f(null), y = b(async () => {
-    if (!l) return;
-    const m = d.trim();
-    if (!(!m || c)) {
-      i(!0), r(null);
+async function ne(n, i, r, e) {
+  const t = await H(
+    n,
+    `/files/${r}/nodes?ids=${encodeURIComponent(e)}`,
+    i,
+    { timeout: 12e4 }
+  ), l = t.nodes[e];
+  if (!l) {
+    const o = Object.keys(t.nodes), s = o.find(
+      (c) => c.replace(/%3A/g, ":") === e || c === e.replace(/:/g, "%3A")
+    );
+    if (s)
+      return {
+        rootNode: t.nodes[s].document,
+        components: t.nodes[s].components
+      };
+    throw new Error(
+      `Node "${e}" not found in API response. Available nodes: ${o.join(", ")}`
+    );
+  }
+  return {
+    rootNode: l.document,
+    components: l.components
+  };
+}
+async function te(n, i, r) {
+  const e = await H(
+    n,
+    `/files/${r}`,
+    i,
+    { timeout: 12e4 }
+  );
+  return {
+    rootNodes: e.document.children,
+    components: e.components
+  };
+}
+function ie({ onTokenSaved: n }) {
+  const i = W(), r = (i == null ? void 0 : i.shell) ?? null, [e, t] = p(""), [l, o] = p(!1), [s, c] = p(null), x = b(async () => {
+    if (!r) return;
+    const u = e.trim();
+    if (!(!u || l)) {
+      o(!0), c(null);
       try {
-        const u = await z(l, m);
-        t(m, u);
-      } catch (u) {
-        r((u == null ? void 0 : u.message) || "Failed to validate token. Please check and try again.");
+        const g = await V(r, u);
+        n(u, g);
+      } catch (g) {
+        c((g == null ? void 0 : g.message) || "Failed to validate token. Please check and try again.");
       } finally {
-        i(!1);
+        o(!1);
       }
     }
-  }, [d, c, l, t]), v = b(
-    (m) => {
-      m.key === "Enter" && y();
+  }, [e, l, r, n]), w = b(
+    (u) => {
+      u.key === "Enter" && x();
     },
-    [y]
+    [x]
   );
-  return /* @__PURE__ */ a("div", { children: [
-    /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ e("h3", { style: { fontSize: "14px", fontWeight: 600, margin: "0 0 8px 0" }, children: "Connect to Figma" }),
-      /* @__PURE__ */ a("p", { style: { fontSize: "12px", color: "var(--text-secondary)", margin: "0 0 16px 0", lineHeight: 1.5 }, children: [
+  return /* @__PURE__ */ d("div", { children: [
+    /* @__PURE__ */ d("div", { className: "figma-plugin-section", children: [
+      /* @__PURE__ */ a("h3", { style: { fontSize: "14px", fontWeight: 600, margin: "0 0 8px 0" }, children: "Connect to Figma" }),
+      /* @__PURE__ */ d("p", { style: { fontSize: "12px", color: "var(--text-secondary)", margin: "0 0 16px 0", lineHeight: 1.5 }, children: [
         "To get started, you need a Figma Personal Access Token.",
         " ",
-        /* @__PURE__ */ e(
+        /* @__PURE__ */ a(
           "a",
           {
             href: "https://www.figma.com/developers/api#access-tokens",
@@ -255,64 +292,64 @@ function M({ onTokenSaved: t }) {
         '. Make sure "File content (Read)" scope is enabled.'
       ] })
     ] }),
-    /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ e("label", { className: "figma-plugin-label", children: "Personal Access Token" }),
-      /* @__PURE__ */ e(
+    /* @__PURE__ */ d("div", { className: "figma-plugin-section", children: [
+      /* @__PURE__ */ a("label", { className: "figma-plugin-label", children: "Personal Access Token" }),
+      /* @__PURE__ */ a(
         "input",
         {
           className: "figma-plugin-input",
           type: "password",
           placeholder: "figd_xxxxxxxxxxxxxxxx",
-          value: d,
-          onChange: (m) => s(m.target.value),
-          onKeyDown: v,
-          disabled: c
+          value: e,
+          onChange: (u) => t(u.target.value),
+          onKeyDown: w,
+          disabled: l
         }
       ),
-      o && /* @__PURE__ */ e("div", { className: "figma-plugin-error", children: o }),
-      /* @__PURE__ */ e("div", { className: "figma-plugin-hint", children: "Token is stored locally in this project only." })
+      s && /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: s }),
+      /* @__PURE__ */ a("div", { className: "figma-plugin-hint", children: "Token is stored locally in this project only." })
     ] }),
-    /* @__PURE__ */ e(
+    /* @__PURE__ */ a(
       "button",
       {
         className: "btn-primary",
-        onClick: y,
-        disabled: !d.trim() || c,
+        onClick: x,
+        disabled: !e.trim() || l,
         style: { width: "100%", marginTop: "4px" },
-        children: c ? /* @__PURE__ */ a(A, { children: [
-          /* @__PURE__ */ e("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
+        children: l ? /* @__PURE__ */ d(M, { children: [
+          /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
           "Connecting..."
         ] }) : "Connect"
       }
     )
   ] });
 }
-function $({ currentUser: t, onTokenUpdated: n, onTokenRemoved: l, onBack: d }) {
-  const s = E(), c = (s == null ? void 0 : s.shell) ?? null, [i, o] = f(""), [r, y] = f(!1), [v, m] = f(null), u = b(async () => {
-    if (!c) return;
-    const w = i.trim();
-    if (!(!w || r)) {
-      y(!0), m(null);
+function ae({ currentUser: n, onTokenUpdated: i, onTokenRemoved: r, onBack: e }) {
+  const t = W(), l = (t == null ? void 0 : t.shell) ?? null, [o, s] = p(""), [c, x] = p(!1), [w, u] = p(null), g = b(async () => {
+    if (!l) return;
+    const N = o.trim();
+    if (!(!N || c)) {
+      x(!0), u(null);
       try {
-        const h = await z(c, w);
-        n(w, h);
-      } catch (h) {
-        m((h == null ? void 0 : h.message) || "Failed to validate token. Please check and try again.");
+        const f = await V(l, N);
+        i(N, f);
+      } catch (f) {
+        u((f == null ? void 0 : f.message) || "Failed to validate token. Please check and try again.");
       } finally {
-        y(!1);
+        x(!1);
       }
     }
-  }, [i, r, c, n]), k = b(
-    (w) => {
-      w.key === "Enter" && u();
+  }, [o, c, l, i]), T = b(
+    (N) => {
+      N.key === "Enter" && g();
     },
-    [u]
+    [g]
   );
-  return /* @__PURE__ */ a("div", { children: [
-    /* @__PURE__ */ a(
+  return /* @__PURE__ */ d("div", { children: [
+    /* @__PURE__ */ d(
       "button",
       {
-        onClick: d,
+        onClick: e,
         style: {
           background: "none",
           border: "none",
@@ -326,209 +363,426 @@ function $({ currentUser: t, onTokenUpdated: n, onTokenRemoved: l, onBack: d }) 
           gap: "4px"
         },
         children: [
-          /* @__PURE__ */ e("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ e("polyline", { points: "15 18 9 12 15 6" }) }),
+          /* @__PURE__ */ a("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ a("polyline", { points: "15 18 9 12 15 6" }) }),
           "Back"
         ]
       }
     ),
-    /* @__PURE__ */ e("div", { className: "figma-plugin-section", children: /* @__PURE__ */ a("div", { className: "figma-plugin-success", style: { display: "flex", alignItems: "center", gap: "6px", marginTop: "0" }, children: [
-      /* @__PURE__ */ e("span", { style: { fontSize: "10px" }, children: "●" }),
+    /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ d("div", { className: "figma-plugin-success", style: { display: "flex", alignItems: "center", gap: "6px", marginTop: "0" }, children: [
+      /* @__PURE__ */ a("span", { style: { fontSize: "10px" }, children: "●" }),
       "Connected as ",
-      t.handle
+      n.handle
     ] }) }),
-    /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ e("label", { className: "figma-plugin-label", children: "Update Token" }),
-      /* @__PURE__ */ e(
+    /* @__PURE__ */ d("div", { className: "figma-plugin-section", children: [
+      /* @__PURE__ */ a("label", { className: "figma-plugin-label", children: "Update Token" }),
+      /* @__PURE__ */ a(
         "input",
         {
           className: "figma-plugin-input",
           type: "password",
           placeholder: "figd_xxxxxxxxxxxxxxxx",
-          value: i,
-          onChange: (w) => o(w.target.value),
-          onKeyDown: k,
-          disabled: r
+          value: o,
+          onChange: (N) => s(N.target.value),
+          onKeyDown: T,
+          disabled: c
         }
       ),
-      v && /* @__PURE__ */ e("div", { className: "figma-plugin-error", children: v }),
-      /* @__PURE__ */ e(
+      w && /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: w }),
+      /* @__PURE__ */ a(
         "button",
         {
           className: "btn-primary",
-          onClick: u,
-          disabled: !i.trim() || r,
+          onClick: g,
+          disabled: !o.trim() || c,
           style: { width: "100%", marginTop: "8px" },
-          children: r ? /* @__PURE__ */ a(A, { children: [
-            /* @__PURE__ */ e("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
+          children: c ? /* @__PURE__ */ d(M, { children: [
+            /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
             "Validating..."
           ] }) : "Update"
         }
       )
     ] }),
-    /* @__PURE__ */ e("div", { className: "figma-plugin-section", style: { borderTop: "1px solid var(--border)", paddingTop: "16px" }, children: /* @__PURE__ */ e(
+    /* @__PURE__ */ a("div", { className: "figma-plugin-section", style: { borderTop: "1px solid var(--border)", paddingTop: "16px" }, children: /* @__PURE__ */ a(
       "button",
       {
         className: "btn-secondary",
-        onClick: l,
+        onClick: r,
         style: { width: "100%" },
         children: "Disconnect"
       }
     ) })
   ] });
 }
-function j(t) {
-  const n = t.match(
+function re(n) {
+  const i = n.match(
     /figma\.com\/(file|design|proto|board)\/([A-Za-z0-9]+)/
   );
-  if (!n) return null;
-  const l = n[1], d = n[2];
-  let s = null;
-  const c = t.match(/[?&]node-id=([^&]+)/);
-  return c && (s = decodeURIComponent(c[1]).replace(/-/g, ":")), { fileKey: d, nodeId: s, fileType: l };
+  if (!i) return null;
+  const r = i[1], e = i[2];
+  let t = null;
+  const l = n.match(/[?&]node-id=([^&]+)/);
+  return l && (t = decodeURIComponent(l[1]).replace(/-/g, ":")), { fileKey: e, nodeId: t, fileType: r };
 }
-function K({ token: t }) {
-  const n = E(), l = (n == null ? void 0 : n.shell) ?? null, d = (n == null ? void 0 : n.actions) ?? null, [s, c] = f(""), [i, o] = f(null), [r, y] = f("page"), [v, m] = f(null), [u, k] = f(!1), [w, h] = f(null), C = _(l);
-  C.current = l;
-  const I = _(0), S = b(
-    (p) => {
-      const g = p.target.value;
-      if (c(g), !g.trim()) {
-        o(null), m(null), h(null), k(!1);
+function oe(n) {
+  switch (n) {
+    case "MIN":
+      return "flex-start";
+    case "CENTER":
+      return "center";
+    case "MAX":
+      return "flex-end";
+    case "SPACE_BETWEEN":
+      return "space-between";
+    default:
+      return "flex-start";
+  }
+}
+function le(n) {
+  switch (n) {
+    case "MIN":
+      return "flex-start";
+    case "CENTER":
+      return "center";
+    case "MAX":
+      return "flex-end";
+    case "BASELINE":
+      return "baseline";
+    default:
+      return "flex-start";
+  }
+}
+function se(n) {
+  const i = {
+    flexDirection: n.layoutMode === "HORIZONTAL" ? "row" : "column",
+    justifyContent: oe(n.primaryAxisAlignItems),
+    alignItems: le(n.counterAxisAlignItems),
+    gap: n.itemSpacing ?? 0,
+    padding: {
+      top: n.paddingTop ?? 0,
+      right: n.paddingRight ?? 0,
+      bottom: n.paddingBottom ?? 0,
+      left: n.paddingLeft ?? 0
+    },
+    flexWrap: n.layoutWrap === "WRAP" ? "wrap" : "nowrap"
+  };
+  return n.layoutWrap === "WRAP" && (i.rowGap = n.counterAxisSpacing ?? 0), i;
+}
+function ce(n, i) {
+  const r = i[n.componentId];
+  let e;
+  if (n.componentProperties) {
+    const l = {};
+    for (const [o, s] of Object.entries(n.componentProperties))
+      (s.type === "VARIANT" || s.type === "BOOLEAN" || s.type === "TEXT") && (l[o] = s.value);
+    Object.keys(l).length > 0 && (e = l);
+  }
+  const t = {
+    componentId: n.componentId,
+    componentName: (r == null ? void 0 : r.name) ?? n.name,
+    isRemote: (r == null ? void 0 : r.remote) ?? !1,
+    source: r != null && r.remote ? "library" : "local"
+  };
+  return r != null && r.description && (t.description = r.description), e && (t.variantProperties = e), n.overrides && (t.overrides = n.overrides), t;
+}
+function j(n, i, r) {
+  const e = n;
+  if (e.type === "SLICE") return null;
+  const t = {
+    id: e.id,
+    name: e.name,
+    type: e.type,
+    visible: e.visible !== !1
+    // defaults to true when undefined
+  };
+  switch (e.absoluteBoundingBox != null ? (t.width = e.absoluteBoundingBox.width, t.height = e.absoluteBoundingBox.height) : e.size != null && (t.width = e.size.x, t.height = e.size.y), "layoutSizingHorizontal" in e && (t.widthMode = e.layoutSizingHorizontal), "layoutSizingVertical" in e && (t.heightMode = e.layoutSizingVertical), "layoutPositioning" in e && e.layoutPositioning != null && (t.positioning = e.layoutPositioning), "layoutMode" in e && e.layoutMode && e.layoutMode !== "NONE" && (t.autoLayout = se(e)), "constraints" in e && e.constraints != null && (t.constraints = e.constraints), "minWidth" in e && e.minWidth != null && (t.minWidth = e.minWidth), "maxWidth" in e && e.maxWidth != null && (t.maxWidth = e.maxWidth), "minHeight" in e && e.minHeight != null && (t.minHeight = e.minHeight), "maxHeight" in e && e.maxHeight != null && (t.maxHeight = e.maxHeight), "preserveRatio" in e && e.preserveRatio != null && (t.preserveRatio = e.preserveRatio), e.type) {
+    case "TEXT":
+      t.textContent = e.characters;
+      break;
+    case "INSTANCE":
+      return t.componentRef = ce(e, i), t;
+    case "BOOLEAN_OPERATION":
+      return t;
+  }
+  if ("children" in e && Array.isArray(e.children)) {
+    const l = e.children.map((o) => j(o, i)).filter((o) => o !== null);
+    t.children = ue(l);
+  }
+  return t;
+}
+function $(n) {
+  let i = 1;
+  if (n.children && Array.isArray(n.children))
+    for (const r of n.children)
+      i += $(r);
+  return i;
+}
+function de(n) {
+  const i = n.componentRef, r = i.variantProperties ? JSON.stringify(i.variantProperties, Object.keys(i.variantProperties).sort()) : "";
+  return `${i.componentId}::${r}`;
+}
+function ue(n) {
+  if (n.length === 0) return [];
+  const i = /* @__PURE__ */ new Map();
+  for (let t = 0; t < n.length; t++) {
+    const l = n[t];
+    if (l.componentRef) {
+      const o = de(l), s = i.get(o);
+      s ? (s.count++, s.indices.push(t)) : i.set(o, { node: l, count: 1, indices: [t] });
+    }
+  }
+  const r = /* @__PURE__ */ new Set();
+  for (const t of i.values())
+    if (t.count >= 3) {
+      t.node.repeatCount = t.count;
+      for (let l = 1; l < t.indices.length; l++)
+        r.add(t.indices[l]);
+    }
+  const e = [];
+  for (let t = 0; t < n.length; t++)
+    r.has(t) || e.push(n[t]);
+  return e;
+}
+function ge(n, i) {
+  let r = 0;
+  for (const t of n)
+    r += $(t);
+  return {
+    rootNodes: n.map((t) => j(t, i)).filter((t) => t !== null),
+    nodeCount: r,
+    truncated: !1
+  };
+}
+const fe = 500, pe = 2e3;
+async function me(n) {
+  const { shell: i, token: r, fileKey: e, nodeId: t, scope: l } = n;
+  let o, s;
+  if (l === "node" || l === "frame") {
+    if (!t)
+      throw new Error(
+        `Cannot extract ${l}: no node ID found in the URL. Paste a Figma URL that includes a node-id, or switch to "Entire Page" scope.`
+      );
+    const u = await ne(i, r, e, t);
+    o = [u.rootNode], s = u.components;
+  } else {
+    const u = await te(i, r, e), g = u.rootNodes[0];
+    o = (g == null ? void 0 : g.children) || [], s = u.components;
+  }
+  let c = 0;
+  for (const u of o)
+    c += $(u);
+  let x;
+  c > fe && (x = {
+    nodeCount: c,
+    message: `This selection has ~${c} nodes. Large extractions may produce verbose output.`
+  });
+  const w = ge(o, s);
+  return c > pe && (w.truncated = !0), { extraction: w, largeTreeWarning: x };
+}
+function he({ token: n }) {
+  const i = W(), r = (i == null ? void 0 : i.shell) ?? null, e = (i == null ? void 0 : i.actions) ?? null, [t, l] = p(""), [o, s] = p(null), [c, x] = p("page"), [w, u] = p(null), [g, T] = p(!1), [N, f] = p(null), [F, P] = p(!1), [S, A] = p(null), [R, m] = p(null), [y, k] = p(!1), E = U(null), L = U(r);
+  L.current = r;
+  const _ = U(0), z = U(0), K = b(
+    (C) => {
+      const I = C.target.value;
+      if (l(I), !I.trim()) {
+        s(null), u(null), f(null), T(!1), A(null), m(null), k(!1), E.current = null;
         return;
       }
-      const x = j(g);
-      if (!x) {
-        o(null), m(null), h("Please paste a valid Figma URL (file, design, proto, or board link)"), k(!1);
+      const h = re(I);
+      if (!h) {
+        s(null), u(null), f("Please paste a valid Figma URL (file, design, proto, or board link)"), T(!1);
         return;
       }
-      o(x), h(null), m(null), x.nodeId ? y("node") : y("page");
+      s(h), f(null), u(null), A(null), m(null), k(!1), E.current = null, h.nodeId ? x("node") : x("page");
     },
     []
   );
-  F(() => {
-    if (!i || !C.current) return;
-    const p = ++I.current, g = C.current;
-    k(!0), m(null), h(null), (async () => {
+  B(() => {
+    if (!o || !L.current) return;
+    const C = ++_.current, I = L.current;
+    T(!0), u(null), f(null), (async () => {
       try {
-        const x = await H(g, t, i.fileKey);
-        I.current === p && (m(x), k(!1));
-      } catch (x) {
-        if (I.current === p) {
-          const N = (x == null ? void 0 : x.message) || "Failed to validate file access.";
-          N.includes("403") || N.includes("Invalid or expired") ? h("Cannot access this file. Check that your token has File content (Read) scope.") : N.includes("404") || N.includes("not found") ? h("File not found. Check that the URL is correct.") : N.includes("429") || N.includes("Rate limited") ? h("Rate limited by Figma. Please wait a moment and try again.") : h(N), k(!1);
+        const h = await ee(I, n, o.fileKey);
+        _.current === C && (u(h), T(!1));
+      } catch (h) {
+        if (_.current === C) {
+          const v = (h == null ? void 0 : h.message) || "Failed to validate file access.";
+          v.includes("403") || v.includes("Invalid or expired") ? f("Cannot access this file. Check that your token has File content (Read) scope.") : v.includes("404") || v.includes("not found") ? f("File not found. Check that the URL is correct.") : v.includes("429") || v.includes("Rate limited") ? f("Rate limited by Figma. Please wait a moment and try again.") : f(v), T(!1);
         }
       }
     })();
-  }, [i, t]);
-  const U = b(() => {
-    d && d.showToast("Extraction coming in next update", "info");
-  }, [d]), T = !i || !v || u;
-  return /* @__PURE__ */ a("div", { children: [
-    /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ e("label", { className: "figma-plugin-label", children: "Figma URL" }),
-      /* @__PURE__ */ e(
+  }, [o, n]);
+  const X = b(() => {
+    const C = L.current;
+    if (!C || !o) return;
+    const I = ++z.current;
+    P(!0), A(null), f(null), m(null), k(!1), E.current = null, (async () => {
+      try {
+        const h = await me({
+          shell: C,
+          token: n,
+          fileKey: o.fileKey,
+          nodeId: o.nodeId,
+          scope: c
+        });
+        if (z.current !== I) return;
+        if (h.largeTreeWarning) {
+          E.current = h, m(h.largeTreeWarning), k(!0), P(!1);
+          return;
+        }
+        A(h.extraction), e && e.showToast(`Extracted ${h.extraction.nodeCount} nodes`, "success");
+      } catch (h) {
+        if (z.current !== I) return;
+        const v = (h == null ? void 0 : h.message) || "Extraction failed.";
+        v.includes("403") || v.includes("Invalid or expired") ? f("Cannot access this file. Check that your token has File content (Read) scope.") : v.includes("404") || v.includes("not found") ? f("File not found. Check that the URL is correct.") : v.includes("429") || v.includes("Rate limited") ? f("Rate limited by Figma. Please wait a moment and try again.") : v.includes("timeout") || v.includes("timed out") ? f("Request timed out. Try a smaller selection or check your connection.") : f(v);
+      } finally {
+        z.current === I && P(!1);
+      }
+    })();
+  }, [o, n, c, e]), G = b(() => {
+    const C = E.current;
+    C && (k(!1), m(null), A(C.extraction), E.current = null, e && e.showToast(`Extracted ${C.extraction.nodeCount} nodes`, "success"));
+  }, [e]), q = b(() => {
+    k(!1), m(null), E.current = null;
+  }, []), J = !o || !w || g || F;
+  return /* @__PURE__ */ d("div", { children: [
+    /* @__PURE__ */ d("div", { className: "figma-plugin-section", children: [
+      /* @__PURE__ */ a("label", { className: "figma-plugin-label", children: "Figma URL" }),
+      /* @__PURE__ */ a(
         "input",
         {
           className: "figma-plugin-input",
           type: "text",
           placeholder: "https://www.figma.com/design/...",
-          value: s,
-          onChange: S
+          value: t,
+          onChange: K
         }
       ),
-      w && /* @__PURE__ */ e("div", { className: "figma-plugin-error", children: w })
+      N && /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: N })
     ] }),
-    i && /* @__PURE__ */ e("div", { className: "figma-plugin-section", children: /* @__PURE__ */ a("div", { className: "figma-plugin-file-info", children: [
-      u && /* @__PURE__ */ a("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: v ? "8px" : "0" }, children: [
-        /* @__PURE__ */ e("span", { className: "figma-plugin-spinner" }),
-        /* @__PURE__ */ e("span", { style: { color: "var(--text-secondary)" }, children: "Checking access..." })
+    o && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ d("div", { className: "figma-plugin-file-info", children: [
+      g && /* @__PURE__ */ d("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: w ? "8px" : "0" }, children: [
+        /* @__PURE__ */ a("span", { className: "figma-plugin-spinner" }),
+        /* @__PURE__ */ a("span", { style: { color: "var(--text-secondary)" }, children: "Checking access..." })
       ] }),
-      v && /* @__PURE__ */ a("div", { style: { marginBottom: "8px" }, children: [
-        /* @__PURE__ */ e("div", { style: { fontWeight: 600, fontSize: "13px", marginBottom: "4px" }, children: v.name }),
-        /* @__PURE__ */ a("div", { style: { color: "var(--text-secondary)" }, children: [
-          v.pages.length,
+      w && /* @__PURE__ */ d("div", { style: { marginBottom: "8px" }, children: [
+        /* @__PURE__ */ a("div", { style: { fontWeight: 600, fontSize: "13px", marginBottom: "4px" }, children: w.name }),
+        /* @__PURE__ */ d("div", { style: { color: "var(--text-secondary)" }, children: [
+          w.pages.length,
           " page",
-          v.pages.length !== 1 ? "s" : ""
+          w.pages.length !== 1 ? "s" : ""
         ] })
       ] }),
-      !u && /* @__PURE__ */ a("div", { style: { color: "var(--text-muted)", lineHeight: 1.6 }, children: [
-        /* @__PURE__ */ a("div", { children: [
+      !g && /* @__PURE__ */ d("div", { style: { color: "var(--text-muted)", lineHeight: 1.6 }, children: [
+        /* @__PURE__ */ d("div", { children: [
           "File key: ",
-          i.fileKey
+          o.fileKey
         ] }),
-        /* @__PURE__ */ a("div", { children: [
+        /* @__PURE__ */ d("div", { children: [
           "Node: ",
-          i.nodeId || "None (file-level)"
+          o.nodeId || "None (file-level)"
         ] }),
-        /* @__PURE__ */ a("div", { children: [
+        /* @__PURE__ */ d("div", { children: [
           "Type: ",
-          i.fileType
+          o.fileType
         ] })
       ] })
     ] }) }),
-    i && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ e("label", { className: "figma-plugin-label", children: "Extraction Scope" }),
-      /* @__PURE__ */ a("div", { className: "figma-plugin-radio-group", children: [
-        /* @__PURE__ */ a("label", { className: "figma-plugin-radio-label", style: i.nodeId ? void 0 : { opacity: 0.5, cursor: "not-allowed" }, children: [
-          /* @__PURE__ */ e(
+    o && /* @__PURE__ */ d("div", { className: "figma-plugin-section", children: [
+      /* @__PURE__ */ a("label", { className: "figma-plugin-label", children: "Extraction Scope" }),
+      /* @__PURE__ */ d("div", { className: "figma-plugin-radio-group", children: [
+        /* @__PURE__ */ d("label", { className: "figma-plugin-radio-label", style: o.nodeId ? void 0 : { opacity: 0.5, cursor: "not-allowed" }, children: [
+          /* @__PURE__ */ a(
             "input",
             {
               type: "radio",
               name: "scope",
               value: "node",
-              checked: r === "node",
-              onChange: () => y("node"),
-              disabled: !i.nodeId
+              checked: c === "node",
+              onChange: () => x("node"),
+              disabled: !o.nodeId
             }
           ),
           "Single Node",
-          !i.nodeId && /* @__PURE__ */ e("span", { className: "figma-plugin-hint", style: { marginTop: 0, marginLeft: "4px" }, children: "Paste a URL with a node-id to use this option" })
+          !o.nodeId && /* @__PURE__ */ a("span", { className: "figma-plugin-hint", style: { marginTop: 0, marginLeft: "4px" }, children: "Paste a URL with a node-id to use this option" })
         ] }),
-        /* @__PURE__ */ a("label", { className: "figma-plugin-radio-label", children: [
-          /* @__PURE__ */ e(
+        /* @__PURE__ */ d("label", { className: "figma-plugin-radio-label", children: [
+          /* @__PURE__ */ a(
             "input",
             {
               type: "radio",
               name: "scope",
               value: "frame",
-              checked: r === "frame",
-              onChange: () => y("frame")
+              checked: c === "frame",
+              onChange: () => x("frame")
             }
           ),
           "Frame"
         ] }),
-        /* @__PURE__ */ a("label", { className: "figma-plugin-radio-label", children: [
-          /* @__PURE__ */ e(
+        /* @__PURE__ */ d("label", { className: "figma-plugin-radio-label", children: [
+          /* @__PURE__ */ a(
             "input",
             {
               type: "radio",
               name: "scope",
               value: "page",
-              checked: r === "page",
-              onChange: () => y("page")
+              checked: c === "page",
+              onChange: () => x("page")
             }
           ),
           "Entire Page"
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ e(
+    F && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ d("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+      /* @__PURE__ */ a("span", { className: "figma-plugin-spinner" }),
+      /* @__PURE__ */ a("span", { style: { color: "var(--text-secondary)" }, children: "Extracting layout..." })
+    ] }) }),
+    y && R && /* @__PURE__ */ d(
+      "div",
+      {
+        className: "figma-plugin-section",
+        style: {
+          background: "var(--bg-warning, #fff3cd)",
+          border: "1px solid var(--border-warning, #ffc107)",
+          borderRadius: "6px",
+          padding: "12px"
+        },
+        children: [
+          /* @__PURE__ */ a("div", { style: { fontWeight: 600, marginBottom: "4px" }, children: "Large selection" }),
+          /* @__PURE__ */ a("div", { style: { marginBottom: "8px", color: "var(--text-primary)" }, children: R.message }),
+          /* @__PURE__ */ d("div", { style: { display: "flex", gap: "8px" }, children: [
+            /* @__PURE__ */ a("button", { className: "btn-primary", onClick: G, children: "Extract Anyway" }),
+            /* @__PURE__ */ a("button", { className: "btn-secondary", onClick: q, children: "Cancel" })
+          ] })
+        ]
+      }
+    ),
+    S && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ d("div", { className: "figma-plugin-file-info", children: [
+      /* @__PURE__ */ a("div", { style: { fontWeight: 600 }, children: "Extraction Complete" }),
+      /* @__PURE__ */ d("div", { style: { color: "var(--text-secondary)" }, children: [
+        S.nodeCount,
+        " nodes extracted",
+        S.truncated && " (truncated)"
+      ] })
+    ] }) }),
+    /* @__PURE__ */ a(
       "button",
       {
         className: "btn-primary",
-        onClick: U,
-        disabled: T,
+        onClick: X,
+        disabled: J,
         style: { width: "100%" },
-        children: "Extract Design Brief"
+        children: F ? "Extracting..." : "Extract Design Brief"
       }
     )
   ] });
 }
-function O({ onClick: t }) {
-  return /* @__PURE__ */ e(
+function xe({ onClick: n }) {
+  return /* @__PURE__ */ a(
     "button",
     {
-      onClick: t,
+      onClick: n,
       title: "Settings",
       style: {
         background: "none",
@@ -539,7 +793,7 @@ function O({ onClick: t }) {
         display: "flex",
         alignItems: "center"
       },
-      children: /* @__PURE__ */ a(
+      children: /* @__PURE__ */ d(
         "svg",
         {
           width: "14",
@@ -551,76 +805,76 @@ function O({ onClick: t }) {
           strokeLinecap: "round",
           strokeLinejoin: "round",
           children: [
-            /* @__PURE__ */ e("circle", { cx: "12", cy: "12", r: "3" }),
-            /* @__PURE__ */ e("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
+            /* @__PURE__ */ a("circle", { cx: "12", cy: "12", r: "3" }),
+            /* @__PURE__ */ a("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
           ]
         }
       )
     }
   );
 }
-function W() {
-  const t = E(), n = (t == null ? void 0 : t.storage) ?? null, l = (t == null ? void 0 : t.actions) ?? null, [d, s] = f(!1), [c, i] = f(null), [o, r] = f(null), [y, v] = f(!1), [m, u] = f("main");
-  F(() => {
-    if (!n) return;
-    let p = !1;
+function ye() {
+  const n = W(), i = (n == null ? void 0 : n.storage) ?? null, r = (n == null ? void 0 : n.actions) ?? null, [e, t] = p(!1), [l, o] = p(null), [s, c] = p(null), [x, w] = p(!1), [u, g] = p("main");
+  B(() => {
+    if (!i) return;
+    let m = !1;
     return (async () => {
       try {
-        const g = await n.read();
-        !p && typeof g.figmaToken == "string" && (i(g.figmaToken), typeof g.figmaUserHandle == "string" && r({ id: "", handle: g.figmaUserHandle, img_url: "" }));
-      } catch (g) {
-        console.error("[figma] Failed to read storage:", g);
+        const y = await i.read();
+        !m && typeof y.figmaToken == "string" && (o(y.figmaToken), typeof y.figmaUserHandle == "string" && c({ id: "", handle: y.figmaUserHandle, img_url: "" }));
+      } catch (y) {
+        console.error("[figma] Failed to read storage:", y);
       } finally {
-        p || v(!0);
+        m || w(!0);
       }
     })(), () => {
-      p = !0;
+      m = !0;
     };
-  }, [n]);
-  const k = b(() => s(!0), []), w = b(() => {
-    s(!1), u("main");
-  }, []), h = b(async (p, g) => {
-    if (!(!n || !l))
+  }, [i]);
+  const T = b(() => t(!0), []), N = b(() => {
+    t(!1), g("main");
+  }, []), f = b(async (m, y) => {
+    if (!(!i || !r))
       try {
-        const x = await n.read();
-        await n.write({ ...x, figmaToken: p, figmaUserHandle: g.handle }), i(p), r(g), u("main"), l.showToast(`Connected as ${g.handle}`, "success");
+        const k = await i.read();
+        await i.write({ ...k, figmaToken: m, figmaUserHandle: y.handle }), o(m), c(y), g("main"), r.showToast(`Connected as ${y.handle}`, "success");
       } catch {
-        l.showToast("Failed to save token. Please try again.", "error");
+        r.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [n, l]), C = b(async (p, g) => {
-    if (!(!n || !l))
+  }, [i, r]), F = b(async (m, y) => {
+    if (!(!i || !r))
       try {
-        const x = await n.read();
-        await n.write({ ...x, figmaToken: p, figmaUserHandle: g.handle }), i(p), r(g), u("main"), l.showToast(`Token updated — connected as ${g.handle}`, "success");
+        const k = await i.read();
+        await i.write({ ...k, figmaToken: m, figmaUserHandle: y.handle }), o(m), c(y), g("main"), r.showToast(`Token updated — connected as ${y.handle}`, "success");
       } catch {
-        l.showToast("Failed to save token. Please try again.", "error");
+        r.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [n, l]), I = b(async () => {
-    if (!(!n || !l))
+  }, [i, r]), P = b(async () => {
+    if (!(!i || !r))
       try {
-        const p = await n.read(), { figmaToken: g, figmaUserHandle: x, ...N } = p;
-        await n.write(N), i(null), r(null), u("main"), l.showToast("Disconnected from Figma", "info");
+        const m = await i.read(), { figmaToken: y, figmaUserHandle: k, ...E } = m;
+        await i.write(E), o(null), c(null), g("main"), r.showToast("Disconnected from Figma", "info");
       } catch {
-        l.showToast("Failed to remove token. Please try again.", "error");
+        r.showToast("Failed to remove token. Please try again.", "error");
       }
-  }, [n, l]), S = "Figma", U = c ? /* @__PURE__ */ e(O, { onClick: () => u("settings") }) : void 0;
-  let T = null;
-  return y && (c ? m === "settings" && o ? T = /* @__PURE__ */ e(
-    $,
+  }, [i, r]), S = "Figma", A = l ? /* @__PURE__ */ a(xe, { onClick: () => g("settings") }) : void 0;
+  let R = null;
+  return x && (l ? u === "settings" && s ? R = /* @__PURE__ */ a(
+    ae,
     {
-      currentUser: o,
-      onTokenUpdated: C,
-      onTokenRemoved: I,
-      onBack: () => u("main")
+      currentUser: s,
+      onTokenUpdated: F,
+      onTokenRemoved: P,
+      onBack: () => g("main")
     }
-  ) : T = /* @__PURE__ */ e(K, { token: c }) : T = /* @__PURE__ */ e(M, { onTokenSaved: h })), /* @__PURE__ */ a(A, { children: [
-    /* @__PURE__ */ e(
+  ) : R = /* @__PURE__ */ a(he, { token: l }) : R = /* @__PURE__ */ a(ie, { onTokenSaved: f })), /* @__PURE__ */ d(M, { children: [
+    /* @__PURE__ */ a(
       "button",
       {
-        onClick: k,
+        onClick: T,
         title: "Figma Design Brief",
         className: "toolbar-icon-btn",
-        children: /* @__PURE__ */ a(
+        children: /* @__PURE__ */ d(
           "svg",
           {
             width: "14",
@@ -632,39 +886,39 @@ function W() {
             strokeLinecap: "round",
             strokeLinejoin: "round",
             children: [
-              /* @__PURE__ */ e("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
-              /* @__PURE__ */ e("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
-              /* @__PURE__ */ e("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
-              /* @__PURE__ */ e("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
+              /* @__PURE__ */ a("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
+              /* @__PURE__ */ a("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
+              /* @__PURE__ */ a("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
+              /* @__PURE__ */ a("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
             ]
           }
         )
       }
     ),
-    /* @__PURE__ */ e(
-      D,
+    /* @__PURE__ */ a(
+      Y,
       {
-        open: d,
-        onClose: w,
+        open: e,
+        onClose: N,
         title: S,
-        headerRight: U,
-        children: T
+        headerRight: A,
+        children: R
       }
     )
   ] });
 }
-const J = "Figma", X = {
-  toolbar: W
+const be = "Figma", ke = {
+  toolbar: ye
 };
-function Y() {
+function Ne() {
   console.log("[figma] Plugin activated");
 }
-function Z() {
+function Ce() {
   console.log("[figma] Plugin deactivated");
 }
 export {
-  J as name,
-  Y as onActivate,
-  Z as onDeactivate,
-  X as slots
+  be as name,
+  Ne as onActivate,
+  Ce as onDeactivate,
+  ke as slots
 };

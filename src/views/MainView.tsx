@@ -3,6 +3,9 @@ import type { ChangeEvent } from 'react';
 import { usePluginContext } from '../context';
 import { parseFigmaUrl } from '../url-parser';
 import { validateFileAccess } from '../figma-api';
+import { extractLayout } from '../layout/extract';
+import type { ExtractLayoutResult } from '../layout/extract';
+import type { ExtractionResult } from '../layout/types';
 import type { FigmaUrlParts, ExtractionScope, FigmaFileInfo } from '../types';
 
 interface MainViewProps {
@@ -10,9 +13,9 @@ interface MainViewProps {
 }
 
 /**
- * Main view for URL input, scope selection, and file validation.
+ * Main view for URL input, scope selection, file validation, and layout extraction.
  * Users paste a Figma URL, see it parsed, choose extraction scope,
- * and confirm file accessibility before extraction.
+ * and click Extract to fetch and normalize the layout tree.
  */
 export function MainView({ token }: MainViewProps) {
   const ctx = usePluginContext();
@@ -26,12 +29,24 @@ export function MainView({ token }: MainViewProps) {
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState(null as string | null);
 
+  // Extraction state
+  const [extracting, setExtracting] = useState(false);
+  const [extractionResult, setExtractionResult] = useState(null as ExtractionResult | null);
+  const [largeTreeWarning, setLargeTreeWarning] = useState(null as { nodeCount: number; message: string } | null);
+  const [awaitingLargeTreeConfirm, setAwaitingLargeTreeConfirm] = useState(false);
+
+  // Store pending extraction result while awaiting large tree confirmation
+  const pendingResultRef = useRef(null as ExtractLayoutResult | null);
+
   // Stable ref for shell so the validation effect doesn't re-fire on context re-renders
   const shellRef = useRef(shell);
   shellRef.current = shell;
 
   // Counter to discard stale validation responses
   const requestIdRef = useRef(0);
+
+  // Counter to discard stale extraction responses
+  const extractRequestIdRef = useRef(0);
 
   const handleUrlChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +58,11 @@ export function MainView({ token }: MainViewProps) {
         setFileInfo(null);
         setError(null);
         setValidating(false);
+        // Clear extraction state on URL clear
+        setExtractionResult(null);
+        setLargeTreeWarning(null);
+        setAwaitingLargeTreeConfirm(false);
+        pendingResultRef.current = null;
         return;
       }
 
@@ -58,6 +78,11 @@ export function MainView({ token }: MainViewProps) {
       setParsedUrl(parsed);
       setError(null);
       setFileInfo(null);
+      // Clear extraction state on URL change
+      setExtractionResult(null);
+      setLargeTreeWarning(null);
+      setAwaitingLargeTreeConfirm(false);
+      pendingResultRef.current = null;
 
       if (parsed.nodeId) {
         setScope('node');
@@ -105,10 +130,91 @@ export function MainView({ token }: MainViewProps) {
   }, [parsedUrl, token]);
 
   const handleExtract = useCallback(() => {
-    if (actions) actions.showToast('Extraction coming in next update', 'info');
+    const currentShell = shellRef.current;
+    if (!currentShell || !parsedUrl) return;
+
+    const currentExtractId = ++extractRequestIdRef.current;
+
+    // Clear previous results and errors
+    setExtracting(true);
+    setExtractionResult(null);
+    setError(null);
+    setLargeTreeWarning(null);
+    setAwaitingLargeTreeConfirm(false);
+    pendingResultRef.current = null;
+
+    (async () => {
+      try {
+        const result = await extractLayout({
+          shell: currentShell,
+          token,
+          fileKey: parsedUrl.fileKey,
+          nodeId: parsedUrl.nodeId,
+          scope,
+        });
+
+        // Discard stale result if user changed URL during extraction
+        if (extractRequestIdRef.current !== currentExtractId) return;
+
+        if (result.largeTreeWarning) {
+          // Store full result, show warning, let user decide
+          pendingResultRef.current = result;
+          setLargeTreeWarning(result.largeTreeWarning);
+          setAwaitingLargeTreeConfirm(true);
+          setExtracting(false);
+          return;
+        }
+
+        // No warning -- set result directly
+        setExtractionResult(result.extraction);
+        if (actions) {
+          actions.showToast(`Extracted ${result.extraction.nodeCount} nodes`, 'success');
+        }
+      } catch (err: any) {
+        if (extractRequestIdRef.current !== currentExtractId) return;
+
+        const message = err?.message || 'Extraction failed.';
+        if (message.includes('403') || message.includes('Invalid or expired')) {
+          setError('Cannot access this file. Check that your token has File content (Read) scope.');
+        } else if (message.includes('404') || message.includes('not found')) {
+          setError('File not found. Check that the URL is correct.');
+        } else if (message.includes('429') || message.includes('Rate limited')) {
+          setError('Rate limited by Figma. Please wait a moment and try again.');
+        } else if (message.includes('timeout') || message.includes('timed out')) {
+          setError('Request timed out. Try a smaller selection or check your connection.');
+        } else {
+          setError(message);
+        }
+      } finally {
+        if (extractRequestIdRef.current === currentExtractId) {
+          setExtracting(false);
+        }
+      }
+    })();
+  }, [parsedUrl, token, scope, actions]);
+
+  const handleConfirmLargeTree = useCallback(() => {
+    const pending = pendingResultRef.current;
+    if (!pending) return;
+
+    // Use the already-fetched and normalized result -- no second API call needed
+    setAwaitingLargeTreeConfirm(false);
+    setLargeTreeWarning(null);
+    setExtractionResult(pending.extraction);
+    pendingResultRef.current = null;
+
+    if (actions) {
+      actions.showToast(`Extracted ${pending.extraction.nodeCount} nodes`, 'success');
+    }
   }, [actions]);
 
-  const extractDisabled = !parsedUrl || !fileInfo || validating;
+  const handleCancelLargeTree = useCallback(() => {
+    setAwaitingLargeTreeConfirm(false);
+    setLargeTreeWarning(null);
+    pendingResultRef.current = null;
+  }, []);
+
+  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting;
 
   return (
     <div>
@@ -201,6 +307,55 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
+      {/* Extraction Spinner */}
+      {extracting && (
+        <div className="figma-plugin-section">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="figma-plugin-spinner" />
+            <span style={{ color: 'var(--text-secondary)' }}>Extracting layout...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Large Tree Warning */}
+      {awaitingLargeTreeConfirm && largeTreeWarning && (
+        <div
+          className="figma-plugin-section"
+          style={{
+            background: 'var(--bg-warning, #fff3cd)',
+            border: '1px solid var(--border-warning, #ffc107)',
+            borderRadius: '6px',
+            padding: '12px',
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: '4px' }}>Large selection</div>
+          <div style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>
+            {largeTreeWarning.message}
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-primary" onClick={handleConfirmLargeTree}>
+              Extract Anyway
+            </button>
+            <button className="btn-secondary" onClick={handleCancelLargeTree}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Extraction Result Summary */}
+      {extractionResult && (
+        <div className="figma-plugin-section">
+          <div className="figma-plugin-file-info">
+            <div style={{ fontWeight: 600 }}>Extraction Complete</div>
+            <div style={{ color: 'var(--text-secondary)' }}>
+              {extractionResult.nodeCount} nodes extracted
+              {extractionResult.truncated && ' (truncated)'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Extract Button */}
       <button
         className="btn-primary"
@@ -208,7 +363,7 @@ export function MainView({ token }: MainViewProps) {
         disabled={extractDisabled}
         style={{ width: '100%' }}
       >
-        Extract Design Brief
+        {extracting ? 'Extracting...' : 'Extract Design Brief'}
       </button>
     </div>
   );
