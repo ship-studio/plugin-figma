@@ -1,27 +1,60 @@
-// Stub file -- types will be implemented in GREEN phase
+/**
+ * Layout normalization types.
+ *
+ * These are the normalized output types consumed by Phase 3+ (design tokens,
+ * asset export, brief assembly). All Figma node properties are mapped to
+ * CSS-oriented equivalents.
+ */
+
+import type { LayoutConstraint } from '@figma/rest-api-spec';
+
+/** Re-export LayoutConstraint for downstream convenience. */
+export type { LayoutConstraint };
+
+/**
+ * A normalized representation of a Figma node, expressed in CSS flexbox terms.
+ * This is the core output type of layout extraction.
+ */
 export interface LayoutNode {
   id: string;
   name: string;
   type: string;
   visible: boolean;
+
+  /** Dimensions (LYOT-03) */
   width?: number;
   height?: number;
-  widthMode?: string;
-  heightMode?: string;
+  widthMode?: 'FIXED' | 'HUG' | 'FILL';
+  heightMode?: 'FIXED' | 'HUG' | 'FILL';
   minWidth?: number;
   maxWidth?: number;
   minHeight?: number;
   maxHeight?: number;
   preserveRatio?: boolean;
-  constraints?: any;
+  constraints?: LayoutConstraint;
+
+  /** Auto-layout in CSS flexbox terms (LYOT-02) */
   autoLayout?: AutoLayoutProps;
-  positioning?: string;
+
+  /** Positioning within auto-layout parent (LYOT-05) */
+  positioning?: 'AUTO' | 'ABSOLUTE';
+
+  /** Text content (user decision: include actual text) */
   textContent?: string;
+
+  /** Component reference -- instances treated as leaf nodes */
   componentRef?: ComponentRef;
+
+  /** Deduplication: how many identical instances this represents */
   repeatCount?: number;
+
+  /** Children (LYOT-01) */
   children?: LayoutNode[];
 }
 
+/**
+ * CSS flexbox properties mapped from Figma auto-layout (LYOT-02).
+ */
 export interface AutoLayoutProps {
   flexDirection: 'row' | 'column';
   justifyContent: string;
@@ -32,6 +65,10 @@ export interface AutoLayoutProps {
   rowGap?: number;
 }
 
+/**
+ * Component instance metadata. Instances are treated as leaf nodes
+ * with component name, variant properties, and source tagging.
+ */
 export interface ComponentRef {
   componentId: string;
   componentName: string;
@@ -42,6 +79,9 @@ export interface ComponentRef {
   overrides?: any[];
 }
 
+/**
+ * Result of normalizing a Figma node tree.
+ */
 export interface ExtractionResult {
   rootNodes: LayoutNode[];
   nodeCount: number;

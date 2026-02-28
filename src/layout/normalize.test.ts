@@ -667,7 +667,7 @@ describe('normalizeTree', () => {
 
     const result = normalizeTree(roots, {});
     expect(result.rootNodes).toHaveLength(2);
-    expect(result.nodeCount).toBe(4); // 2 frames + 1 text child + 1 text in children = 3... actually: Frame1(1) + Text1(1) + Frame2(1) = 3 raw nodes
+    expect(result.nodeCount).toBe(3); // Frame1(1) + Text1(1) + Frame2(1) = 3 raw nodes
     expect(result.truncated).toBe(false);
   });
 
