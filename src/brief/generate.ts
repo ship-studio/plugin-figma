@@ -29,11 +29,12 @@ export function estimateTokens(markdown: string): number {
  *
  * The brief follows a locked section order:
  * 1. Metadata (file, frame, date, URL)
- * 2. Preview (image link)
- * 3. Layout Tree (indented CSS flexbox tree)
- * 4. Design Tokens (grouped tables)
- * 5. Components (inventory table)
- * 6. Assets (file reference table)
+ * 2. How to Use This Brief (behavioral instructions)
+ * 3. Preview (image link)
+ * 4. Layout Tree (indented CSS flexbox tree)
+ * 5. Design Tokens (grouped tables)
+ * 6. Components (inventory table)
+ * 7. Assets (file reference table)
  *
  * Empty sections are omitted entirely.
  */
@@ -43,6 +44,7 @@ export function generateBrief(input: BriefInput): BriefResult {
 
   const sections = [
     buildMetadataSection(input),
+    buildInstructionsSection(),
     buildPreviewSection(exportResult.previewPath, projectPath),
     buildLayoutTreeSection(extraction.extraction.rootNodes),
     buildDesignTokensSection(tokens),
@@ -84,6 +86,16 @@ function buildMetadataSection(input: BriefInput): string {
     `**Frame:** ${frameName}`,
     `**Extracted:** ${date}`,
     `**Figma URL:** ${figmaUrl}`,
+  ].join('\n');
+}
+
+function buildInstructionsSection(): string {
+  return [
+    '## How to Use This Brief',
+    '',
+    '**Before building:** Read this brief fully. Plan your approach and ask clarifying questions before writing any code.',
+    '**During building:** Use only the assets listed in the Assets section below -- if an asset is missing, ask the user rather than substituting or fabricating a replacement.',
+    '**After building:** Compare your result against the Preview image above and verify that all design tokens and assets are correctly applied.',
   ].join('\n');
 }
 

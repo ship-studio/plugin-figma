@@ -144,26 +144,29 @@ describe('generateBrief', () => {
   // ── Full brief structure ────────────────────────────────────────
 
   describe('full brief structure', () => {
-    it('produces markdown with all 6 sections in locked order', () => {
+    it('produces markdown with all 7 sections in locked order', () => {
       const result = generateBrief(makeInput());
 
       // All sections present
       expect(result.markdown).toContain('# Design Brief');
+      expect(result.markdown).toContain('## How to Use This Brief');
       expect(result.markdown).toContain('## Preview');
       expect(result.markdown).toContain('## Layout Tree');
       expect(result.markdown).toContain('## Design Tokens');
       expect(result.markdown).toContain('## Components');
       expect(result.markdown).toContain('## Assets');
 
-      // Order is locked: metadata before preview before layout tree before tokens before components before assets
+      // Order is locked: metadata before instructions before preview before layout tree before tokens before components before assets
       const metadataIdx = result.markdown.indexOf('# Design Brief');
+      const instructionsIdx = result.markdown.indexOf('## How to Use This Brief');
       const previewIdx = result.markdown.indexOf('## Preview');
       const layoutIdx = result.markdown.indexOf('## Layout Tree');
       const tokensIdx = result.markdown.indexOf('## Design Tokens');
       const componentsIdx = result.markdown.indexOf('## Components');
       const assetsIdx = result.markdown.indexOf('## Assets');
 
-      expect(metadataIdx).toBeLessThan(previewIdx);
+      expect(metadataIdx).toBeLessThan(instructionsIdx);
+      expect(instructionsIdx).toBeLessThan(previewIdx);
       expect(previewIdx).toBeLessThan(layoutIdx);
       expect(layoutIdx).toBeLessThan(tokensIdx);
       expect(tokensIdx).toBeLessThan(componentsIdx);
@@ -185,6 +188,76 @@ describe('generateBrief', () => {
 
       expect(result.charCount).toBe(result.markdown.length);
       expect(result.estimatedTokens).toBe(Math.ceil(result.markdown.length / 4));
+    });
+  });
+
+  // ── Instructions section ────────────────────────────────────────
+
+  describe('instructions section', () => {
+    it('has heading "## How to Use This Brief"', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toContain('## How to Use This Brief');
+    });
+
+    it('appears after metadata and before preview', () => {
+      const result = generateBrief(makeInput());
+      const metadataIdx = result.markdown.indexOf('# Design Brief');
+      const instructionsIdx = result.markdown.indexOf('## How to Use This Brief');
+      const previewIdx = result.markdown.indexOf('## Preview');
+
+      expect(instructionsIdx).toBeGreaterThan(metadataIdx);
+      expect(instructionsIdx).toBeLessThan(previewIdx);
+    });
+
+    it('"Before building" stage mentions planning approach and asking clarifying questions', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toMatch(/Before building.*plan/i);
+      expect(result.markdown).toMatch(/Before building.*clarifying questions/i);
+    });
+
+    it('"During building" stage references the Assets section and includes "if an asset is missing, ask" directive', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toMatch(/During building.*Assets section/);
+      expect(result.markdown).toMatch(/asset is missing, ask/i);
+      // Must warn against substituting/fabricating (negative instruction)
+      const duringLine = result.markdown.split('\n').find(l => l.includes('During building'));
+      expect(duringLine).toBeDefined();
+      expect(duringLine).toMatch(/rather than substituting or fabricating/i);
+    });
+
+    it('"After building" stage references the Preview image and verifying tokens/assets', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toMatch(/After building.*Preview/);
+      expect(result.markdown).toMatch(/After building.*token/i);
+      expect(result.markdown).toMatch(/After building.*asset/i);
+    });
+
+    it('instructions are static: same content regardless of input data', () => {
+      const result1 = generateBrief(makeInput());
+      const result2 = generateBrief(makeInput({
+        fileName: 'Different File',
+        figmaUrl: 'https://www.figma.com/design/xyz/Other',
+        date: '2020-01-01',
+      }));
+
+      // Extract instructions section from each
+      const extractInstructions = (md: string) => {
+        const start = md.indexOf('## How to Use This Brief');
+        const afterStart = md.indexOf('\n## ', start + 1);
+        return md.slice(start, afterStart);
+      };
+
+      expect(extractInstructions(result1.markdown)).toBe(extractInstructions(result2.markdown));
+    });
+
+    it('instructions are concise: no more than 10 lines total', () => {
+      const result = generateBrief(makeInput());
+      const start = result.markdown.indexOf('## How to Use This Brief');
+      const afterStart = result.markdown.indexOf('\n## ', start + 1);
+      const section = result.markdown.slice(start, afterStart);
+      const lines = section.split('\n');
+      // Heading + blank line + 3-5 instruction lines = max ~10 lines
+      expect(lines.length).toBeLessThanOrEqual(10);
     });
   });
 
