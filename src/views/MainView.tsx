@@ -1,12 +1,84 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ChangeEvent } from 'react';
 import { usePluginContext } from '../context';
 import { parseFigmaUrl } from '../url-parser';
 import { validateFileAccess } from '../figma-api';
 import { extractLayout } from '../layout/extract';
 import type { ExtractLayoutResult } from '../layout/extract';
-import type { ExtractionResult } from '../layout/types';
+import type { ExtractionResult, LayoutNode } from '../layout/types';
 import type { FigmaUrlParts, ExtractionScope, FigmaFileInfo } from '../types';
+
+interface ExtractionStats {
+  frames: number;
+  autoLayoutFrames: number;
+  components: { name: string; count: number }[];
+  textNodes: number;
+  hiddenNodes: number;
+}
+
+function collectStats(nodes: LayoutNode[]): ExtractionStats {
+  const stats: ExtractionStats = { frames: 0, autoLayoutFrames: 0, components: [], textNodes: 0, hiddenNodes: 0 };
+  const componentMap = new Map<string, number>();
+
+  function walk(node: LayoutNode) {
+    if (!node.visible) stats.hiddenNodes++;
+    if (node.type === 'FRAME' || node.type === 'GROUP' || node.type === 'SECTION') {
+      stats.frames++;
+      if (node.autoLayout) stats.autoLayoutFrames++;
+    }
+    if (node.type === 'TEXT') stats.textNodes++;
+    if (node.componentRef) {
+      const name = node.componentRef.componentName;
+      const count = node.repeatCount ?? 1;
+      componentMap.set(name, (componentMap.get(name) ?? 0) + count);
+    }
+    if (node.children) node.children.forEach(walk);
+  }
+  nodes.forEach(walk);
+
+  stats.components = Array.from(componentMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return stats;
+}
+
+function TreePreview({ nodes, depth = 0, maxDepth = 2 }: { nodes: LayoutNode[]; depth?: number; maxDepth?: number }) {
+  if (depth >= maxDepth) return null;
+  return (
+    <div style={{ paddingLeft: depth > 0 ? '12px' : '0', borderLeft: depth > 0 ? '1px solid var(--border)' : 'none' }}>
+      {nodes.map((node, i) => {
+        const label = node.componentRef
+          ? `<${node.componentRef.componentName}${node.repeatCount ? ` x${node.repeatCount}` : ''}>`
+          : node.type === 'TEXT'
+            ? `"${(node.textContent ?? '').slice(0, 30)}${(node.textContent ?? '').length > 30 ? '...' : ''}"`
+            : node.name;
+        const tag = node.autoLayout
+          ? `${node.autoLayout.flexDirection}`
+          : node.type === 'INSTANCE'
+            ? 'component'
+            : node.type.toLowerCase();
+        return (
+          <div key={node.id || i} style={{ fontSize: '11px', lineHeight: 1.7 }}>
+            <span style={{ color: 'var(--text-muted)' }}>{tag} </span>
+            <span style={{ color: node.visible === false ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+              {label}
+            </span>
+            {node.visible === false && <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>(hidden)</span>}
+            {node.children && node.children.length > 0 && depth + 1 < maxDepth && (
+              <TreePreview nodes={node.children} depth={depth + 1} maxDepth={maxDepth} />
+            )}
+            {node.children && node.children.length > 0 && depth + 1 >= maxDepth && (
+              <span style={{ color: 'var(--text-muted)', fontSize: '11px', marginLeft: '12px' }}>
+                ({node.children.length} children)
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 interface MainViewProps {
   token: string;
@@ -34,6 +106,12 @@ export function MainView({ token }: MainViewProps) {
   const [extractionResult, setExtractionResult] = useState(null as ExtractionResult | null);
   const [largeTreeWarning, setLargeTreeWarning] = useState(null as { nodeCount: number; message: string } | null);
   const [awaitingLargeTreeConfirm, setAwaitingLargeTreeConfirm] = useState(false);
+  const [showTree, setShowTree] = useState(false);
+
+  const extractionStats = useMemo(
+    () => extractionResult ? collectStats(extractionResult.rootNodes) : null,
+    [extractionResult],
+  );
 
   // Store pending extraction result while awaiting large tree confirmation
   const pendingResultRef = useRef(null as ExtractLayoutResult | null);
@@ -62,6 +140,7 @@ export function MainView({ token }: MainViewProps) {
         setExtractionResult(null);
         setLargeTreeWarning(null);
         setAwaitingLargeTreeConfirm(false);
+        setShowTree(false);
         pendingResultRef.current = null;
         return;
       }
@@ -82,6 +161,7 @@ export function MainView({ token }: MainViewProps) {
       setExtractionResult(null);
       setLargeTreeWarning(null);
       setAwaitingLargeTreeConfirm(false);
+      setShowTree(false);
       pendingResultRef.current = null;
 
       if (parsed.nodeId) {
@@ -335,18 +415,73 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
-      {/* Extraction Result Summary */}
-      {extractionResult && (
+      {/* Extraction Result */}
+      {extractionResult && extractionStats && (
         <div className="figma-plugin-section">
           <div className="figma-plugin-file-info">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
               <span style={{ color: '#38a169' }}>&#10003;</span>
               <span style={{ fontWeight: 600, fontSize: '13px' }}>Layout extracted</span>
+              {extractionResult.truncated && (
+                <span style={{ color: '#f59e0b', fontSize: '11px' }}>(truncated)</span>
+              )}
             </div>
-            <div style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              {extractionResult.nodeCount} nodes &middot; {extractionResult.rootNodes.length} top-level {extractionResult.rootNodes.length === 1 ? 'frame' : 'frames'}
-              {extractionResult.truncated && ' (truncated)'}
+
+            {/* Stats row */}
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
+              {extractionResult.nodeCount} nodes &middot; {extractionStats.autoLayoutFrames} auto-layout frames &middot; {extractionStats.textNodes} text layers
             </div>
+
+            {/* Components found */}
+            {extractionStats.components.length > 0 && (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>Components</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {extractionStats.components.slice(0, 8).map((c) => (
+                    <span
+                      key={c.name}
+                      style={{
+                        fontSize: '11px',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      {c.name}{c.count > 1 ? ` x${c.count}` : ''}
+                    </span>
+                  ))}
+                  {extractionStats.components.length > 8 && (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '2px 4px' }}>
+                      +{extractionStats.components.length - 8} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tree preview toggle */}
+            <button
+              onClick={() => setShowTree(!showTree)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent, #0d99ff)',
+                fontSize: '11px',
+                cursor: 'pointer',
+                padding: '4px 0',
+                marginTop: '8px',
+              }}
+            >
+              {showTree ? 'Hide tree' : 'Show tree preview'}
+            </button>
+
+            {showTree && (
+              <div style={{ marginTop: '6px', padding: '8px', background: 'var(--bg-primary)', borderRadius: '4px', border: '1px solid var(--border)', maxHeight: '200px', overflowY: 'auto' }}>
+                <TreePreview nodes={extractionResult.rootNodes} />
+              </div>
+            )}
           </div>
         </div>
       )}
