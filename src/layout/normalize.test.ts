@@ -712,3 +712,230 @@ describe('normalizeTree', () => {
     expect(result.truncated).toBe(false);
   });
 });
+
+// ────────────────────────────────────────────────────────────────────
+// Style Enrichment Tests (Phase 3)
+// ────────────────────────────────────────────────────────────────────
+
+describe('normalizeNode style enrichment', () => {
+  const emptyComponents: Record<string, any> = {};
+
+  it('captures fills array from a FRAME', () => {
+    const input = {
+      id: 'style:1',
+      name: 'Filled',
+      type: 'FRAME',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true }],
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.fills).toEqual([{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true }]);
+  });
+
+  it('captures strokes array from a FRAME', () => {
+    const input = {
+      id: 'style:2',
+      name: 'Stroked',
+      type: 'FRAME',
+      strokes: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 } }],
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.strokes).toEqual([{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 } }]);
+  });
+
+  it('captures effects array from a FRAME', () => {
+    const input = {
+      id: 'style:3',
+      name: 'Shadowed',
+      type: 'FRAME',
+      effects: [{ type: 'DROP_SHADOW', visible: true, color: { r: 0, g: 0, b: 0, a: 0.25 }, offset: { x: 0, y: 4 }, radius: 8, spread: 0 }],
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.effects).toEqual([
+      { type: 'DROP_SHADOW', visible: true, color: { r: 0, g: 0, b: 0, a: 0.25 }, offset: { x: 0, y: 4 }, radius: 8, spread: 0 },
+    ]);
+  });
+
+  it('captures cornerRadius from a FRAME', () => {
+    const input = {
+      id: 'style:4',
+      name: 'Rounded',
+      type: 'FRAME',
+      cornerRadius: 8,
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.cornerRadius).toBe(8);
+  });
+
+  it('captures rectangleCornerRadii from a FRAME', () => {
+    const input = {
+      id: 'style:5',
+      name: 'MixedCorners',
+      type: 'FRAME',
+      rectangleCornerRadii: [4, 4, 8, 8],
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.rectangleCornerRadii).toEqual([4, 4, 8, 8]);
+  });
+
+  it('captures strokeWeight from a FRAME', () => {
+    const input = {
+      id: 'style:6',
+      name: 'Bordered',
+      type: 'FRAME',
+      strokeWeight: 2,
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.strokeWeight).toBe(2);
+  });
+
+  it('captures textStyle from a TEXT node', () => {
+    const textStyle = {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      fontWeight: 600,
+      lineHeightPx: 24,
+      letterSpacing: 0,
+    };
+
+    const input = {
+      id: 'style:7',
+      name: 'Heading',
+      type: 'TEXT',
+      characters: 'Hello',
+      style: textStyle,
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.textStyle).toEqual(textStyle);
+    expect(result!.textContent).toBe('Hello');
+  });
+
+  it('captures textStyleOverrides from a TEXT node', () => {
+    const input = {
+      id: 'style:8',
+      name: 'MixedText',
+      type: 'TEXT',
+      characters: 'Hello World',
+      style: { fontFamily: 'Inter', fontSize: 16 },
+      styleOverrideTable: { '1': { fontFamily: 'Inter', fontSize: 14 } },
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.textStyleOverrides).toEqual({ '1': { fontFamily: 'Inter', fontSize: 14 } });
+  });
+
+  it('captures opacity when not 1', () => {
+    const input = {
+      id: 'style:9',
+      name: 'Faded',
+      type: 'FRAME',
+      opacity: 0.5,
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.opacity).toBe(0.5);
+  });
+
+  it('does not capture opacity when it is 1 (default)', () => {
+    const input = {
+      id: 'style:10',
+      name: 'Opaque',
+      type: 'FRAME',
+      opacity: 1,
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.opacity).toBeUndefined();
+  });
+
+  it('captures styleRefs from a FRAME', () => {
+    const input = {
+      id: 'style:11',
+      name: 'Styled',
+      type: 'FRAME',
+      styles: { fill: 'S:abc123' },
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.styleRefs).toEqual({ fill: 'S:abc123' });
+  });
+
+  it('does not set fills on a node without fills (e.g., GROUP)', () => {
+    const input = {
+      id: 'style:12',
+      name: 'Group',
+      type: 'GROUP',
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.fills).toBeUndefined();
+  });
+
+  it('still returns componentRef on INSTANCE nodes (existing behavior)', () => {
+    const input = {
+      id: 'style:13',
+      name: 'Button',
+      type: 'INSTANCE',
+      componentId: 'comp-1',
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, visible: true }],
+      absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 40 },
+      children: [],
+    };
+
+    const components = {
+      'comp-1': { name: 'Button', remote: false },
+    };
+
+    const result = normalizeNode(input, components, 0);
+    expect(result).not.toBeNull();
+    expect(result!.componentRef).toBeDefined();
+    expect(result!.componentRef!.componentName).toBe('Button');
+    // INSTANCE should still NOT recurse into children
+    expect(result!.children).toBeUndefined();
+    // Style data should still be captured on instances
+    expect(result!.fills).toEqual([{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, visible: true }]);
+  });
+
+  it('does not set textStyleOverrides when styleOverrideTable is empty', () => {
+    const input = {
+      id: 'style:14',
+      name: 'SimpleText',
+      type: 'TEXT',
+      characters: 'Plain',
+      style: { fontFamily: 'Inter', fontSize: 16 },
+      styleOverrideTable: {},
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.textStyleOverrides).toBeUndefined();
+  });
+});

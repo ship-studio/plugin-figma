@@ -50,6 +50,29 @@ export interface LayoutNode {
 
   /** Children (LYOT-01) */
   children?: LayoutNode[];
+
+  // ── Style data (Phase 3 — design token extraction) ──────────────
+
+  /** Raw fill paints from Figma (for token extraction) */
+  fills?: any[];
+  /** Raw stroke paints from Figma */
+  strokes?: any[];
+  /** Stroke weight */
+  strokeWeight?: number;
+  /** Raw effects from Figma (shadows, blurs) */
+  effects?: any[];
+  /** Corner radius (uniform) */
+  cornerRadius?: number;
+  /** Per-corner radii [TL, TR, BR, BL] */
+  rectangleCornerRadii?: number[];
+  /** Typography style (TEXT nodes only) */
+  textStyle?: any;
+  /** Style overrides table (TEXT nodes with mixed styles) */
+  textStyleOverrides?: any;
+  /** Node-level opacity */
+  opacity?: number;
+  /** References to named Figma styles { fill: 'styleId', text: 'styleId', ... } */
+  styleRefs?: Record<string, string>;
 }
 
 /**

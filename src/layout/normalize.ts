@@ -123,10 +123,42 @@ export function normalizeNode(
   if ('maxHeight' in node && node.maxHeight != null) result.maxHeight = node.maxHeight;
   if ('preserveRatio' in node && node.preserveRatio != null) result.preserveRatio = node.preserveRatio;
 
+  // Style data capture (Phase 3 -- design token extraction)
+  if ('fills' in node && Array.isArray(node.fills)) {
+    result.fills = node.fills;
+  }
+  if ('strokes' in node && Array.isArray(node.strokes)) {
+    result.strokes = node.strokes;
+  }
+  if ('strokeWeight' in node && node.strokeWeight != null) {
+    result.strokeWeight = node.strokeWeight;
+  }
+  if ('effects' in node && Array.isArray(node.effects)) {
+    result.effects = node.effects;
+  }
+  if ('cornerRadius' in node && node.cornerRadius != null) {
+    result.cornerRadius = node.cornerRadius;
+  }
+  if ('rectangleCornerRadii' in node && Array.isArray(node.rectangleCornerRadii)) {
+    result.rectangleCornerRadii = node.rectangleCornerRadii;
+  }
+  if ('opacity' in node && node.opacity != null && node.opacity !== 1) {
+    result.opacity = node.opacity;
+  }
+  if ('styles' in node && node.styles) {
+    result.styleRefs = node.styles;
+  }
+
   // Dispatch by type for specialized handling
   switch (node.type) {
     case 'TEXT':
       result.textContent = node.characters;
+      if (node.style) {
+        result.textStyle = node.style;
+      }
+      if (node.styleOverrideTable && Object.keys(node.styleOverrideTable).length > 0) {
+        result.textStyleOverrides = node.styleOverrideTable;
+      }
       break;
 
     case 'INSTANCE':
