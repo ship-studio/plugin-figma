@@ -57,14 +57,14 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **BREF-02**: Brief is framework-agnostic — describes layout intent rather than framework-specific code
 - [x] **BREF-03**: Brief references exported assets by their local file paths in the project
 - [x] **BREF-04**: Plugin estimates token count and warns if brief exceeds ~12K tokens for a single component
-- [ ] **BREF-05**: Plugin copies the formatted brief to clipboard
+- [x] **BREF-05**: Plugin copies the formatted brief to clipboard
 
 ### Plugin UI
 
 - [x] **PLUI-01**: Plugin renders a toolbar button that opens the main plugin modal
 - [x] **PLUI-02**: Plugin uses Ship Studio's theme system for consistent styling
-- [ ] **PLUI-03**: Plugin shows extraction progress during API calls
-- [ ] **PLUI-04**: Plugin shows clear error messages for common failures (invalid token, inaccessible file, rate limit)
+- [x] **PLUI-03**: Plugin shows extraction progress during API calls
+- [x] **PLUI-04**: Plugin shows clear error messages for common failures (invalid token, inaccessible file, rate limit)
 
 ## v2 Requirements
 
@@ -133,11 +133,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BREF-02 | Phase 5 | Complete |
 | BREF-03 | Phase 5 | Complete |
 | BREF-04 | Phase 5 | Complete |
-| BREF-05 | Phase 5 | Pending |
+| BREF-05 | Phase 5 | Complete |
 | PLUI-01 | Phase 1 | Complete |
 | PLUI-02 | Phase 1 | Complete |
-| PLUI-03 | Phase 5 | Pending |
-| PLUI-04 | Phase 5 | Pending |
+| PLUI-03 | Phase 5 | Complete |
+| PLUI-04 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 35 total
