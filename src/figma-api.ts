@@ -19,8 +19,10 @@ export async function figmaApiCall<T>(
   options?: { timeout?: number }
 ): Promise<T> {
   const url = `${FIGMA_API_BASE}${endpoint}`;
+  const timeoutSec = Math.ceil((options?.timeout ?? 30000) / 1000);
   const args = [
     '-sS',
+    '--max-time', String(timeoutSec),
     '-H', `X-Figma-Token: ${token}`,
     url,
   ];

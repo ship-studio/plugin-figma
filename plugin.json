@@ -1,7 +1,13 @@
 {
   "id": "figma",
   "name": "Figma",
-  "description": "Extract structured design briefs from Figma designs",
   "version": "0.1.0",
-  "entry": "dist/index.js"
+  "description": "Extract structured design briefs from Figma designs",
+  "slots": ["toolbar"],
+  "author": "",
+  "repository": "",
+  "min_app_version": "0.3.53",
+  "icon": "",
+  "required_commands": [],
+  "api_version": 1
 }

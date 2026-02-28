@@ -1,10 +1,9 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { ChangeEvent } from 'react';
 import { usePluginContext } from '../context';
 import { parseFigmaUrl } from '../url-parser';
 import { validateFileAccess } from '../figma-api';
 import type { FigmaUrlParts, ExtractionScope, FigmaFileInfo } from '../types';
-
-const React = (window as any).__SHIPSTUDIO_REACT__;
-const { useState, useEffect, useCallback, useRef } = React;
 
 interface MainViewProps {
   token: string;
@@ -16,7 +15,9 @@ interface MainViewProps {
  * and confirm file accessibility before extraction.
  */
 export function MainView({ token }: MainViewProps) {
-  const { shell, actions } = usePluginContext();
+  const ctx = usePluginContext();
+  const shell = ctx?.shell ?? null;
+  const actions = ctx?.actions ?? null;
 
   const [urlInput, setUrlInput] = useState('');
   const [parsedUrl, setParsedUrl] = useState(null as FigmaUrlParts | null);
@@ -25,19 +26,19 @@ export function MainView({ token }: MainViewProps) {
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState(null as string | null);
 
+  // Stable ref for shell so the validation effect doesn't re-fire on context re-renders
+  const shellRef = useRef(shell);
+  shellRef.current = shell;
+
   // Counter to discard stale validation responses
   const requestIdRef = useRef(0);
 
-  /**
-   * Handle URL input change: parse and trigger validation.
-   */
   const handleUrlChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setUrlInput(value);
 
       if (!value.trim()) {
-        // Clear everything when input is empty
         setParsedUrl(null);
         setFileInfo(null);
         setError(null);
@@ -58,7 +59,6 @@ export function MainView({ token }: MainViewProps) {
       setError(null);
       setFileInfo(null);
 
-      // Auto-set scope default based on nodeId presence
       if (parsed.nodeId) {
         setScope('node');
       } else {
@@ -68,22 +68,20 @@ export function MainView({ token }: MainViewProps) {
     []
   );
 
-  /**
-   * Validate file access whenever parsedUrl changes.
-   * Uses a request ID counter to discard stale responses.
-   */
+  // Validate file access whenever parsedUrl changes.
+  // Uses shellRef to avoid re-firing when context re-renders.
   useEffect(() => {
-    if (!parsedUrl) return;
+    if (!parsedUrl || !shellRef.current) return;
 
     const currentRequestId = ++requestIdRef.current;
+    const currentShell = shellRef.current;
     setValidating(true);
     setFileInfo(null);
     setError(null);
 
     (async () => {
       try {
-        const info = await validateFileAccess(shell, token, parsedUrl.fileKey);
-        // Only apply result if this is still the latest request
+        const info = await validateFileAccess(currentShell, token, parsedUrl.fileKey);
         if (requestIdRef.current === currentRequestId) {
           setFileInfo(info);
           setValidating(false);
@@ -91,7 +89,6 @@ export function MainView({ token }: MainViewProps) {
       } catch (err: any) {
         if (requestIdRef.current === currentRequestId) {
           const message = err?.message || 'Failed to validate file access.';
-          // Map error messages to user-friendly versions
           if (message.includes('403') || message.includes('Invalid or expired')) {
             setError('Cannot access this file. Check that your token has File content (Read) scope.');
           } else if (message.includes('404') || message.includes('not found')) {
@@ -105,10 +102,10 @@ export function MainView({ token }: MainViewProps) {
         }
       }
     })();
-  }, [parsedUrl, shell, token]);
+  }, [parsedUrl, token]);
 
   const handleExtract = useCallback(() => {
-    actions.showToast('Extraction coming in next update', 'info');
+    if (actions) actions.showToast('Extraction coming in next update', 'info');
   }, [actions]);
 
   const extractDisabled = !parsedUrl || !fileInfo || validating;

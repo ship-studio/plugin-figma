@@ -1,12 +1,11 @@
+import { useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { usePluginContext } from './context';
 import { Modal } from './components/Modal';
 import { SetupView } from './views/SetupView';
 import { SettingsView } from './views/SettingsView';
 import { MainView } from './views/MainView';
 import type { FigmaUser } from './types';
-
-const React = (window as any).__SHIPSTUDIO_REACT__;
-const { useState, useEffect, useCallback } = React;
 
 /**
  * Gear icon button for the modal header — opens settings view.
@@ -49,7 +48,8 @@ function GearButton({ onClick }: { onClick: () => void }) {
  */
 function FigmaToolbarButton() {
   const ctx = usePluginContext();
-  const { storage, actions } = ctx;
+  const storage = ctx?.storage ?? null;
+  const actions = ctx?.actions ?? null;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [token, setToken] = useState(null as string | null);
@@ -57,15 +57,15 @@ function FigmaToolbarButton() {
   const [loaded, setLoaded] = useState(false);
   const [currentView, setCurrentView] = useState('main' as 'main' | 'settings');
 
-  // Read stored token on mount
+  // Read stored token on mount (once storage is available)
   useEffect(() => {
+    if (!storage) return;
     let cancelled = false;
     (async () => {
       try {
         const data = await storage.read();
         if (!cancelled && typeof data.figmaToken === 'string') {
           setToken(data.figmaToken);
-          // Restore user handle from storage (full re-validation happens on next API call)
           if (typeof data.figmaUserHandle === 'string') {
             setFigmaUser({ id: '', handle: data.figmaUserHandle, img_url: '' } as FigmaUser);
           }
@@ -86,6 +86,7 @@ function FigmaToolbarButton() {
   }, []);
 
   const handleTokenSaved = useCallback(async (newToken: string, user: FigmaUser) => {
+    if (!storage || !actions) return;
     try {
       const data = await storage.read();
       await storage.write({ ...data, figmaToken: newToken, figmaUserHandle: user.handle });
@@ -99,6 +100,7 @@ function FigmaToolbarButton() {
   }, [storage, actions]);
 
   const handleTokenUpdated = useCallback(async (newToken: string, user: FigmaUser) => {
+    if (!storage || !actions) return;
     try {
       const data = await storage.read();
       await storage.write({ ...data, figmaToken: newToken, figmaUserHandle: user.handle });
@@ -112,6 +114,7 @@ function FigmaToolbarButton() {
   }, [storage, actions]);
 
   const handleTokenRemoved = useCallback(async () => {
+    if (!storage || !actions) return;
     try {
       const data = await storage.read();
       const { figmaToken, figmaUserHandle, ...rest } = data as Record<string, unknown>;
@@ -132,7 +135,7 @@ function FigmaToolbarButton() {
   ) : undefined;
 
   // Determine which view to render inside the modal
-  let modalContent: React.ReactNode = null;
+  let modalContent: ReactNode = null;
   if (loaded) {
     if (!token) {
       modalContent = <SetupView onTokenSaved={handleTokenSaved} />;

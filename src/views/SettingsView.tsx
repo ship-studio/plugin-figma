@@ -1,9 +1,8 @@
+import { useState, useCallback } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { usePluginContext } from '../context';
 import { validateToken } from '../figma-api';
 import type { FigmaUser } from '../types';
-
-const React = (window as any).__SHIPSTUDIO_REACT__;
-const { useState, useCallback } = React;
 
 interface SettingsViewProps {
   currentUser: FigmaUser;
@@ -18,12 +17,14 @@ interface SettingsViewProps {
  * and removing the stored token.
  */
 export function SettingsView({ currentUser, onTokenUpdated, onTokenRemoved, onBack }: SettingsViewProps) {
-  const { shell } = usePluginContext();
+  const ctx = usePluginContext();
+  const shell = ctx?.shell ?? null;
   const [newToken, setNewToken] = useState('');
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState(null as string | null);
 
   const handleUpdate = useCallback(async () => {
+    if (!shell) return;
     const trimmed = newToken.trim();
     if (!trimmed || validating) return;
 
@@ -41,7 +42,7 @@ export function SettingsView({ currentUser, onTokenUpdated, onTokenRemoved, onBa
   }, [newToken, validating, shell, onTokenUpdated]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         handleUpdate();
       }
@@ -86,7 +87,7 @@ export function SettingsView({ currentUser, onTokenUpdated, onTokenRemoved, onBa
           type="password"
           placeholder="figd_xxxxxxxxxxxxxxxx"
           value={newToken}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewToken(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setNewToken(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={validating}
         />

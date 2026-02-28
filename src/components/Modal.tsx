@@ -1,14 +1,13 @@
+import { useEffect, useCallback } from 'react';
+import type { ReactNode, MouseEvent } from 'react';
 import { STYLE_ID, PLUGIN_CSS } from '../styles';
-
-const React = (window as any).__SHIPSTUDIO_REACT__;
-const { useEffect, useCallback } = React;
 
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  headerRight?: React.ReactNode;
-  children: React.ReactNode;
+  headerRight?: ReactNode;
+  children: ReactNode;
 }
 
 /**
@@ -48,7 +47,7 @@ export function Modal({ open, onClose, title, headerRight, children }: ModalProp
 
   // Close on overlay click (not modal body)
   const handleOverlayClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+    (e: MouseEvent<HTMLDivElement>) => {
       if (e.target === e.currentTarget) {
         onClose();
       }

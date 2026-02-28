@@ -1,9 +1,8 @@
+import { useState, useCallback } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { usePluginContext } from '../context';
 import { validateToken } from '../figma-api';
 import type { FigmaUser } from '../types';
-
-const React = (window as any).__SHIPSTUDIO_REACT__;
-const { useState, useCallback } = React;
 
 interface SetupViewProps {
   onTokenSaved: (token: string, user: FigmaUser) => void;
@@ -15,12 +14,14 @@ interface SetupViewProps {
  * input field, validation via GET /v1/me, and inline feedback.
  */
 export function SetupView({ onTokenSaved }: SetupViewProps) {
-  const { shell } = usePluginContext();
+  const ctx = usePluginContext();
+  const shell = ctx?.shell ?? null;
   const [tokenValue, setTokenValue] = useState('');
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState(null as string | null);
 
   const handleConnect = useCallback(async () => {
+    if (!shell) return;
     const trimmed = tokenValue.trim();
     if (!trimmed || validating) return;
 
@@ -38,7 +39,7 @@ export function SetupView({ onTokenSaved }: SetupViewProps) {
   }, [tokenValue, validating, shell, onTokenSaved]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         handleConnect();
       }
@@ -73,7 +74,7 @@ export function SetupView({ onTokenSaved }: SetupViewProps) {
           type="password"
           placeholder="figd_xxxxxxxxxxxxxxxx"
           value={tokenValue}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTokenValue(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setTokenValue(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={validating}
         />
