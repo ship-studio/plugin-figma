@@ -43,11 +43,11 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
   2. Generated brief contains an asset-only rule telling Claude Code to use only the provided assets and never fabricate replacements
   3. Generated brief contains a verification instruction telling Claude Code to compare its output against the PNG preview when done
   4. All user-facing text in the plugin uses plain, human-friendly language -- no "Extraction Scope", "Single Node", "auto-layout frames", or other developer jargon
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- Add "How to Use This Brief" instructions section to generated brief (TDD)
+- [ ] 06-02-PLAN.md -- Replace developer jargon with human-friendly terminology in plugin UI
 
 ### Phase 7: Smart Asset Detection & Layout Mapping
 **Goal**: Complex illustrations (nested groups of vectors, masks, blend modes) are automatically detected and exported as single images, and every exported asset is mapped to its exact position in the layout tree
@@ -90,6 +90,6 @@ Phases execute in numeric order: 6 -> 6.x -> 7 -> 7.x -> 8 -> 8.x
 | 3. Design Data Extraction | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 4. Image & Asset Export | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 5. Brief Assembly & Output | v1.0 | 2/2 | Complete | 2026-02-28 |
-| 6. Brief Instructions & Terminology | v1.1 | 0/? | Not started | - |
+| 6. Brief Instructions & Terminology | v1.1 | 0/2 | In progress | - |
 | 7. Smart Asset Detection & Layout Mapping | v1.1 | 0/? | Not started | - |
 | 8. UX Flow Simplification | v1.1 | 0/? | Not started | - |
