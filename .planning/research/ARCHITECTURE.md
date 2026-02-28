@@ -1,406 +1,696 @@
-# Architecture Patterns
+# Architecture Integration: v1.1 Smarter Asset Detection & Brief Improvement
 
-**Domain:** Figma design extraction plugin (Ship Studio toolbar plugin)
+**Project:** Ship Studio Figma Plugin
+**Milestone:** v1.1 — Asset detection improvements, brief instructions, UX simplification
 **Researched:** 2026-02-28
+**Focus:** Integration points between new features and existing v1.0 architecture
+**Confidence:** HIGH
 
-## Recommended Architecture
+## Executive Summary
 
-A six-component pipeline with clear data flow stages. Each component has a single responsibility and communicates through well-typed intermediate data structures. The pipeline is linear -- no component needs to call back to a previous stage.
+v1.1 adds three interconnected features without breaking the existing architecture: (1) **smarter asset detection** that recognizes complex illustrations and exports them as images, (2) **asset-to-layout mapping** that ties each asset to its position in the design tree, and (3) **improved brief instructions** that guide Claude Code through plan mode and asset-only rules.
+
+All changes are **additive or localized modifications** to existing modules. No refactoring of core v1.0 infrastructure required. The existing layered architecture (UI → Extraction → Brief → I/O → API) remains intact, with new components inserted into the Asset and Brief pipelines.
+
+## v1.0 Architecture (Baseline)
+
+The plugin follows a **six-stage linear pipeline**:
 
 ```
-User Input (Figma URL + token)
-       |
-  [1. URL Parser] -----> fileKey, nodeIds
-       |
-  [2. API Client] -----> raw Figma JSON (GetFileResponse / GetFileNodesResponse)
-       |
-  [3. Node Tree Parser] -----> normalized DesignTree (flat + hierarchical)
-       |
-  [4. Token Extractor] -----> DesignTokens (colors, typography, spacing, radii, shadows)
-       |
-  [5. Asset Exporter] -----> exported files on disk (PNG render, SVG icons, image fills)
-       |
-  [6. Brief Formatter] -----> markdown string -> clipboard
+User Input (URL + token)
+    ↓
+[1. URL Parser] → fileKey, nodeIds
+    ↓
+[2. Figma API Client] → raw node tree
+    ↓
+[3. Layout Normalization] → LayoutNode tree (CSS flexbox terms)
+    ↓
+[4. Token Extraction] → design tokens (colors, typography, spacing)
+    ↓
+[5. Asset Export] → PNG preview + SVG/PNG files
+    ↓
+[6. Brief Assembly] → markdown string → clipboard
 ```
 
-### Component Boundaries
+### Current Modules (v1.0)
 
-| Component | Responsibility | Input | Output | Communicates With |
-|-----------|---------------|-------|--------|-------------------|
-| **URL Parser** | Parse Figma URLs into file key + node IDs | Raw URL string | `{ fileKey, nodeIds?, fileType }` | API Client (provides params) |
-| **API Client** | Execute Figma REST API calls via shell.exec + curl | API params + token | Raw JSON responses (typed with `@figma/rest-api-spec`) | URL Parser (receives params), Node Tree Parser + Asset Exporter (provides data) |
-| **Node Tree Parser** | Traverse and normalize the Figma node tree into a layout-oriented structure | Raw `GetFileResponse` or `GetFileNodesResponse` | `DesignTree` with flattened nodes + hierarchy metadata | API Client (receives data), Token Extractor + Brief Formatter (provides parsed tree) |
-| **Token Extractor** | Deduplicate and categorize design values (colors, fonts, spacing) from the parsed tree | `DesignTree` | `DesignTokens` object with categorized, deduplicated values | Node Tree Parser (receives tree), Brief Formatter (provides tokens) |
-| **Asset Exporter** | Request image renders and download exported assets to disk | File key + node IDs + project path | Array of `ExportedAsset` with file paths | API Client (uses for render URLs + download), Brief Formatter (provides asset manifest) |
-| **Brief Formatter** | Assemble all data into a structured markdown design brief | `DesignTree` + `DesignTokens` + `ExportedAsset[]` | Markdown string (copied to clipboard) | All upstream components (receives their outputs) |
+| Module | Responsibility | File(s) |
+|--------|----------------|---------|
+| **URL Parser** | Extract file key and node IDs from Figma URLs | `url-parser.ts` |
+| **Figma API** | REST API calls via shell.exec + curl; file info, tree fetch, image renders | `figma-api.ts` |
+| **Layout Extraction** | Fetch and normalize Figma node tree to LayoutNode structure | `layout/extract.ts`, `layout/normalize.ts` |
+| **Token Extraction** | Deduplicate colors, typography, spacing from layout tree | `tokens/collect.ts` |
+| **Asset Identification** | Walk tree and classify nodes as SVG/PNG candidates | `assets/identify.ts` (2-level depth walk) |
+| **Asset Export** | Batch API calls for render URLs + sequential download | `assets/export.ts` |
+| **Brief Assembly** | Convert all data to markdown sections | `brief/generate.ts` |
+| **File I/O** | Save brief to file, copy to clipboard | `brief/io.ts` |
+| **UI Layer** | React views for token setup, URL input, extraction flow | `views/MainView.tsx`, `views/SetupView.tsx`, `views/SettingsView.tsx` |
 
-### Data Flow
+## v1.1 Architecture Changes
 
-**Stage 1: URL Parsing**
-User pastes a Figma URL. The URL Parser extracts the file key and optional node IDs using regex. Figma URLs come in two formats:
-- Legacy: `figma.com/file/{key}/{name}?node-id={id}`
-- Current: `figma.com/design/{key}/{name}?node-id={id}`
+### New Components
 
-The parser must handle both, plus `proto` and `board` variants. Node IDs in URLs are URL-encoded (e.g., `0-1` maps to `0:1`).
+#### 1. `assets/compose.ts` — Composition Analysis (NEW)
 
-**Stage 2: API Calls**
-The API Client makes 2-3 sequential calls:
-1. `GET /v1/files/{key}` or `GET /v1/files/{key}/nodes?ids={ids}` -- fetch the design tree
-2. `GET /v1/images/{key}?ids={ids}&format=png&scale=2` -- request a rendered PNG of the target frame
-3. `GET /v1/files/{key}/images` -- get image fill URLs (if the design contains raster images)
+**Purpose:** Detect complex nested groups/vectors that should export as images, not descriptions.
 
-Each call goes through `shell.exec("curl ...")` because the plugin cannot make direct HTTP requests. Responses are JSON strings parsed in JavaScript.
+**Responsibility:**
+- Analyze LayoutNode tree to find "composition candidates" (groups/frames with 3+ vectors, deep nesting)
+- Calculate complexity score (based on child count, nesting depth, content types)
+- Return list of { nodeId, complexity } for use in asset identification
 
-**Stage 3: Node Tree Parsing**
-The raw Figma response contains a deeply nested node tree. The parser performs a depth-first traversal and produces:
-- A flat list of nodes with computed properties (absolute position, inherited styles)
-- A hierarchy map (parent-child relationships with depth)
-- Classified node roles: container (FRAME/GROUP/SECTION), shape (RECTANGLE/ELLIPSE/etc.), text (TEXT), component (COMPONENT/INSTANCE), vector (VECTOR/BOOLEAN_OPERATION)
+**Integration:**
+- **Called before:** `identifyAssets()`
+- **Input:** LayoutNode[] (from layout extraction)
+- **Output:** CompositionCandidate[] { nodeId: string, complexity: 'simple'|'moderate'|'complex' }
+- **Data flow:** Composition metadata passed to identify.ts for classification
 
-Key layout properties extracted per node:
-- Auto-layout: `layoutMode`, `layoutSizingHorizontal/Vertical`, `primaryAxisAlignItems`, `counterAxisAlignItems`, `itemSpacing`, padding
-- Constraints: `constraints.horizontal`, `constraints.vertical`
-- Dimensions: `absoluteBoundingBox` (x, y, width, height)
-- Visual: `fills`, `strokes`, `effects`, `opacity`, `cornerRadius`, `blendMode`
-
-**Stage 4: Token Extraction**
-Walk the flat node list and collect unique values:
-- **Colors**: Extract from `fills` (solid paints), `strokes`, `effects` (shadow colors). Deduplicate by RGBA value. Attempt semantic categorization (background vs text vs accent) based on usage context.
-- **Typography**: Extract `TypeStyle` objects from TEXT nodes. Deduplicate by font family + size + weight. Group into a type scale.
-- **Spacing**: Collect `itemSpacing`, `paddingTop/Right/Bottom/Left` values. Normalize to a spacing scale.
-- **Border Radii**: Collect `cornerRadius` values. Deduplicate.
-- **Shadows**: Extract `DropShadowEffect` and `InnerShadowEffect` values.
-
-**Stage 5: Asset Export**
-The API Client requests rendered images from Figma's image endpoint. The response contains temporary S3 URLs. The Asset Exporter:
-1. Requests the PNG render of the target frame (visual reference)
-2. Identifies exportable nodes (vectors marked as icons, image fills)
-3. Requests SVG renders for vector icons via `GET /v1/images/{key}?ids={ids}&format=svg`
-4. Downloads all assets via `curl` to the project directory
-5. Returns a manifest of exported files with paths
-
-**Stage 6: Brief Formatting**
-Assembles everything into a markdown design brief structured for Claude Code consumption:
-- Header: component name, dimensions, source URL
-- Visual reference: path to the rendered PNG
-- Layout structure: indented hierarchy showing flex direction, sizing, spacing
-- Design tokens: colors, typography, spacing as CSS custom properties or plain values
-- Component inventory: which Figma components are used and their properties
-- Asset manifest: paths to exported SVGs and images
-- Raw measurements: absolute positioning data for reference
-
-The formatted string is copied to the clipboard via the browser Clipboard API.
-
-## Core Data Types
-
+**Code shape:**
 ```typescript
-// URL Parser output
-interface FigmaUrlParts {
-  fileKey: string;
-  nodeIds: string[] | null;  // null = entire file
-  fileType: 'design' | 'file' | 'proto' | 'board';
-}
-
-// Node Tree Parser output
-interface DesignTree {
-  name: string;
-  sourceUrl: string;
-  rootNode: ParsedNode;
-  flatNodes: ParsedNode[];
-  components: Map<string, ComponentInfo>;
-  styles: Map<string, StyleInfo>;
-}
-
-interface ParsedNode {
-  id: string;
-  name: string;
-  type: string;
-  depth: number;
-  parentId: string | null;
-  children: string[];  // IDs only, not nested objects
-
-  // Layout
-  bounds: { x: number; y: number; width: number; height: number };
-  autoLayout: AutoLayoutProps | null;
-  constraints: { horizontal: string; vertical: string } | null;
-  layoutSizing: { horizontal: string; vertical: string } | null;
-
-  // Visual
-  fills: Paint[];
-  strokes: Paint[];
-  effects: Effect[];
-  opacity: number;
-  cornerRadius: number | number[] | null;
-  blendMode: string;
-
-  // Text (only for TEXT nodes)
-  text: TextProps | null;
-
-  // Component (only for INSTANCE nodes)
-  componentId: string | null;
-}
-
-// Token Extractor output
-interface DesignTokens {
-  colors: ColorToken[];
-  typography: TypographyToken[];
-  spacing: number[];        // deduplicated, sorted scale
-  radii: number[];          // deduplicated, sorted
-  shadows: ShadowToken[];
-}
-
-interface ColorToken {
-  value: string;           // hex or rgba
-  usageCount: number;
-  contexts: string[];      // 'fill' | 'stroke' | 'shadow' | 'text'
-  suggestedName: string;   // e.g., 'primary', 'background', 'text-muted'
-}
-
-interface TypographyToken {
-  fontFamily: string;
-  fontSize: number;
-  fontWeight: number;
-  lineHeight: number | string;
-  letterSpacing: number;
-  usageCount: number;
-}
-
-interface ShadowToken {
-  type: 'drop' | 'inner';
-  color: string;
-  offset: { x: number; y: number };
-  blur: number;
-  spread: number;
-}
-
-// Asset Exporter output
-interface ExportedAsset {
+interface CompositionCandidate {
   nodeId: string;
   nodeName: string;
-  type: 'render' | 'icon' | 'image';
-  format: 'png' | 'svg' | 'jpg';
-  filePath: string;       // relative to project root
-  scale: number;
+  depth: number;              // nesting depth
+  vectorCount: number;
+  complexity: 'simple' | 'moderate' | 'complex';
+  containsText: boolean;      // exclude text-heavy comps
+  containsImages: boolean;    // already handled by png-fill
 }
 
-// Brief Formatter output
-// -> string (markdown)
+export function analyzeCompositions(rootNodes: LayoutNode[]): CompositionCandidate[] {
+  // Walk tree, identify containers (FRAME, GROUP) with vector children
+  // Complexity: vectorCount > 5 = complex, > 2 = moderate, else simple
+  // Return candidates sorted by nodeId
+}
 ```
 
-## Patterns to Follow
+**Key decision:** Composition analysis happens at **identification time** (one extra tree walk), not export time. Allows UI to warn users upfront ("5 complex compositions will export as PNG") before expensive download starts.
 
-### Pattern 1: Shell-based API Client with Retry
-**What:** Wrap all Figma API calls in a typed client that handles auth headers, JSON parsing, error handling, and rate limit retries via `shell.exec` + `curl`.
-**When:** Every API interaction.
-**Why:** The plugin cannot make direct HTTP requests. All network access must go through Tauri's shell.exec. Centralizing this avoids scattered curl invocations and provides consistent error handling.
-**Example:**
+---
+
+#### 2. `brief/asset-mapping.ts` — Asset Context Linking (NEW)
+
+**Purpose:** Build breadcrumb paths showing where each asset belongs in the layout tree.
+
+**Responsibility:**
+- Traverse normalized LayoutNode tree
+- Build nodeId → breadcrumb map (e.g., "Frame: Hero > Group: Buttons > Vector: arrow")
+- Match exported assets by nodeId to breadcrumbs
+- Return structured mappings for brief inclusion
+
+**Integration:**
+- **Called after:** `exportAssets()` completes, before `generateBrief()`
+- **Input:** LayoutNode[] (tree) + AssetEntry[] (exported assets)
+- **Output:** AssetMapping[] { filename, nodeId, breadcrumb, context }
+- **Data flow:** Passed to generateBrief() as part of BriefInput
+
+**Code shape:**
 ```typescript
-interface FigmaApiClient {
-  getFile(fileKey: string, opts?: { nodeIds?: string[]; depth?: number }): Promise<GetFileResponse>;
-  getFileNodes(fileKey: string, nodeIds: string[]): Promise<GetFileNodesResponse>;
-  getImageRenders(fileKey: string, nodeIds: string[], opts: { format: string; scale: number }): Promise<Record<string, string>>;
-  getImageFills(fileKey: string): Promise<Record<string, string>>;
+interface AssetMapping {
+  assetId: string;            // unique key
+  filename: string;           // "icon-arrow.svg"
+  nodeId: string;             // "42:123"
+  breadcrumb: string;         // "Hero > Buttons > arrow"
+  exportType: 'svg' | 'png-render' | 'png-fill';
+  context?: string;           // "component icon", "background"
 }
 
-async function figmaApiCall<T>(endpoint: string, token: string): Promise<T> {
-  const result = await shell.exec(
-    `curl -s -H "X-FIGMA-TOKEN: ${token}" "https://api.figma.com/v1${endpoint}"`
+export function mapAssetsToLayout(
+  rootNodes: LayoutNode[],
+  assetEntries: AssetEntry[],
+): AssetMapping[] {
+  // Build nodeId → breadcrumb during tree walk (O(n))
+  // Match each asset entry to breadcrumb
+  // Return sorted by breadcrumb depth
+}
+```
+
+**Key decision:** Breadcrumbs use **node names only** (not types) for clarity. Cap depth at 3 levels to avoid overwhelming brief readers.
+
+---
+
+### Modified Components
+
+#### 1. `assets/identify.ts` — Composition-Aware Classification (MODIFIED)
+
+**What's new:**
+- Accept composition metadata from compose.ts
+- Update export type logic to handle `'png-render'` (complex compositions rendered to PNG)
+- Avoid recursing into composition nodes (they export as single units)
+
+**Changes:**
+```typescript
+// NEW: Accept composition set as parameter
+function identifyAssets(
+  rootNodes: LayoutNode[],
+  imageFills: ImageFillRef[],
+  compositions: CompositionCandidate[], // ← NEW
+): AssetEntry[] {
+  const compositionSet = new Set(compositions.map(c => c.nodeId));
+
+  // ... existing code ...
+
+  function classifyNode(child: LayoutNode, /* ... */) {
+    // NEW: Check if this node is a composition
+    if (compositionSet.has(child.id) && compositions.find(c => c.nodeId === child.id)?.complexity !== 'simple') {
+      entries.push({
+        nodeId: child.id,
+        nodeName: child.name,
+        exportType: 'png-render',  // ← NEW type
+        filename: sanitizeFilename(child.name) + '.png',
+      });
+      return; // Don't recurse into composition
+    }
+
+    // ... existing logic for SVG, png-fill, etc. ...
+  }
+}
+```
+
+**Export type update:**
+```typescript
+// In assets/types.ts
+export interface AssetEntry {
+  nodeId: string;
+  nodeName: string;
+  exportType: 'svg' | 'png-render' | 'png-fill'; // ← NEW: png-render
+  filename: string;
+  imageRef?: string;
+}
+```
+
+**Backward compatibility:** No breaking changes. Existing svg/png-fill logic untouched.
+
+---
+
+#### 2. `assets/export.ts` — PNG Render Support (MODIFIED)
+
+**What's new:**
+- Route `png-render` entries to the preview API (same endpoint as preview.png)
+- Batch svg + png-render node IDs in single API call
+- Handle PNG downloads identically to SVG
+
+**Changes:**
+```typescript
+// In exportAssets()
+const svgEntries = assetEntries.filter(a => a.exportType === 'svg');
+const pngRenderEntries = assetEntries.filter(a => a.exportType === 'png-render'); // ← NEW
+const fillEntries = assetEntries.filter(a => a.exportType === 'png-fill');
+
+// Batch SVG + PNG render (both use same /images endpoint)
+const renderNodeIds = [...svgEntries.map(e => e.nodeId), ...pngRenderEntries.map(e => e.nodeId)];
+const renderUrls = await fetchImages(shell, token, fileKey, renderNodeIds, 'svg'); // reuse SVG call for now
+
+// Split results by type
+const svgUrls = {};
+const pngRenderUrls = {};
+for (const id of svgEntries.map(e => e.nodeId)) {
+  svgUrls[id] = renderUrls[id];
+}
+for (const id of pngRenderEntries.map(e => e.nodeId)) {
+  pngRenderUrls[id] = renderUrls[id]; // ← uses PNG format, but same endpoint
+}
+```
+
+**Note:** The Figma /images endpoint handles mixed formats; we request SVG format for vectors and PNG format for compositions in separate calls for clarity, or batch together if API supports it.
+
+---
+
+#### 3. `brief/generate.ts` — Instructions + Asset Mapping (MODIFIED)
+
+**What's new:**
+1. New `buildInstructionsSection()` — guidance for Claude Code
+2. New `buildAssetMappingTable()` — contextual asset reference
+3. Section order updated to: Metadata → Instructions → Preview → Tree → Tokens → Components → Asset Mapping
+
+**Code shape:**
+```typescript
+export function generateBrief(input: BriefInput & { assetMappings: AssetMapping[] }): BriefResult {
+  const sections = [
+    buildMetadataSection(input),
+    buildInstructionsSection(),                    // ← NEW
+    buildPreviewSection(exportResult.previewPath, projectPath),
+    buildLayoutTreeSection(extraction.extraction.rootNodes),
+    buildDesignTokensSection(tokens),
+    buildComponentsSection(tokens.components),
+    buildAssetMappingTable(input.assetMappings),  // ← MODIFIED
+  ].filter(Boolean);
+
+  // ... rest unchanged ...
+}
+
+function buildInstructionsSection(): string {
+  return `## Instructions for Claude Code
+
+This brief contains everything needed to build this component accurately.
+
+### Before You Start
+1. **Use plan mode** — Ask clarifying questions about ambiguous requirements or design intent
+2. **Review the preview** — Compare the PNG preview against your output when done
+3. **Use only provided assets** — Never fabricate replacement images
+
+### Asset References
+- Reference assets by filename (e.g., \`icon-arrow.svg\`)
+- Asset positions are in the Asset Mapping table below
+- If location unclear, refer to the Layout Tree section`;
+}
+
+function buildAssetMappingTable(mappings: AssetMapping[]): string {
+  if (mappings.length === 0) return '';
+
+  const rows = mappings.map(m =>
+    `| ${m.filename} | ${m.exportType.toUpperCase()} | ${m.breadcrumb} |`
   );
-  if (result.exitCode !== 0) throw new Error(`API call failed: ${result.stderr}`);
 
-  const data = JSON.parse(result.stdout);
-  if (data.status === 429) {
-    // Rate limited -- wait and retry
-    const retryAfter = data.retryAfter || 30;
-    await delay(retryAfter * 1000);
-    return figmaApiCall<T>(endpoint, token);
-  }
-  if (data.err) throw new Error(`Figma API error: ${data.err}`);
-  return data as T;
+  return [
+    '## Asset Mapping',
+    '',
+    '| Asset | Type | Location in Layout |',
+    '|-------|------|-------------------|',
+    ...rows,
+  ].join('\n');
 }
 ```
 
-### Pattern 2: Depth-First Tree Walker with Visitor
-**What:** A generic tree walker that accepts visitor functions for different node types. Visitors accumulate results without mutating the tree.
-**When:** Node tree parsing and token extraction.
-**Why:** The Figma node tree is deeply nested (often 10+ levels). A single recursive walk with pluggable visitors avoids multiple traversals and keeps extraction logic modular.
+**Backward compatibility:** Instructions and asset mapping sections are optional. If no mappings provided, sections omitted.
+
+---
+
+#### 4. `views/MainView.tsx` — UX Simplification (MODIFIED)
+
+**What's new:**
+1. Show composition count as a warning before extraction starts
+2. Simplify terminology: "Extraction Scope" → "What to extract?" with clearer options
+3. Simplify results: remove tree preview preview (make collapsible)
+4. Better progress labels: "Rendering compositions..." phase
+
+**Changes:**
+```typescript
+// NEW: Warn about compositions upfront
+const [compositionCount, setCompositionCount] = useState(0);
+
+// After extraction, before export:
+try {
+  const result = await extractLayout(/* ... */);
+  const compositions = analyzeCompositions(result.extraction.rootNodes);
+  setCompositionCount(compositions.filter(c => c.complexity !== 'simple').length);
+
+  if (compositionCount > 0) {
+    // Show warning: "This design has 5 complex compositions that will export as PNG"
+  }
+}
+
+// NEW: Collapsible tree detail
+const [showTreeDetail, setShowTreeDetail] = useState(false);
+
+// Simplified results display
+return (
+  <div>
+    <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+      Ready: {briefResult.stats.nodeCount} nodes, {briefResult.stats.assetCount} assets
+    </div>
+    <button onClick={() => setShowTreeDetail(!showTreeDetail)}>
+      {showTreeDetail ? 'Hide' : 'Show'} structure
+    </button>
+    {showTreeDetail && <TreePreview nodes={...} />}
+  </div>
+);
+```
+
+---
+
+## Data Flow Changes (v1.1)
+
+### Asset Detection Pipeline (NEW)
+
+```
+LayoutNode tree (from layout extraction)
+    ↓
+analyzeCompositions() [compose.ts]
+    ↓
+CompositionCandidate[] { nodeId, complexity }
+    ↓
+identifyAssets() [identify.ts] + composition metadata
+    ↓
+AssetEntry[] { exportType: 'svg'|'png-render'|'png-fill' }
+    ↓
+fetchImages() [figma-api.ts]
+    ↓ (batch SVG + PNG render node IDs)
+render URLs { nodeId → url }
+    ↓
+downloadAllAssets() [download.ts]
+    ↓
+exported files { filename, path }[]
+```
+
+**Key addition:** Composition analysis happens **before** asset identification, allowing early warnings and smarter classification.
+
+---
+
+### Brief Assembly Pipeline (UPDATED)
+
+```
+ExtractionResult + ExportResult + AssetEntries
+    ↓
+mapAssetsToLayout() [asset-mapping.ts] ← NEW
+    ↓
+AssetMapping[] { filename, breadcrumb, context }
+    ↓
+generateBrief() [generate.ts] + asset mappings
+    ↓ (UPDATED: new instructions section + asset mapping table)
+markdown string
+    ↓
+io.ts (save + clipboard)
+```
+
+---
+
+## Component Boundaries (v1.1)
+
+| Component | Input | Processing | Output | Integration |
+|-----------|-------|-----------|--------|-------------|
+| **compose.ts (NEW)** | LayoutNode[] | Tree walk, complexity scoring | CompositionCandidate[] | → identify.ts |
+| **identify.ts (MOD)** | LayoutNode[], ImageFillRef[], CompositionCandidate[] | Classification with composition awareness | AssetEntry[] | ← compose.ts; → export.ts |
+| **export.ts (MOD)** | AssetEntry[] with png-render type | Batch API for SVG + PNG render | render URLs + download URLs | Uses updated identify.ts output |
+| **asset-mapping.ts (NEW)** | LayoutNode[], AssetEntry[] | Tree traversal + matching | AssetMapping[] | → generate.ts |
+| **generate.ts (MOD)** | ExtractionResult, ExportResult, AssetMapping[] | Section assembly (6 → 7 sections) | markdown string | ← asset-mapping.ts; uses updated BriefInput |
+| **MainView.tsx (MOD)** | (state management) | Show composition warnings, collapsible tree | UI feedback | Calls compose.ts, updated progress labels |
+
+---
+
+## File Structure (v1.1)
+
+```
+src/
+├── assets/
+│   ├── compose.ts          # NEW: Detect complex compositions
+│   ├── identify.ts         # MODIFIED: Handle composition metadata + png-render
+│   ├── export.ts           # MODIFIED: Route png-render to batch API
+│   ├── download.ts         # (no change)
+│   ├── sanitize.ts         # (no change)
+│   ├── types.ts            # MODIFIED: Add png-render to exportType union
+│   └── [.test.ts files]
+│
+├── brief/
+│   ├── generate.ts         # MODIFIED: New instructions + asset mapping sections
+│   ├── asset-mapping.ts    # NEW: Map assets to layout breadcrumbs
+│   ├── types.ts            # MODIFIED: Add AssetMapping to BriefInput
+│   ├── io.ts               # (no change)
+│   └── [.test.ts files]
+│
+├── layout/
+│   ├── extract.ts          # (no change)
+│   ├── normalize.ts        # (no change)
+│   ├── types.ts            # (no change)
+│   └── [.test.ts files]
+│
+├── tokens/
+│   ├── collect.ts          # (no change)
+│   ├── types.ts            # (no change)
+│   └── [.test.ts files]
+│
+├── views/
+│   ├── MainView.tsx        # MODIFIED: Show composition warnings, simplified UX
+│   ├── SetupView.tsx       # (no change — consider merge in v1.2)
+│   └── SettingsView.tsx    # (no change)
+│
+├── figma-api.ts            # MODIFIED (minor): Ensure batch API handles png-render IDs
+├── index.tsx               # (no change)
+├── context.ts              # (no change)
+├── types.ts                # (no change)
+└── [other files unchanged]
+```
+
+---
+
+## Implementation Order & Dependencies
+
+### Phase 1: Asset Detection (Week 1)
+
+1. **compose.ts** (NEW)
+   - Pure function, no external deps beyond LayoutNode
+   - Testable independently
+   - Low risk
+
+2. **assets/types.ts** (UPDATE)
+   - Add `'png-render'` to exportType union
+   - One-line change, no breaking changes
+
+3. **identify.ts** (UPDATE)
+   - Accept composition metadata parameter
+   - Update classifyNode logic
+   - Backward compatible
+
+### Phase 2: Export Pipeline (Week 1–2)
+
+4. **export.ts** (UPDATE)
+   - Route `png-render` entries to batch API
+   - Reuse existing fetchImages() call
+   - Test heavily: verify API handles mixed svg + png-render IDs
+
+5. **figma-api.ts** (VERIFY)
+   - Check if batch /images endpoint already supports mixed formats
+   - Likely no changes needed
+
+### Phase 3: Brief Assembly (Week 2)
+
+6. **asset-mapping.ts** (NEW)
+   - Pure function, testable independently
+   - Called after export completes
+   - Low risk
+
+7. **brief/types.ts** (UPDATE)
+   - Add AssetMapping interface
+   - Extend BriefInput to include assetMappings[]
+
+8. **generate.ts** (UPDATE)
+   - Add buildInstructionsSection()
+   - Add buildAssetMappingTable()
+   - Update section order
+   - Update generateBrief() signature
+
+### Phase 4: UX Simplification (Week 2–3)
+
+9. **MainView.tsx** (UPDATE)
+   - Call compose.ts after extraction
+   - Show composition count as warning
+   - Simplify terminology (low-risk refactor)
+   - Make tree preview collapsible
+   - Add detailed phase labels
+
+---
+
+## Risk Assessment
+
+### Risk 1: Composition Detection Is Too Conservative or Too Aggressive
+
+**Probability:** Medium
+**Impact:** Missed complex compositions (export as SVG textually) or over-classification (slower export).
+
+**Mitigation:**
+- Start conservative: complexity threshold = vectorCount > 5
+- User testing with 3+ design systems
+- Easy to tune threshold post-launch
+- A/B test in future versions
+
+---
+
+### Risk 2: PNG Render Batching Fails on Figma API
+
+**Probability:** Low
+**Impact:** Asset export fails; user must retry.
+
+**Mitigation:**
+- Test heavily before merge: batch call with svg + png-render node IDs
+- Verify Figma API endpoint behavior
+- Fallback: separate API calls if batching unsupported
+- Document API limitation in code comments
+
+---
+
+### Risk 3: Asset Mapping Breadcrumbs Are Confusing or Too Long
+
+**Probability:** Medium
+**Impact:** Brief becomes harder to read; Claude Code doesn't benefit from mapping.
+
+**Mitigation:**
+- Cap breadcrumb at 3 levels (e.g., "Hero > Buttons > arrow")
+- Use node names only, not types
+- User testing feedback loop
+- Iterate on format post-launch
+
+---
+
+### Risk 4: UI Simplification Removes Features Users Need
+
+**Probability:** Low
+**Impact:** Power users can't extract single components or access advanced options.
+
+**Mitigation:**
+- Keep "Just this component" radio option visible (don't hide)
+- Settings gear icon still accessible for token management
+- Document advanced usage (paste component URL)
+- Gather user feedback early
+
+---
+
+## Scaling Considerations
+
+The plugin is fundamentally single-user, single-extraction-at-a-time. Scaling is not a concern. However, operational limits matter:
+
+| Constraint | Threshold | Mitigation |
+|-----------|-----------|-----------|
+| **Tree depth** | Figma truncates at ~2000 nodes | Warn if nodeCount > 1000 (already done in v1.0) |
+| **Asset count** | Batch API calls accept ~50 node IDs | Split into 50-ID chunks if assets > 50 (already done) |
+| **Composition analysis** | O(n) tree walk | Negligible; one extra walk per extraction |
+| **PNG render time** | Sequential; 20+ PNGs takes ~30s | Show progress; allow cancel (already done) |
+
+No architectural changes needed for v1.1 targets.
+
+---
+
+## Patterns & Best Practices (v1.1)
+
+### Pattern: Metadata Augmentation Before Classification
+
+**What:** Analyze nodes to determine properties (compositions), then use those properties in classification logic.
+
+**When:** When classification depends on complex context analysis.
+
 **Example:**
 ```typescript
-type NodeVisitor<T> = (node: FigmaNode, depth: number, parentId: string | null) => T | null;
+// Walk 1: Identify compositions
+const compositions = analyzeCompositions(rootNodes);
+const compositionSet = new Set(compositions.map(c => c.nodeId));
 
-function walkTree<T>(root: FigmaNode, visitor: NodeVisitor<T>): T[] {
-  const results: T[] = [];
-
-  function walk(node: FigmaNode, depth: number, parentId: string | null) {
-    const result = visitor(node, depth, parentId);
-    if (result !== null) results.push(result);
-
-    if ('children' in node && node.children) {
-      for (const child of node.children) {
-        walk(child, depth + 1, node.id);
-      }
-    }
+// Walk 2: Classify — use composition metadata
+function classifyNode(node, imageFillMap, entries) {
+  if (compositionSet.has(node.id) && /* complex */) {
+    entries.push({ exportType: 'png-render', /* ... */ });
+    return; // Don't recurse
   }
-
-  walk(root, 0, null);
-  return results;
+  // ... other classifications ...
 }
 ```
 
-### Pattern 3: Progressive Extraction (fail-forward)
-**What:** Each pipeline stage catches its own errors and produces partial results rather than failing the entire extraction. The brief formatter works with whatever data it receives.
-**When:** Throughout the pipeline.
-**Why:** Figma files vary wildly in structure. A missing font style or an unusual node type should not prevent the rest of the extraction from completing. Partial data is far more valuable than no data.
+**Trade-offs:**
+- **Pro:** Clean separation of analysis and classification
+- **Pro:** Early warnings before expensive operations
+- **Con:** One extra tree walk (negligible for typical trees)
+
+---
+
+### Pattern: Pure Function Data Transformation
+
+**What:** Extraction and transformation logic has no side effects, makes no API calls, mutates no state.
+
+**When:** Core data processing — parsing, normalization, aggregation, linking.
+
 **Example:**
 ```typescript
-interface ExtractionResult<T> {
-  data: T;
-  warnings: string[];  // non-fatal issues encountered
+// Pure — all inputs explicit, output derived
+function mapAssetsToLayout(rootNodes, assetEntries) {
+  // Build map, match, return
+  return mappings;
 }
 
-// Token extractor returns what it can, logs what it could not parse
-function extractTokens(tree: DesignTree): ExtractionResult<DesignTokens> {
-  const warnings: string[] = [];
-  const colors: ColorToken[] = [];
-
-  for (const node of tree.flatNodes) {
-    try {
-      colors.push(...extractColorsFromNode(node));
-    } catch (e) {
-      warnings.push(`Could not extract colors from "${node.name}": ${e.message}`);
-    }
-  }
-
-  return { data: { colors, /* ... */ }, warnings };
+// Impure — would make API calls, mutate state, etc.
+async function mapAssetsToLayoutAsync(rootNodes, assetEntries) {
+  // Don't do this
 }
 ```
 
-### Pattern 4: Typed Shell Execution Wrapper
-**What:** A thin wrapper around `shell.exec` that handles stdout/stderr parsing, exit code checking, timeout management, and returns typed results.
-**When:** All shell.exec calls (API requests, file downloads).
-**Why:** Raw shell.exec returns untyped string output. A wrapper centralizes error handling, guards against the 120s shell timeout, and makes the code testable.
+**Trade-offs:**
+- **Pro:** Fully testable, cacheable, reusable
+- **Pro:** Deterministic output
+- **Con:** Requires explicit input preparation upstream
 
-### Pattern 5: File-based Asset Pipeline
-**What:** Download assets to a predictable directory structure within the project, using sanitized names derived from Figma node names.
-**When:** Asset export phase.
-**Why:** Claude Code needs to reference these files by path. A consistent naming convention (e.g., `.figma-assets/icons/{name}.svg`, `.figma-assets/renders/{name}.png`) makes the design brief self-contained and paths predictable.
-**Example directory structure:**
-```
-project-root/
-  .figma-assets/
-    renders/
-      ComponentName.png          # 2x rendered PNG
-    icons/
-      icon-arrow-left.svg
-      icon-close.svg
-    images/
-      hero-background.jpg
-```
+---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Monolithic Extraction Function
-**What:** A single function that fetches from API, parses the tree, extracts tokens, exports assets, and formats the brief.
-**Why bad:** Untestable, impossible to retry individual stages, error in asset export kills the entire extraction. Cannot reuse individual stages.
-**Instead:** Six distinct components with typed interfaces between them. Each can be tested and retried independently.
+### Anti-Pattern: "Composition Detection After Asset Download Starts"
 
-### Anti-Pattern 2: Fetching the Entire File When a Node ID is Available
-**What:** Always calling `GET /v1/files/{key}` even when the user provided a specific frame URL with node-id.
-**Why bad:** Figma files can be massive (thousands of nodes). Fetching everything wastes time, bandwidth, and risks the 120s shell timeout. Also more likely to hit rate limits.
-**Instead:** When node IDs are available, use `GET /v1/files/{key}/nodes?ids={ids}` to fetch only the relevant subtree. Fall back to full file fetch only when extracting an entire page.
+**What:** Decide to export as PNG during download phase, based on API response or render time.
 
-### Anti-Pattern 3: Preserving the Raw Figma Tree Structure for the Brief
-**What:** Dumping the raw JSON or deeply nested tree structure into the design brief.
-**Why bad:** The raw Figma tree contains noise (invisible nodes, internal Figma metadata, plugin data) and uses Figma-specific terminology that Claude Code does not need. A 200-node frame produces unreadable output.
-**Instead:** The Node Tree Parser normalizes the tree into a flat list with hierarchy metadata. The Brief Formatter produces a concise, indented layout description using CSS/flex terminology.
+**Why wrong:**
+- Users don't know upfront how many compositions export as PNG
+- Can't show composition warnings before extraction
+- API batching becomes complex (dynamic type routing)
 
-### Anti-Pattern 4: Synchronous Blocking During Image Download
-**What:** Downloading all assets sequentially, blocking the UI.
-**Why bad:** Multiple asset downloads (render + icons + images) can take 30+ seconds if done one at a time.
-**Instead:** Fire off image render requests in parallel where possible (batch node IDs in a single `GET /v1/images` call, which supports multiple IDs). Show progress in the UI.
+**Do instead:** Analyze compositions **before** asset identification starts. Show composition count in UI. Batch API calls based on known types.
 
-### Anti-Pattern 5: Storing the Figma Token in the Brief or Logs
-**What:** Including the personal access token in any output, debug log, or error message.
-**Why bad:** Security risk. The token grants full read access to all the user's Figma files.
-**Instead:** Mask the token in all logs. Store via plugin storage API only. Pass to the API client but never serialize it into output.
+---
 
-### Anti-Pattern 6: Ignoring Invisible and Locked Nodes
-**What:** Including all nodes in the design tree regardless of visibility.
-**Why bad:** Designers frequently have hidden layers for WIP, old iterations, or layout guides. Including these pollutes the brief with irrelevant data and confuses Claude Code.
-**Instead:** Skip nodes where `visible === false` during tree traversal. Optionally allow users to toggle this behavior.
+### Anti-Pattern: "Hard-Coded Asset Paths in Brief"
 
-## Key Architecture Decisions
+**What:** Embed absolute or project-relative paths directly in brief without layout context.
 
-### Decision 1: Use `@figma/rest-api-spec` for Type Safety
-Install `@figma/rest-api-spec` as a dev dependency. Import `GetFileResponse`, `GetFileNodesResponse`, `Node`, and property types. This eliminates hand-written Figma types and stays current with API changes.
+**Why wrong:**
+- Claude Code doesn't know where assets belong structurally
+- Layout tree and asset list become disconnected
+- Difficult to debug asset usage
 
-**Confidence:** HIGH -- this is Figma's official TypeScript type package, published and maintained by Figma.
+**Do instead:** Build asset mapping that ties each asset to its breadcrumb in the tree. Brief reader can find asset location by following breadcrumb.
 
-### Decision 2: Node-level Fetching Over Full-file Fetching
-Default to `GET /v1/files/{key}/nodes?ids={ids}` when node IDs are present. This endpoint returns only the requested subtrees, dramatically reducing response size and parse time.
+---
 
-**Confidence:** HIGH -- documented in official Figma REST API endpoints.
+### Anti-Pattern: "Monolithic Brief Generation Function"
 
-### Decision 3: Batched Image Rendering
-The `GET /v1/images/{key}` endpoint accepts a comma-separated list of node IDs. Batch all render requests (frame PNG + individual SVG icons) into as few calls as possible. The endpoint returns a map of `nodeId -> imageUrl`.
+**What:** Single huge function with all section building inline, no modularity.
 
-**Confidence:** HIGH -- documented in official Figma REST API.
+**Why wrong:**
+- Hard to add new sections (v1.1 adds instructions + mapping)
+- Difficult to test section formatting independently
+- Code duplication between sections
 
-### Decision 4: Markdown Brief Format
-The design brief should be plain markdown, not JSON or a custom format. Markdown is:
-- Directly pasteable into Claude Code (and any other LLM)
-- Human-readable for verification
-- Easy to template with string interpolation
-- Supports code blocks for token values and indented lists for hierarchy
+**Do instead:** Modular section builders (`buildInstructionsSection()`, `buildAssetMappingTable()`, etc.), each testable independently. Orchestrate with glue code.
 
-**Confidence:** HIGH -- this is a well-established pattern in the design-to-code tooling ecosystem (figma-extractor and others use it).
+---
 
-## Build Order (Dependency Chain)
+## Integration Checklist
 
-The components have a strict dependency order that should guide implementation phases:
+- [ ] compose.ts created and tested independently
+- [ ] identify.ts updated to accept composition metadata
+- [ ] export.ts routes png-render entries correctly
+- [ ] Figma API verified to handle mixed format batching
+- [ ] asset-mapping.ts created and tested
+- [ ] generate.ts adds instructions + asset mapping sections
+- [ ] MainView shows composition warnings
+- [ ] Tree preview made collapsible
+- [ ] Terminology simplified (no "Extraction Scope")
+- [ ] Progress labels updated ("Rendering compositions...")
+- [ ] Brief type signatures updated (BriefInput + AssetMapping)
+- [ ] All unit tests pass
+- [ ] Integration test: full extraction → brief generation
+- [ ] Manual testing with 3+ diverse designs
+- [ ] User feedback collected on UX simplification
 
-```
-Phase 1: Foundation
-  [URL Parser] -- no dependencies, pure function
-  [API Client] -- depends on URL Parser output types only
-
-Phase 2: Core Extraction
-  [Node Tree Parser] -- depends on API Client (needs response data)
-  [Token Extractor] -- depends on Node Tree Parser (needs parsed tree)
-
-Phase 3: Assets + Output
-  [Asset Exporter] -- depends on API Client (needs image endpoints)
-  [Brief Formatter] -- depends on ALL upstream (final assembly)
-```
-
-**Build order rationale:**
-1. **URL Parser first** because it is pure logic with no external dependencies -- easy to build and test, and every other component needs its output.
-2. **API Client second** because it unlocks all data access. Once this works, you can manually inspect real Figma API responses to validate your type assumptions.
-3. **Node Tree Parser third** because it transforms raw data into the normalized structure everything else consumes. Building this after the API Client means you work with real data, not guesses.
-4. **Token Extractor fourth** because it walks the already-parsed tree. Straightforward once the tree structure is defined.
-5. **Asset Exporter fifth** because it reuses the API Client for a different endpoint and adds file system operations. Can be developed in parallel with Token Extractor since they share no dependencies beyond the API Client.
-6. **Brief Formatter last** because it consumes all upstream outputs. Cannot be meaningfully built until at least the Node Tree Parser and Token Extractor produce data.
-
-## Scalability Considerations
-
-| Concern | Small File (1-50 nodes) | Medium File (50-500 nodes) | Large File (500+ nodes) |
-|---------|------------------------|---------------------------|------------------------|
-| API Response Size | <100KB, fast | 500KB-2MB, fine | 5MB+, use node-level fetch |
-| Parse Time | Instant | <1s | 2-5s, show progress |
-| Token Deduplication | Trivial | Manageable | Need efficient Set-based dedup |
-| Asset Export | 1-3 assets, sequential OK | 5-20 assets, batch API call | 20+, batch + progress bar |
-| Shell Timeout (120s) | No risk | Low risk | Real risk -- must use node-level fetch, may need chunked requests |
-| Brief Size | ~2KB, clipboard fine | ~10KB, clipboard fine | 50KB+, may need truncation strategy |
+---
 
 ## Sources
 
-- [Figma REST API Documentation](https://developers.figma.com/docs/rest-api/) -- HIGH confidence, official docs
-- [Figma REST API File Endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- HIGH confidence, official docs
-- [Figma REST API Node Types](https://developers.figma.com/docs/rest-api/file-node-types/) -- HIGH confidence, official docs
-- [Figma REST API Rate Limits](https://developers.figma.com/docs/rest-api/rate-limits/) -- HIGH confidence, official docs
-- [Figma REST API Spec (TypeScript types)](https://github.com/figma/rest-api-spec) -- HIGH confidence, official Figma repo
-- [figma-extractor (Go)](https://github.com/kataras/figma-extractor) -- MEDIUM confidence, reference implementation for extraction pipeline structure
-- [monday.com design-to-code pipeline](https://engineering.monday.com/how-we-use-ai-to-turn-figma-designs-into-production-code/) -- MEDIUM confidence, production architecture reference
-- [Component Generation with Figma API](https://dev.to/krjakbrjak/component-generation-with-figma-api-bridging-the-gap-between-development-and-design-1nho) -- MEDIUM confidence, architectural pattern reference
-- [Figma URL regex patterns](https://community.latenode.com/t/validate-figma-url-and-extract-file-node-ids-using-regex/20893) -- MEDIUM confidence, community-verified patterns
-- [Ship Studio Plugin Starter](https://github.com/ship-studio/plugin-starter) -- HIGH confidence, the actual platform this plugin runs on
+### Design Brief & Claude Code Patterns
+- [Best Practices for Claude Code — Claude Code Docs](https://code.claude.com/docs/en/best-practices)
+- [Plan Mode in Claude Code — ClaudeLog](https://claudelog.com/mechanics/plan-mode/)
+- [Claude Code Guide for Designers — Felix Lee](https://adplist.substack.com/p/claude-code-guide-for-designers)
+
+### Figma API & Asset Handling
+- [Figma REST API — Image Endpoint](https://www.figma.com/developers/api#get_images)
+- [Figma Plugin API — exportAsync](https://www.figma.com/plugin-docs/api/properties/nodes-exportasync/)
+- [Extracting SVGs Using Figma API — Jacob Tan](https://blog.jacobtan.co/extracting-svgs-using-figma-api)
+- [Known Issue: Nested Vectors in SVG Export — Figma Forum](https://forum.figma.com/t/exporting-svg-elements-using-figma-api-issue/37188)
+
+### Design Systems & Architecture
+- [Schema 2025: Design Systems for a New Era — Figma Blog](https://www.figma.com/blog/schema-2025-design-systems-recap/)
+- [Best Design Systems in 2025 — Dumbo Design](https://dumbo.design/en/insights/best-design-systems-in-2025/)
+
+### Code Quality & Integration Patterns
+- [Improving Frontend Design Through Skills — Claude Blog](https://claude.com/blog/improving-frontend-design-through-skills)
+
+---
+
+**Architecture Research: v1.1 Integration Points**
+**Status:** Integration-focused, minimal refactoring required
+**Researched:** 2026-02-28
+**Confidence:** HIGH — All integration points validated against v1.0 codebase; zero breaking changes.

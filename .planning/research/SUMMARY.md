@@ -1,217 +1,221 @@
 # Project Research Summary
 
-**Project:** Ship Studio Figma Plugin
+**Project:** Ship Studio Figma Plugin — v1.1 (Smart Asset Detection, Brief Instructions, UX Simplification)
 **Domain:** Figma design extraction for AI-assisted code generation
 **Researched:** 2026-02-28
 **Confidence:** HIGH
 
 ## Executive Summary
 
-The Ship Studio Figma plugin is a design extraction tool that runs inside the Ship Studio desktop app (Tauri-based) and produces framework-agnostic design briefs for Claude Code to consume. Unlike competitors (Locofy, Anima, Builder.io) that generate framework-specific code divorced from project context, this plugin produces a structured markdown brief containing layout structure, design tokens, component inventory, and asset references — letting Claude Code generate code that fits the user's actual project. The competitive landscape has clearly bifurcated into code generators (poor production fit) and context providers (the emerging pattern), and this plugin sits in the context-provider category with a simpler workflow than Figma MCP (no server setup, no framework assumptions, paste-and-go).
+This plugin is a Ship Studio toolbar plugin that extracts structured design data from Figma files and assembles a markdown brief for Claude Code to generate implementation-ready code. The core thesis — proven by v1.0 — is that a structured design brief outperforms a raw screenshot for AI code generation because it carries layout semantics, design tokens, and component identity that images cannot convey. v1.1 targets the remaining 20% failure rate caused by three specific v1.0 gaps: complex illustrations being described textually instead of exported as images (causing Claude Code to fabricate replacements), assets lacking positional context in the brief, and a UX flow that confused non-technical users with jargon and too many steps.
 
-The recommended approach is a six-stage linear pipeline: URL Parser -> API Client -> Node Tree Parser -> Token Extractor -> Asset Exporter -> Brief Formatter. Each stage produces typed intermediate data structures consumed by the next. The most critical architectural constraint is that the plugin cannot make direct HTTP requests — all Figma REST API calls must go through `shell.exec` + `curl`. This eliminates third-party Figma client libraries and requires a custom curl-based API client. The stack is lean: TypeScript 5.x with `@figma/rest-api-spec` for type safety, React and Vite inherited from the Ship Studio plugin starter, and optionally Zod for runtime validation of curl output.
+The recommended approach for v1.1 is strictly additive to the existing v1.0 six-stage linear pipeline: insert composition analysis before asset identification, insert asset-to-layout mapping after export, and add an instructions section to the brief template. No refactoring of core infrastructure is required. The architecture is a clean layered pipeline (URL Parser → API Client → Layout Normalization → Token Extraction → Asset Export → Brief Assembly) with new modules slotting in at well-defined integration points. All new components are pure functions — testable independently, no side effects, deterministic output.
 
-The key risks are front-loaded in the API layer: fetching full file trees instead of targeted nodes causes timeouts and memory exhaustion; rate limits are severe on non-Enterprise plans (as low as 10 req/min); and Figma's color format (0-1 float range, not 0-255) will produce silently wrong output if not handled from the start. These pitfalls are all addressable by building the right patterns into Phase 1 before any extraction logic is written. The Node Tree Parser is the highest-complexity component and the critical path for the entire pipeline — everything else depends on its normalized output.
+The primary risks for v1.1 are heuristic calibration (composition detection that is either too aggressive, bloating the asset directory, or too conservative, still missing complex illustrations) and brief instruction engineering (instructions must be 2-3 behaviors maximum — beyond that, Claude Code compliance degrades). Both risks are addressable through incremental validation against real Figma files before shipping. The transport constraint — all HTTP must go through `shell.exec` + `curl`, no native fetch — is already solved by v1.0 and poses no new risk for v1.1 changes.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is tightly constrained by the Ship Studio plugin platform. React (host-provided), Vite, and TypeScript 5.x are not choices — they come from the plugin starter template. The only meaningful dependency decision is `@figma/rest-api-spec` (v0.36.0, published January 2026), which provides official TypeScript types for every Figma REST API response shape and eliminates the need to hand-write Figma types. No Figma API client library can be used because all network access must go through `shell.exec` + `curl`.
+The stack is entirely constrained by the Ship Studio plugin environment. React, TypeScript 5.x, and Vite are inherited from the Ship Studio plugin starter and cannot be changed. The only meaningful dependency additions are `@figma/rest-api-spec` (official Figma types, zero runtime dependencies, actively maintained as of January 2026) for compile-time safety, and optionally `zod` for runtime validation of curl responses. All Figma REST API calls go through `shell.exec` + `curl` — the only transport available in Ship Studio plugins. Client libraries like `figma-api` and `figma-js` are excluded because they use HTTP clients that do not exist in this environment.
+
+For v1.1 specifically, no new dependencies are needed. The new `compose.ts` and `asset-mapping.ts` modules are pure TypeScript utility functions with zero external dependencies beyond LayoutNode types already defined in the codebase.
 
 **Core technologies:**
-- **TypeScript 5.x**: Type safety — required for consuming `@figma/rest-api-spec` types; catches Figma API response shape errors at compile time
-- **`@figma/rest-api-spec` v0.36.0**: Figma API types — official Figma package, zero dependencies, covers all node types, auto-layout, paint, typography, and effect types
-- **`shell.exec` + `curl`**: HTTP transport — the only way to make network requests from a Ship Studio plugin; all Figma REST API calls go through this path
-- **Zod v4 (optional)**: Runtime validation — validates curl response JSON before processing; `@zod/mini` at ~2KB gzipped if bundle size is a concern
+- `@figma/rest-api-spec` ^0.36.0: Official Figma REST API types — all node types, auto-layout properties, paint types, and response shapes at compile time; zero runtime dependencies
+- `shell.exec` + `curl`: The only HTTP transport available in Ship Studio plugins — all Figma API calls go through this path
+- React (host-provided): UI framework — Ship Studio injects React as a shared instance; plugins do not bundle their own
+- TypeScript 5.x: Type safety — required for consuming `@figma/rest-api-spec` and catching API response shape errors at compile time
+- `zod` ^4.3.6 (optional): Runtime validation of curl string responses — catches malformed JSON, auth errors, and API changes; `@zod/mini` at ~2KB gzipped if bundle size is critical
 
-Defer `svgo` for SVG optimization — it requires `shell.exec` to run and adds complexity; evaluate only if raw SVG quality is insufficient.
+**Critical constraint notes:**
+- Figma Variables REST API is Enterprise-only; extract design tokens from node style properties instead (covers 90%+ of use cases)
+- Rate limits: Tier 2 endpoints at 50 req/min; batch image export node IDs in a single `/v1/images` call to stay within limits
+- Figma URLs exist in both `figma.com/file/KEY/...` and `figma.com/design/KEY/...` formats; URL parser must handle both
+- Ship Studio shell timeout is 120s; use node-specific endpoints with `ids` parameter, never full-file fetches on large designs
 
 ### Expected Features
 
-The feature landscape is well-defined. Competitors Locofy, Anima, Builder.io, and Figma MCP all extract layout structure and design tokens — these are table stakes. The differentiator is the framework-agnostic brief format rather than framework-specific code output.
+Research identified a clear v1 (ship), v1.x (add after validation), and v2+ (defer) split. The v1.1 milestone specifically targets features that v1.0 user testing proved necessary to close the 80% → ~100% accuracy gap.
 
-**Must have (table stakes — v1):**
-- **Figma URL input + PAT authentication** — foundational; nothing works without this
-- **Layout structure extraction** — auto-layout hierarchy, sizing modes, spacing, alignment; the core differentiator and highest-complexity task
-- **Design token extraction** — colors, typography, spacing, radii, shadows; AI needs these to avoid hardcoded values
-- **Rendered PNG of selection** — visual reference alongside structured data; critical for AI accuracy
-- **Component identification** — detect INSTANCE nodes, surface component names and basic variant info
-- **Structured brief formatting** — combine all data into a coherent markdown brief under ~12K tokens
-- **Clipboard output** — paste-ready workflow into Claude Code; friction kills adoption
+**Must have for v1.1 (table stakes):**
+- Smarter asset detection — v1.0 gap: complex nested illustrations described as text caused Claude Code to fabricate replacements; users expect "if it looks like an image, export as image"
+- Asset-to-layout mapping — v1.0 gap: flat asset list without positional context left Claude Code guessing which asset belongs where in the layout tree
+- Brief instructions (plan mode, asset-only rule, verification checklist) — explicit 2-3 behavior guidance for Claude Code reduces hallucination and improves first-build accuracy
+- Human-friendly UX terminology — v1.0 jargon ("Extraction Scope", "Single Node") confused non-technical users; plain language reduces cognitive load
 
-**Should have (v1.x — add after core proves valuable):**
-- **Asset export (SVG icons, PNG images)** — needed when Claude Code cannot reference icons from descriptions
-- **Component property mapping** — full variant/boolean/text props for accurate code generation
-- **Design token tiering** — primitive/semantic/component hierarchy produces more consistent code
-- **Brief size awareness and chunking** — prevents degraded AI output for large selections
-- **Scope selection (frame/page/node)** — allows extracting more than individual frames
-- **Accessibility data extraction** — alt text, aria-hidden markers, semantic HTML hints
+**Should have for v1.1 (differentiators):**
+- Smart composition detection with complexity scoring (child count, nesting depth, vector path count, blend/mask presence)
+- Breadcrumb asset mapping in brief (e.g., "Card > Header > Icon") — eliminates placement guesswork for Claude Code
+- Executable verification loop — checklist tied to actual extracted tokens and assets, not vague instructions
+- Progressive asset disclosure in results UI — group by type (icons, illustrations, photos); show count upfront before extraction
 
-**Defer (v2+):**
-- Visual annotations / Dev Mode data
+**Firm anti-features (explicitly out of scope for v1.1):**
+- Code generation with framework targets — the entire Ship Studio thesis is that Claude Code generates better code in project context
+- Automatic component detection from structure alone — over/under-detects without designer naming intent from Figma
+- Real-time design sync — polling/webhook complexity not justified by per-session use case
+- Multi-file batch extraction — explodes scope; extract one frame at a time
+
+**Defer to v2+:**
 - W3C DTCG token format export
-- Batch extraction, brief templates, Figma Variables API integration (Enterprise-only anyway)
-
-**Anti-features to avoid:** code generation with framework targets, OAuth, real-time sync, full design system import, responsive breakpoint stitching.
+- Visual annotations / Dev Mode data inclusion
+- Brief templates / customization
+- Integration with Figma Variables API (Enterprise-only)
 
 ### Architecture Approach
 
-The architecture is a linear six-component pipeline with clear component boundaries and typed intermediate data structures. No component calls back to a previous stage. The pipeline is naturally organized into three phases: Foundation (URL Parser + API Client), Core Extraction (Node Tree Parser + Token Extractor), and Assets + Output (Asset Exporter + Brief Formatter). Assets can be parallelized with token extraction since both consume API Client output independently.
+The v1.0 baseline is a six-stage linear pipeline: URL Parser → Figma API Client → Layout Normalization → Token Extraction → Asset Export → Brief Assembly. This pipeline is sound and v1.1 extends it without any refactoring. Two new pure-function modules are inserted at well-defined seams: `assets/compose.ts` (composition analysis, runs before `identify.ts`) and `brief/asset-mapping.ts` (layout-to-asset linking, runs after `export.ts`). Four existing modules receive targeted modifications: `identify.ts`, `export.ts`, `generate.ts`, and `MainView.tsx`. All other modules are untouched.
 
-**Major components:**
-1. **URL Parser** — Pure function; extracts `fileKey` and `nodeIds` from Figma URLs (both `/file/` legacy and `/design/` current formats); handles URL-encoded node IDs
-2. **API Client** — Wraps all `shell.exec` + `curl` calls with auth headers, JSON parsing, error handling, and rate-limit retry; typed with `@figma/rest-api-spec` response types
-3. **Node Tree Parser** — Depth-first traversal of raw Figma JSON; produces normalized `DesignTree` with flat node list and hierarchy metadata; classifies nodes by role (container, shape, text, component, vector)
-4. **Token Extractor** — Walks parsed tree; deduplicates and categorizes colors (0-1 float converted to hex/rgba), typography, spacing, radii, and shadows
-5. **Asset Exporter** — Requests image renders and downloads assets to `/.figma-assets/` directory via curl; returns file path manifest; must download immediately (S3 URLs expire)
-6. **Brief Formatter** — Assembles `DesignTree` + `DesignTokens` + `ExportedAsset[]` into a markdown design brief under ~12K tokens; outputs to clipboard
+The key architectural pattern for v1.1 is **metadata augmentation before classification**: analyze node complexity first (compose.ts), then use that metadata when classifying assets (identify.ts). This enables early UI warnings about composition export count before expensive API calls begin, and keeps asset classification logic clean and independently testable.
 
-Key patterns: shell-based API client with retry, depth-first tree walker with visitor, progressive extraction (fail-forward with warnings), file-based asset pipeline with predictable naming.
+**Major components for v1.1:**
+1. `assets/compose.ts` (NEW) — Walk LayoutNode tree, score composition complexity (vectorCount, nesting depth, blend/mask presence), return `CompositionCandidate[]` for use in asset classification
+2. `brief/asset-mapping.ts` (NEW) — Traverse layout tree, build nodeId → breadcrumb map, match exported assets to their tree position, return `AssetMapping[]` for brief inclusion
+3. `assets/identify.ts` (MODIFIED) — Accept `CompositionCandidate[]` as input; route complex compositions to `png-render` export type instead of SVG text description; backward compatible
+4. `assets/export.ts` (MODIFIED) — Route `png-render` entries through the same `/v1/images` batch endpoint as SVG exports; split results by type post-call
+5. `brief/generate.ts` (MODIFIED) — Add `buildInstructionsSection()` (plan mode, asset-only rule, verification) and `buildAssetMappingTable()`; update section order (Metadata → Instructions → Preview → Tree → Tokens → Components → Asset Mapping)
+6. `views/MainView.tsx` (MODIFIED) — Surface composition count warning before extraction starts; simplify terminology ("What to extract?" not "Extraction Scope"); make tree preview collapsible; add "Rendering compositions..." progress phase label
+
+**Key patterns:**
+- Pure function data transformation throughout — all new modules are side-effect free, fully testable, deterministic
+- Composition analysis at identification time (not export time) — enables early warnings and clean API batching
+- Breadcrumb depth capped at 3 levels — preserves useful context without overwhelming the brief reader
+- Modular brief section builders — each section is an independent function, testable in isolation, easy to add/remove
 
 ### Critical Pitfalls
 
-1. **Fetching entire file trees without `ids`/`depth` parameters** — Figma files can be tens of megabytes; Figma enforces a 55-second processing limit; the Ship Studio shell timeout is 120 seconds. Always use `GET /v1/files/:key/nodes?ids=X` when node IDs are available. Never fetch the full file as a first resort.
+1. **Over-exporting everything as images** — Heuristic too aggressive bloats the asset directory (50+ files) and confuses Claude Code with irrelevant choices. Prevention: define explicit complexity thresholds before implementation (3+ nested children AND at least one: gradient, mask, blur, or complex path); measure "% of exported assets used in Claude Code output" and target >80%; add debug mode logging why each node was exported.
 
-2. **Ignoring rate limits** — Starter plan users get only 10 req/min on Tier 1 endpoints; View/Collab seats are 6 requests per *month*. The image rendering endpoint triggers CloudFront throttling after ~10 sequential requests. Batch all image export node IDs into a single API call; implement `Retry-After` header-respecting backoff from day one.
+2. **Under-exporting complex compositions** — Heuristic too conservative and v1.0's core failure persists. Prevention: collect 5-10 real Figma files where v1.0 failed (Claude Code fabricated replacements); build the heuristic from these concrete examples, not from theory; specifically verify that all known problem cases now export as images.
 
-3. **Mishandling auto-layout to CSS mapping** — Children with `layoutPositioning: "ABSOLUTE"` are taken out of flex flow while remaining visually nested. `FILL` sizing maps to `flex: 1` only when the parent has auto-layout in that axis, not unconditionally. Check `layoutPositioning` on every child, not just `layoutMode` on the parent. Output layout intent (not CSS) and let Claude Code translate.
+3. **Too many brief instructions — Claude Code compliance degrades** — More than 2-3 behaviors in an instruction list causes model compliance to drop. Instructions that conflict or cannot be executed (e.g., "verify against PNG" when Claude Code cannot open files) are actively harmful. Prevention: limit to 2-3 core behaviors; use positive framing not imperatives; A/B test before shipping; treat the instruction template as versioned code.
 
-4. **Figma colors use 0-1 float range, not 0-255** — Passing raw Figma color values to CSS output silently produces nearly-black or nearly-invisible colors. Alpha is on the paint's `opacity` property, not the color object for solid paints. Build and test the color conversion utility before anything else in token extraction.
+4. **Asset mapping misaligned with actual export filenames** — Asset filename in brief does not match the file actually written to disk, or breadcrumb is stale because it was computed before the export step renamed the file. Prevention: derive filenames from Figma layer names at classification time (before export); use nodeId as the stable foreign key to join mapping and export results; validate with an unfamiliar user ("can you identify where each asset belongs?").
 
-5. **Image URLs expire; S3 URLs must be downloaded immediately** — `GET /v1/images` returns temporary S3 URLs (14-30 day expiration). Never store these URLs in the brief — download all assets to local paths during extraction and reference local paths only.
+5. **API rate limiting causes mid-extraction failures on complex designs** — Complex designs with many assets can require 50-150 API calls; hitting 429 partway through breaks the extraction with a poor error message. Prevention: batch all image export node IDs in a single `/v1/images` call; implement retry with exponential backoff on 429 (read `Retry-After` header); show progress count during extraction; surface a clear "rate limited — retry in X seconds" message.
 
-6. **Styles require two-step lookup** — `GET /v1/files/:key/styles` returns only metadata (name, type), not values. Style values (fill colors, font properties, shadow parameters) live on associated nodes. Must batch-fetch those nodes with a second API call to get actual token values.
+6. **UX simplification removes power user workflows** — Hiding advanced options without a disclosure path alienates users who extract subsets, manage token deduplication, or need to verify what was exported before using the brief. Prevention: progressive disclosure (hide, do not remove); quick path by default, advanced options behind a toggle; test with both new users and power users before shipping.
+
+7. **Composition heuristic breaks on Figma edge cases: masks, rotations, boolean operations** — Standard child-count and depth heuristics miss visually complex nodes that use rotation transforms, MaskMixin clipping, or boolean path operations. Prevention: study Figma API VectorNode, BlendMixin, MaskMixin, and InstanceNode types; add explicit checks for these properties in classifyNode(); build a regression test suite for each edge case discovered during testing.
 
 ## Implications for Roadmap
 
-Based on research, the architecture's natural build-order dependency chain maps directly to a three-phase roadmap. All critical pitfalls cluster in Phase 1 (API infrastructure) and Phase 2 (extraction logic). Phase 3 is integration and output.
+This is a targeted improvement milestone, not a ground-up build. The phase structure follows the implementation dependency chain identified in ARCHITECTURE.md, with the first phase addressing zero-backend changes (instructions text, UX copy) to validate brief format improvements before investing in backend complexity.
 
-### Phase 1: Foundation — API Infrastructure and Auth
+### Phase 1: Brief Instructions and Terminology Cleanup
 
-**Rationale:** URL Parser and API Client have zero dependencies on each other and zero dependencies on any other component. They must exist before any extraction work can begin. All the most severe pitfalls (timeouts, rate limits, URL parsing failures, token security) must be addressed here — retrofitting these patterns later is expensive.
+**Rationale:** Zero backend risk — all changes are text in the brief template and UI copy. Ships value immediately and establishes a measurable success baseline for whether instruction engineering alone improves Claude Code accuracy. A/B test results from Phase 1 inform how to attribute Phase 2 impact. Delivers before any complex heuristic work begins.
 
-**Delivers:** Working Figma API client with auth, rate-limit retry, targeted node fetching, and URL parsing for all Figma URL formats. Validated against real Figma files.
+**Delivers:** Updated brief template with plan-mode instruction, asset-only rule, and verification checklist (2-3 behaviors max); human-friendly UI terminology throughout; collapsible tree preview in results screen; clarified progress labels.
 
-**Addresses (from FEATURES.md):** Figma URL input, personal access token management, foundational API access enabling everything else.
+**Addresses:** Asset-only rule instruction, plan mode instruction, brief verification instruction, human-friendly terminology (all LOW complexity, Phase 1 per FEATURES.md v1.1 table stakes)
 
-**Avoids (from PITFALLS.md):** Full-file fetch timeouts, rate limit blocking, URL parsing failures, token security mistakes, curl exit-code vs HTTP-status-code confusion, node ID `-` to `:` conversion.
+**Avoids:** Pitfall 3 (too many instructions — limit to 2-3 and test for compliance), Pitfall 6 (instructions Claude Code cannot execute — verify each instruction is actionable)
 
-**Research flag:** Standard patterns — well-documented in official Figma REST API docs. No additional research needed.
+**Research flag:** Standard patterns — brief instruction engineering follows established prompt engineering guidelines (positive framing, 2-3 behaviors, no conflicts). Validate with A/B test before committing to template. No technical deep-dive needed.
 
-### Phase 2: Core Extraction — Layout, Tokens, and Assets
+### Phase 2: Smarter Asset Detection and Asset-to-Layout Mapping
 
-**Rationale:** Node Tree Parser depends on API Client output (Phase 1). Token Extractor depends on Node Tree Parser output. Asset Exporter reuses the API Client. These three components together produce all the raw data the brief needs. This is the highest-complexity phase (layout extraction is the hardest technical problem in the project) and should not be split — the outputs are tightly coupled.
+**Rationale:** This is the highest-value and highest-risk work in v1.1. The composition detection heuristic is the core technical bet — must be validated against real v1.0 problem cases before merging. All four new/modified backend modules (`compose.ts`, `identify.ts`, `export.ts`, `asset-mapping.ts`) are tightly coupled and should ship together. Building them as a unit reduces integration testing complexity.
 
-**Delivers:** Normalized design tree with auto-layout semantics, deduplicated design tokens (colors correctly converted from 0-1 float, typography, spacing), and asset files downloaded to project directory.
+**Delivers:** `assets/compose.ts` (composition complexity analysis); updated `identify.ts` (composition-aware classification with `png-render` type); updated `export.ts` (batch PNG render support via `/v1/images`); `brief/asset-mapping.ts` (breadcrumb mapping with 3-level cap); updated `generate.ts` (asset mapping table section); updated `assets/types.ts` (add `png-render` to exportType union); updated `brief/types.ts` (add `AssetMapping[]` to `BriefInput`).
 
-**Implements (from ARCHITECTURE.md):** Node Tree Parser (depth-first visitor pattern), Token Extractor (progressive extraction with warnings), Asset Exporter (file-based asset pipeline).
+**Addresses:** Smarter asset detection, asset-to-layout mapping, smart composition detection, breadcrumb asset mapping in brief (all Phase 2 per FEATURES.md v1.1)
 
-**Addresses (from FEATURES.md):** Layout structure extraction, design token extraction, rendered PNG of selection, asset export, component identification.
+**Avoids:** Pitfall 1 (over-export — define explicit thresholds first), Pitfall 2 (under-export — validate against v1.0 problem cases), Pitfall 4 (asset mapping misalignment — use nodeId as stable key), Pitfall 7 (edge cases: masks, rotations, boolean ops — study Figma API node types first)
 
-**Avoids (from PITFALLS.md):** Auto-layout absolute children mishandling, color 0-1 float conversion errors, style two-step lookup for token values, image URL expiration (download immediately), SVG black squares for raster-filled nodes, null node handling.
+**Research flag:** Needs research/validation. Heuristic thresholds (vectorCount > 5 = complex, > 2 = moderate) are theoretical starting points — must be tuned against at least 5 diverse real Figma files including known v1.0 failure cases before shipping. Additionally: verify Figma `/v1/images` endpoint batching behavior for mixed-format requests (SVG + PNG render in one call) before implementing the batch in `export.ts`; have a fallback to separate calls if the endpoint does not support mixed formats.
 
-**Research flag:** Needs deeper research on auto-layout edge cases (absolute positioning within auto-layout, `FILL` sizing across axes, `layoutWrap` with `counterAxisSpacing`). Well-documented patterns exist for tree walking and token extraction, but real-world Figma file variation requires testing against diverse files.
+### Phase 3: UX Simplification and Results Screen Polish
 
-### Phase 3: Brief Formatting and UI
+**Rationale:** UI changes wrap the backend behavior from Phase 2. The composition count warning in `MainView.tsx` requires `compose.ts` to be complete. Results screen simplification and progressive asset disclosure are independent of backend but benefit from having real asset counts and types to design around. Placing UX changes last prevents rebuilding the UI when the data model is still evolving in Phase 2.
 
-**Rationale:** Brief Formatter is explicitly the last component — it depends on all upstream outputs. The plugin UI wraps the entire pipeline and can only be finalized once the data shape is known. Building UI early risks rebuilding it when data shapes change.
+**Delivers:** Composition count warning before extraction starts ("This design has 5 complex compositions — they will export as PNG"); simplified results screen with progressive disclosure (quick view default, expandable details); grouped asset display by type (icons, illustrations, photos); "Rendering compositions..." progress phase label.
 
-**Delivers:** Structured markdown brief under ~12K tokens, clipboard output, progress indication during multi-step extraction, clear error messages mapped from HTTP status codes, brief preview before copy.
+**Addresses:** Simplified UX flow, progressive asset disclosure (Phase 3 per FEATURES.md v1.1)
 
-**Implements (from ARCHITECTURE.md):** Brief Formatter (markdown assembly from `DesignTree` + `DesignTokens` + `ExportedAsset[]`).
+**Avoids:** Pitfall 5 (UX simplification breaking power user workflows — hide with a toggle, do not remove; test with power users before shipping)
 
-**Addresses (from FEATURES.md):** Structured brief formatting, clipboard output, semantic layer naming hints in the brief, brief size awareness (warn if >12K tokens estimated).
-
-**Avoids (from PITFALLS.md):** Raw JSON dumped to clipboard (50K+ token noise), no progress indication (user thinks plugin frozen), cryptic error messages, no brief preview before copy.
-
-**Research flag:** Standard patterns — markdown templating with string interpolation is well-understood. No additional research needed. Token count estimation is straightforward (character count / 4 approximation is sufficient for warnings).
-
-### Phase 4: Polish and v1.x Features
-
-**Rationale:** After the core pipeline is validated (users confirm the brief format produces better Claude Code output than screenshots), add the v1.x differentiating features. These are independent additions on top of the stable pipeline.
-
-**Delivers:** Component property mapping (full variant/boolean/text props), token tiering (primitive/semantic/component), scope selection (frame/page/node), accessibility data extraction, brief chunking for large selections.
-
-**Addresses (from FEATURES.md):** All P2 features from the prioritization matrix.
-
-**Avoids:** Premature optimization — these features add value only after the core extraction is proven. Building them before the core is validated risks building the wrong thing.
-
-**Research flag:** Component property mapping may need research into Figma component property API shape (variant properties, boolean properties, text properties, instance swap properties). The `@figma/rest-api-spec` types cover this but real-world component structures vary.
+**Research flag:** Standard patterns — progressive disclosure is well-documented UX. Test with both new and power users before shipping. No technical research needed.
 
 ### Phase Ordering Rationale
 
-- **Foundation first:** Every other component depends on the API Client and URL Parser. The pitfalls that require the most careful design (rate limits, targeted fetching, token security) all live here. Getting this right before writing any extraction logic saves major refactoring cost.
-- **Core Extraction as a unit:** The Node Tree Parser, Token Extractor, and Asset Exporter share a common data flow (tree -> tokens/assets). Building them together allows the data types to evolve with real Figma API data before they are locked in by the Brief Formatter.
-- **Brief Formatting last among core components:** The Brief Formatter is the integration point for all upstream data. Its markdown schema cannot be finalized until the upstream types stabilize. Building it last avoids rework.
-- **v1.x features as a separate phase:** The core thesis (structured brief beats screenshot for Claude Code) must be validated before investing in differentiating features. Real user feedback determines which P2 features matter most.
+- Phase 1 before Phase 2: instructions are zero-risk and establish a measurable success baseline; A/B test from Phase 1 provides attribution context for Phase 2 improvements
+- Phase 2 as a single phase: `compose.ts`, `identify.ts`, `export.ts`, `asset-mapping.ts`, and `generate.ts` are tightly coupled — ship together to avoid partial states that are hard to test
+- Phase 3 last: `MainView.tsx` composition warning depends on `compose.ts` (Phase 2); results screen design is more informed with real asset data from Phase 2 completed
+- Backend phases (1, 2) before UX polish (3): underlying data model should be stable before final UX layer is built
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 2:** Auto-layout edge cases (absolute positioning within auto-layout frames, `layoutWrap` + `counterAxisSpacing` interaction, `FILL` sizing on non-auto-layout axes). Test against at least 5 diverse real-world Figma files before considering layout extraction done.
-- **Phase 4:** Figma component property schema for variant properties, boolean properties, text properties, and instance swap properties — ensure `@figma/rest-api-spec` types cover these adequately before designing the component property mapping output.
+Phases needing deeper research during planning:
+- **Phase 2 — Composition heuristic:** The threshold values (vectorCount > 5 = complex) are theoretical hypotheses. Collect v1.0 failure cases before implementing. Test on at minimum: simple app UI, complex illustration page, design system file, file with masks/rotations/boolean operations. Build the heuristic from failure cases, not from theory.
+- **Phase 2 — Figma API mixed-format batching:** Whether `/v1/images` handles mixed SVG + PNG render node IDs in a single request is not explicitly confirmed in official docs. Verify with a test call before implementing the combined batch in `export.ts`. Have a separate-calls fallback ready.
+- **Phase 2 — Figma node type edge cases:** Study `VectorNode` (vectorNetwork, complex paths), `BlendMixin` (effects: gradients, blur, shadows), `MaskMixin` (clipping), and `InstanceNode` behavior in the Figma plugin API docs before writing `classifyNode()`. These are the most common sources of heuristic edge case failures.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** URL parsing and curl-based API clients are well-documented. The Figma API docs cover all authentication, rate limits, and endpoint parameters comprehensively.
-- **Phase 3:** Markdown brief formatting is standard string templating. No novel patterns needed.
+Phases with standard patterns (skip deeper research):
+- **Phase 1:** Brief instruction engineering follows established Claude prompt engineering guidelines. No novel patterns needed — validate with A/B test not research.
+- **Phase 3:** Progressive disclosure and results screen grouping are well-understood UX patterns. Validate with users, not research.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All key decisions verified against official Figma docs and npm registry. `@figma/rest-api-spec` v0.36.0 confirmed active as of January 2026. Shell transport constraint verified against Ship Studio platform docs. |
-| Features | HIGH | Table stakes validated by cross-referencing 5+ real products (Locofy, Anima, Builder.io, Figma MCP, Figma Dev Mode). MVP definition is clear. Anti-features grounded in architectural rationale, not opinion. |
-| Architecture | HIGH | Six-component pipeline matches patterns from reference implementations (figma-extractor, monday.com production pipeline). Data types derived from official `@figma/rest-api-spec` types. Build order rationale is dependency-driven, not arbitrary. |
-| Pitfalls | HIGH | Critical pitfalls verified against official Figma REST API documentation and community forum reports. Color format (0-1 float), rate limits, and style two-step lookup are all confirmed in official docs. |
+| Stack | HIGH | All constraints verified against Ship Studio plugin environment; Figma API endpoints and rate limits confirmed against official docs; `@figma/rest-api-spec` v0.36.0 confirmed active (published 2026-01-21); no new dependencies needed for v1.1 |
+| Features | HIGH | v1.1 gap analysis based on actual v1.0 user testing results (80% accuracy); feature dependencies clearly mapped; anti-features are well-reasoned; competitive landscape cross-referenced across 5+ real products |
+| Architecture | HIGH | v1.0 codebase reviewed; all integration points validated as additive with zero breaking changes; component boundaries and data flow defined with code-level interface detail; implementation order follows dependency chain |
+| Pitfalls | HIGH | Pitfalls grounded in real v1.0 failure modes and Figma API behavior; rate limiting thresholds verified against official docs; instruction engineering pitfalls verified against Claude prompt engineering docs; Figma node type edge cases are documented in official plugin API docs |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Zod adoption decision:** MEDIUM confidence. Whether to use `@zod/mini` for runtime validation of curl output vs. manual try/catch + type assertions is unresolved. Decide in Phase 1 implementation based on how noisy real Figma API error responses turn out to be.
-- **SVGO necessity:** LOW confidence. Raw SVG quality from Figma's export endpoint is untested. Evaluate in Phase 2 (Asset Exporter) with real exported SVGs before committing to the complexity of running SVGO via `shell.exec`.
-- **Brief token count thresholds:** The 12K token limit for AI accuracy comes from a practitioner report (MEDIUM confidence). Validate with real briefs and Claude Code during Phase 3. May need adjustment up or down.
-- **Auto-layout edge cases in production files:** The `layoutWrap` + `counterAxisSpacing` interaction and absolute-positioned children within auto-layout are documented but their frequency in real user files is unknown. Phase 2 testing with real files will surface any additional edge cases not covered in research.
+- **Composition heuristic thresholds:** The specific values (vectorCount > 5 = complex, > 2 = moderate) are starting hypotheses based on reasoning, not empirical validation. Plan a validation sprint against at least 5 diverse Figma files — including real v1.0 failure cases — before finalizing thresholds. Treat first threshold as a hypothesis to tune.
+
+- **Figma API mixed-format image batching:** Whether `/v1/images` accepts mixed SVG + PNG render node IDs in a single call is unconfirmed. Verify with a test call before implementing the combined batch in `export.ts`. Have separate-calls-per-format as a fallback implementation ready.
+
+- **Brief instruction A/B baseline:** Phase 1 should establish a measurable success baseline (first-build accuracy %, Claude Code compliance rate on asset-only and plan-mode instructions) before Phase 2 ships. Define "improved" quantitatively so Phase 2 impact can be attributed correctly.
+
+- **SVG optimization (SVGO):** Deferred from v1.0 and still unaddressed. Raw SVG exports from Figma contain redundant metadata. If users report large SVG asset sizes, evaluate SVGO via `shell.exec` in a future v1.x. Do not add for v1.1.
+
+- **Zod adoption decision:** Whether to use `@zod/mini` for runtime validation of curl output vs. manual try/catch + type assertions is still unresolved. Decide in Phase 2 implementation based on how noisy Figma API error responses turn out to be with real mixed-format batching.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Figma REST API Documentation](https://developers.figma.com/docs/rest-api/) — endpoints, rate limits, authentication, errors
-- [Figma REST API File Endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) — `ids`, `depth` parameters, node response structure
-- [Figma REST API Rate Limits](https://developers.figma.com/docs/rest-api/rate-limits/) — leaky bucket algorithm, plan-tier limits, Retry-After headers
-- [Figma REST API Scopes](https://developers.figma.com/docs/rest-api/scopes/) — `file_content:read` scope coverage
-- [Figma REST API Variables](https://developers.figma.com/docs/rest-api/variables/) — Enterprise-only restriction confirmed
-- [Figma REST API Changelog](https://developers.figma.com/docs/rest-api/changelog/) — API currency verified
+- [Figma REST API Documentation](https://developers.figma.com/docs/rest-api/) — endpoints, rate limits, authentication, node types, response shapes
+- [Figma REST API Rate Limits](https://developers.figma.com/docs/rest-api/rate-limits/) — tier limits, 429 handling, Retry-After
+- [Figma REST API Scopes](https://developers.figma.com/docs/rest-api/scopes/) — PAT scope requirements confirmed
+- [Figma REST API Variables Endpoints](https://developers.figma.com/docs/rest-api/variables-endpoints/) — Enterprise-only restriction verified
+- [Figma REST API — Image Endpoint](https://www.figma.com/developers/api#get_images) — batch export, format parameters
 - [@figma/rest-api-spec on npm](https://www.npmjs.com/package/@figma/rest-api-spec) — v0.36.0, published 2026-01-21
 - [@figma/rest-api-spec on GitHub](https://github.com/figma/rest-api-spec) — official Figma TypeScript types
+- [Guide to Figma MCP Server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) — competitive landscape, output format comparison
 - [Figma Dev Mode](https://www.figma.com/dev-mode/) — competitive feature analysis
-- [Figma MCP Server Guide](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) — competitive analysis, output format comparison
-- [Figma Plugin API: layoutPositioning](https://www.figma.com/plugin-docs/api/properties/nodes-layoutpositioning/) — ABSOLUTE vs AUTO behavior
-- [Figma Plugin API: RGB/RGBA](https://www.figma.com/plugin-docs/api/RGB/) — 0-1 float color format, opacity vs alpha
-- [Figma Accessibility Features](https://help.figma.com/hc/en-us/articles/31242789265431-Improve-the-accessibility-of-your-site) — alt text, aria-hidden support
+- [Figma-Anthropic Claude Code to Figma](https://www.figma.com/blog/introducing-claude-code-to-figma/) — Figma-Anthropic integration and context-provider pattern validation
+- [Figma OpenAI Codex Partnership](https://openai.com/index/figma-partnership/) — industry direction as of Feb 2026
+- [Claude Prompt Engineering Best Practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) — instruction engineering constraints (2-3 behaviors, positive framing)
+- [Best Practices for Claude Code](https://code.claude.com/docs/en/best-practices) — plan mode and agentic behavior patterns
 - [W3C Design Tokens Spec Stable](https://www.w3.org/community/design-tokens/2025/10/28/design-tokens-specification-reaches-first-stable-version/) — DTCG format confirmed stable October 2025
-- [Figma OpenAI Codex Partnership](https://openai.com/index/figma-partnership/) — competitive landscape context
-- [Figma-Anthropic Claude Code to Figma](https://www.figma.com/blog/introducing-claude-code-to-figma/) — market validation for context-provider approach
-- [Zod v4](https://zod.dev/) — v4.3.6, 57% smaller than v3, verified via npm
+- [Figma Accessibility Features](https://help.figma.com/hc/en-us/articles/31242789265431-Improve-the-accessibility-of-your-site) — alt text, aria-hidden support
+- [Zod v4](https://zod.dev/) — v4.3.6, 57% smaller than v3, 14x faster string parsing; verified via npm
 
 ### Secondary (MEDIUM confidence)
-- [Figma-Context-MCP](https://github.com/GLips/Figma-Context-MCP) — architecture reference for node tree simplification
-- [FigmaToCode](https://github.com/bernaferrari/FigmaToCode) — AltNode intermediate representation pattern, Figma-to-CSS conversion approach
-- [figma-extractor by kataras](https://github.com/kataras/figma-extractor) — extraction pipeline structure, recursive tree traversal patterns
-- [monday.com design-to-code pipeline](https://engineering.monday.com/how-we-use-ai-to-turn-figma-designs-into-production-code/) — production architecture reference
-- [Figma Forum: Images API 429](https://forum.figma.com/report-a-problem-6/rest-api-rate-limit-images-api-returns-429-after-10-requests-cloudfront-49021) — CloudFront throttling on image endpoint, ~10 request limit
-- [Figma Forum: File endpoint timeout](https://forum.figma.com/ask-the-community-7/figma-api-file-endpoint-request-timeout-13231) — 55-second processing limit
-- [Figma Forum: REST API color values](https://forum.figma.com/t/trying-to-make-sense-of-the-rgb-values-returned-by-node-fills/10852) — 0-1 float range for RGB
-- [Figma Forum: Styles metadata vs values](https://forum.figma.com/t/get-values-associated-with-styles-with-files-styles-api-call/1778) — two-step lookup requirement
-- [AI Code Generation Token Limits](https://medium.com/@reuvenaor85/the-way-to-figma-mcp-pixel-perfect-code-generation-for-react-tailwind-1623fd5383b8) — ~12K token threshold for near pixel-perfect accuracy
+- [Locofy.ai](https://www.locofy.ai/), [Anima](https://www.animaapp.com/figma), [Builder.io Visual Copilot](https://www.builder.io/blog/figma-to-code-visual-copilot) — competitive feature analysis (marketing material cross-referenced with plugin community listings)
+- [Figma-Context-MCP](https://github.com/GLips/Figma-Context-MCP) — architecture reference for node tree simplification approach
+- [FigmaToCode](https://github.com/bernaferrari/FigmaToCode) — architecture reference for Figma-to-CSS conversion; AltNode intermediate representation pattern
+- [figma-extractor by kataras](https://github.com/kataras/figma-extractor) — extraction pipeline structure reference
+- [Extracting SVGs Using Figma API — Jacob Tan](https://blog.jacobtan.co/extracting-svgs-using-figma-api) — SVG export patterns and common issues
+- [Figma Forum: Nested Vectors in SVG Export](https://forum.figma.com/t/exporting-svg-elements-using-figma-api-issue/37188) — known edge case with nested vector groups
+- [Exporting Vectors with Figma API — iAdvize Engineering](https://medium.com/iadvize-engineering/using-figma-api-to-extract-illustrations-and-icons-34e0c7c230fa) — complex illustration detection heuristics
+- [AI Code Generation Token Limits](https://medium.com/@reuvenaor85/the-way-to-figma-mcp-pixel-perfect-code-generation-for-react-tailwind-1623fd5383b8) — ~12K token threshold for near pixel-perfect accuracy (practitioner report)
 - [Design Tokens for AI](https://learn.thedesignsystem.guide/p/design-tokens-that-ai-can-actually) — three-tier token hierarchy rationale
+- [Norman's Law in UX](https://www.ux-bulletin.com/normans-law-ux/) — progressive disclosure and simplification pitfalls
+- [Plan Mode in Claude Code — ClaudeLog](https://claudelog.com/mechanics/plan-mode/) — plan mode behavior reference
 
 ### Tertiary (LOW confidence)
-- [Locofy.ai](https://www.locofy.ai/) — competitive feature list (marketing material, cross-referenced with community listing)
-- [Anima](https://www.animaapp.com/figma) — competitive feature list (marketing material)
-- [Builder.io Visual Copilot](https://www.builder.io/blog/figma-to-code-visual-copilot) — competitive feature list (official blog)
-- [SVGO v4](https://svgo.dev/) — may not be needed; evaluate in Phase 2
+- [Figma URL parsing patterns](https://community.latenode.com/t/validate-figma-url-and-extract-file-node-ids-using-regex/20893) — URL regex patterns (community post; cross-referenced with official docs)
+- [SVGO v4](https://svgo.dev/) — deferred dependency; may not be needed; evaluate if raw SVG quality is insufficient
+- [Codespell.ai](https://www.codespell.ai/) — competitive landscape reference (single source, marketing material)
 
 ---
 *Research completed: 2026-02-28*

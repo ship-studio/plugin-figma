@@ -1,159 +1,335 @@
-# Pitfalls Research
+# Pitfalls Research: v1.1 Figma Extraction Plugin
 
-**Domain:** Figma design extraction via REST API for AI code generation
+**Milestone:** v1.1 Brief Quality & UX (asset detection, instruction engineering, UX simplification)
 **Researched:** 2026-02-28
-**Confidence:** HIGH (verified against official Figma developer docs and community reports)
+**Confidence:** HIGH
+
+This research identifies common mistakes when ADDING smarter asset detection, brief instruction engineering, and UX simplification to the existing Figma extraction plugin. The plugin currently works for ~80% of cases. The goal is to close the remaining 20% gap without breaking what already works.
+
+---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Fetching Entire File Trees Instead of Targeted Nodes
+### Pitfall 1: Over-Exporting Everything as Images
 
 **What goes wrong:**
-Calling `GET /v1/files/:key` without the `depth` or `ids` parameters on anything beyond a trivially small file returns the entire document tree. Response payloads can be tens of megabytes. The Figma API enforces a 55-second processing limit -- files exceeding this return a 400 "Request timeout, try a smaller request" or a 500 error. Even when responses succeed, piping multi-megabyte JSON through `shell.exec` with curl risks exceeding the 120-second shell timeout or consuming excessive memory in the plugin process.
+Heuristic for "what should be exported as an image" is too aggressive. Plugin exports every group, vector, or nested structure as a PNG, bloating the brief and asset directory. Claude Code receives 50+ asset files instead of 10, making it harder to understand which asset goes where. Many exports are unnecessary (simple text with background color that could be semantic HTML).
 
 **Why it happens:**
-The naive approach is to fetch the whole file and filter client-side. The API defaults to returning all nodes at full depth when no constraints are specified. Developers do not realize how large real-world Figma files are until they hit timeouts in production.
+The intent is to catch complex illustrations that were previously described textually (the core v1.0 gap). But determining "complex enough to export" requires nuanced heuristics:
+- Is a 3-layer group with 2 vectors + text "complex"?
+- Is a button with drop shadow alone worth exporting?
+- Is a simple icon really unsalvageable as SVG?
+
+Developers lean toward "safe" by exporting everything, betting that more context is better. This backfires—Claude Code gets confused by asset overload.
 
 **How to avoid:**
-- Always use the `ids` parameter to request only the specific node(s) the user selected via their pasted Figma URL. Parse the node ID from the URL (`?node-id=X:Y` or `?node-id=X-Y`).
-- Use the `depth` parameter as a safety net (e.g., `depth=50` as a ceiling) to prevent unbounded tree traversal on deeply nested designs.
-- For page-level extraction, first fetch with `depth=1` to get page-level node IDs, then fetch individual frames with `ids`.
-- Implement response size checks before attempting to parse JSON.
+- Define explicit heuristics BEFORE implementation:
+  - Only export groups with 3+ nested children AND at least one of: gradient, mask, blur, complex path
+  - Never export single rectangles, circles, or text layers
+  - Only export illustrations/complex compositions; not UI chrome (buttons, cards, etc.)
+- Test heuristics on diverse designs: simple app UI, complex illustration pages, design systems
+- Measure: track "% of exported assets used in brief" across test files. Aim for >80%.
+- Add debug mode showing WHY each asset was exported
 
 **Warning signs:**
-- API calls taking more than 10 seconds for a single frame extraction.
-- 400/500 errors with "Request timeout" or "Request too large" messages.
-- Plugin UI freezing during extraction.
-- curl process consuming hundreds of MB of memory.
+- Asset directory has >30 files for a single design
+- Brief mentions only 5-10 assets but 30 are exported
+- Claude Code reports "too many image options, unclear which to use"
+- SVG icons are exported as PNG instead of staying as SVG
+- Simple UI elements (buttons, cards, text) are exported as images
 
 **Phase to address:**
-Phase 1 (Core API Layer) -- the URL parsing and API request construction must be correct from the start. Retrofitting targeted fetching onto a full-file approach requires rewriting the extraction pipeline.
+Asset detection heuristics must be validated in a dedicated testing phase BEFORE merging. Phase: "Asset Detection Validation"
 
 ---
 
-### Pitfall 2: Ignoring Rate Limits and Getting Blocked
+### Pitfall 2: Under-Exporting Complex Compositions
 
 **What goes wrong:**
-Figma uses a leaky-bucket rate limiter with per-user limits that vary by plan and seat type. On Starter plans with Dev seats, you get only 10 requests/minute for Tier 1 endpoints (GET files, GET images). View/Collab seats are far worse: 6 requests per *month* for Tier 1. Extracting a design with structure, images, and styles can easily require 5-10 API calls. A single extraction workflow can exhaust the rate limit, and back-to-back extractions will trigger 429 errors. Once rate-limited, the user's token is blocked for the duration specified in the `Retry-After` header.
+Heuristics are too conservative. Complex nested illustrations (10+ layers of vectors, groups, paths) still aren't detected as "export as image." Plugin describes them textually, Claude Code tries to recreate from description and fabricates a replacement.
+
+This is the CORE v1.0 problem the milestone is trying to solve.
 
 **Why it happens:**
-Developers test with their own Enterprise/Pro accounts and never see rate limits. Users on Starter or free plans hit them immediately. The image rendering endpoint is particularly aggressive -- community reports show 429 errors after only ~10 requests to the Images API due to CloudFront-level throttling.
+Hard to predict what "complex" means without domain knowledge. Same 5-layer structure might be:
+- Complex illustration that needs export
+- Button component that doesn't
+
+Context matters—developers build heuristics without real examples, then realize they missed cases during testing.
 
 **How to avoid:**
-- Batch image export requests: the `GET /v1/images/:key` endpoint accepts multiple `ids` in a single call. Never request images one node at a time.
-- Cache aggressively: store the file tree response and re-parse it rather than re-fetching.
-- Implement exponential backoff with `Retry-After` header respect. The header returns the number of seconds to wait.
-- Surface clear error messages when rate-limited, including the `X-Figma-Upgrade-Link` header value so users can upgrade if needed.
-- Design the extraction pipeline to minimize total API calls (ideally: 1 file/nodes call + 1 images call + 1 image fills call = 3 total).
+- Collect 5-10 real Figma files where v1.0 "failed" (exported as text, Claude Code fabricated)
+- Analyze: what do problem cases have in common? (depth? vector count? node types?)
+- Build heuristic FROM these examples, not from theory
+- During testing, specifically validate: "all v1.0 problem cases now export as images"
+- Add manual override: UI button "export this frame as image" for edge cases
 
 **Warning signs:**
-- HTTP 429 responses from any Figma endpoint.
-- `X-Figma-Rate-Limit-Type: low` header indicating View/Collab seat with severe limits.
-- Users reporting "extraction worked once but now fails."
+- Testing finds cases where complex illustrations still export as text
+- Claude Code still fabricating replacements on certain design types
+- Brief mentions "nested vector group" but no corresponding image
+- Heuristics feel arbitrary
 
 **Phase to address:**
-Phase 1 (Core API Layer) -- rate limit handling and request batching must be built into the API client from day one. Phase 2 (Extraction Logic) should optimize for minimal API calls.
+Heuristic design phase must include real problem cases. Phase: "Asset Detection Design"
 
 ---
 
-### Pitfall 3: Mishandling Auto-Layout to Flexbox Translation
+### Pitfall 3: Instructions Too Long, Too Conflicting, or Not Followed
 
 **What goes wrong:**
-Figma's auto-layout maps to CSS flexbox, but the mapping is not 1:1. Children within an auto-layout frame can have `layoutPositioning: "ABSOLUTE"` (Figma calls this "Ignore auto layout"), which takes them out of the flex flow while remaining visually nested inside the frame. Extracting this as a simple flexbox container with all children as flex items produces broken layouts. Additionally, `layoutSizingHorizontal/Vertical` values of `FIXED`, `HUG`, and `FILL` map to different CSS width/height and flex properties that are easy to get wrong.
+Brief includes 5+ detailed instructions for Claude Code. Claude Code follows some but ignores others. Instructions conflict subtly ("enter plan mode" + "ask clarifying questions" can mean different flows). Result: Brief feels prescriptive but Claude Code doesn't actually follow all of it.
 
 **Why it happens:**
-Auto-layout *looks* like flexbox, so developers assume a simple property mapping works. But Figma combines flexbox semantics with absolute positioning within the same container -- something CSS cannot express without wrapper elements or explicit `position: absolute` on specific children. The `FILL` sizing mode maps to `flex: 1` only when the parent is an auto-layout container in the matching axis, not unconditionally.
+More explicit instructions don't always mean better outcomes. According to Claude's prompt engineering docs:
+- Long instruction lists cause models to "lose" instructions in the noise
+- Instructions should be concise, prioritized, and conflict-free
+- Too many process instructions can confuse agentic behavior
+
+Developers add instructions to feel thorough, not realizing they're reducing compliance.
 
 **How to avoid:**
-- Check `layoutPositioning` on every child node, not just `layoutMode` on the parent.
-- Map sizing modes carefully:
-  - `FIXED` = explicit width/height in pixels.
-  - `HUG` = width/height auto (content-driven).
-  - `FILL` = flex: 1 (only when parent has auto-layout in that axis).
-- Detect children with `layoutPositioning: "ABSOLUTE"` and flag them separately from flow children.
-- Include `constraints` data for absolutely-positioned children (they use constraint-based positioning relative to the parent frame).
-- Output the layout intent as a structured description rather than attempting CSS generation -- let Claude Code handle the CSS translation with full context.
+- Limit instructions to 2-3 core behaviors (max 4)
+- Prioritize: if instruction matters most for accuracy, it goes first
+- Test instruction clarity before committing brief template
+- Consider instructions as hypothesis, not gospel—verify with A/B testing
+- Use example format, not imperative ("Good approach: ask clarifying questions..." vs "You MUST ask...")
 
 **Warning signs:**
-- Extracted layouts where all children appear as flex items but the visual output has overlapping elements.
-- Elements appearing in unexpected positions when rendered from the extracted data.
-- Components that "look right" at one size but break when resized.
+- Brief reads like a procedural manual (10+ steps)
+- Claude Code behavior inconsistent
+- Users report briefs feel "over-engineered" or "bossy"
+- Instruction compliance drops as brief grows longer (>300 words)
 
 **Phase to address:**
-Phase 2 (Layout Extraction) -- this is the core complexity of the extraction logic and needs dedicated attention. Build test cases with real-world designs that use absolute positioning within auto-layout.
+Brief instruction template testing phase. Phase: "Brief Instruction A/B Testing"
 
 ---
 
-### Pitfall 4: Styles Require Two-Step Lookup, Not Direct Access
+### Pitfall 4: Asset-to-Layout Mapping Is Incomplete or Confusing
 
 **What goes wrong:**
-Developers expect a single endpoint to return style definitions (color values, font properties, shadow parameters). In reality, `GET /v1/files/:key/styles` returns only style *metadata* (name, key, type, node_id) -- not the actual values. To get the fill colors, font families, or shadow properties, you must make a second call to `GET /v1/files/:key/nodes?ids=<style_node_ids>` and extract the style values from those nodes' properties. Missing this two-step process results in a design brief with style names but no values.
+Brief includes asset list and layout structure, but doesn't explicitly tie assets to layout positions. Claude Code sees layout and assets separately but doesn't know which asset goes where. Claude Code guesses, picks wrong asset, or uses multiple. Brief tried to help but failed.
 
 **Why it happens:**
-The API endpoint naming (`/styles`) implies it returns style data. The response structure includes `style_type` and `name` which look like useful design token data, but the actual fill/stroke/effect/text values live on the associated nodes, not in the styles metadata.
+Asset mapping is hard because:
+- Layout tree structure != asset file names
+- Multiple assets can be relevant to same element
+- Export process generates asset names; brief must reference them correctly
+- Easy to misalign: brief says "header-icon.svg" but plugin exported "header_icon_2.svg"
+
+Developers assume "if I include layout + assets, mapping is obvious" — it usually isn't.
 
 **How to avoid:**
-- Implement the two-step process: fetch style metadata, then batch-fetch the associated nodes using the `ids` parameter.
-- For files that use Figma Variables (the newer token system), note that the Variables REST API (`GET /v1/files/:key/variables/local`) is restricted to Enterprise plan members only. For non-Enterprise users, you must extract token values from the node tree directly.
-- Parse style information from nodes' `styles` property map, which maps style types (`fill`, `stroke`, `text`, `effect`, `grid`) to style IDs.
-- Build a lookup table: style_id -> style values, derived from the nodes that define those styles.
+- Explicit mapping notation in brief: for each exported asset, include:
+  - Asset file name (exact, matching export)
+  - Where it belongs in layout (exact path)
+  - Why it was exported
+  - Fallback if not used
+- Test mapping clarity: show asset table to someone unfamiliar with design. Can they identify where each asset goes?
+- Validate: did Claude Code use all exported assets correctly?
 
 **Warning signs:**
-- Design brief contains style names like "Primary/Blue" but no actual color values.
-- Token extraction works in testing but fails on files without applied styles.
-- Variables endpoint returning 403/404 for non-Enterprise users.
+- Claude Code uses only 50% of exported assets
+- Brief mentions asset but layout doesn't reference it (orphaned assets)
+- Claude Code asks "where does this asset go?" in generated code
+- Multiple assets seem to do the same job (redundant exports)
 
 **Phase to address:**
-Phase 2 (Design Token Extraction) -- must be designed with the two-step lookup from the start.
+Asset mapping notation + testing phase. Phase: "Asset-to-Layout Mapping Validation"
 
 ---
 
-### Pitfall 5: Figma Colors Use 0-1 Float Range, Not 0-255
+### Pitfall 5: UX Simplification Breaks Advanced Workflows
 
 **What goes wrong:**
-Figma's REST API returns colors as `{r, g, b, a}` objects where all values are floats between 0.0 and 1.0. Developers pass these values directly into hex/RGB output, producing colors like `rgb(0, 0, 1)` (which renders as nearly black in CSS) instead of `rgb(0, 0, 255)` (blue). Additionally, `SolidPaint` nodes separate `color` (RGB without alpha) from `opacity` (on the paint itself), meaning alpha must be derived from the paint's opacity, not the color object.
+Plugin removes "advanced" options:
+- No "choose extraction scope"
+- No "asset settings"
+- No "token deduplication options"
+- No "preview PNG" checkbox
+
+Power users needed these. New simplified UI prevents customization. Users can't refine briefs, must start over.
+
+Or: simplification hides necessary information. Results screen shows only "Copy to clipboard" but doesn't show which assets were exported, which layers were skipped, or where files were saved.
 
 **Why it happens:**
-Every other color API developers encounter uses 0-255 integer ranges or hex strings. The 0-1 float convention is mathematically elegant but counterintuitive. The alpha/opacity separation is a Figma-specific design choice that catches everyone.
+Simplification targets "most common case" — extract a frame, get a brief, done. But design extraction has legitimate advanced use cases:
+- Extract subset of complex page
+- Skip certain layers
+- Customize token deduplication
+- Verify what was exported before using brief
+
+Removing options feels like progress but removes user control.
 
 **How to avoid:**
-- Always multiply r, g, b by 255 and round before outputting to CSS formats.
-- For alpha: use the paint's `opacity` property (defaults to 1.0 if absent), not a fourth channel from the color object. For non-solid paints, alpha *is* on the color object.
-- Validate converted colors against the Figma design visually during development.
-- Build a dedicated color conversion utility that handles all Figma paint types (SOLID, GRADIENT_LINEAR, GRADIENT_RADIAL, GRADIENT_ANGULAR, GRADIENT_DIAMOND, IMAGE, EMOJI).
+- Separate concerns:
+  - Quick path (default): Paste URL, click "Extract", get brief. Hide advanced options.
+  - Advanced path (opt-in): Click "Options", reveal extraction scope, asset filtering, token settings
+  - Hide, don't remove
+- Information hiding (progressive disclosure):
+  - Results screen defaults to "Quick view"
+  - Users can expand "Details" to see assets, skipped layers, file locations
+  - Information is still there; not in your face
+- Test with power users before shipping simplification
+- Golden rule: simplification = less friction for common case, NOT removal of capability
 
 **Warning signs:**
-- All extracted colors appear very dark or very desaturated.
-- Transparent elements appearing opaque, or opaque elements appearing transparent.
-- Color values in the design brief that don't match the Figma design.
+- User feedback: "I used to do X, now I can't"
+- Power users avoid the plugin
+- Users export, then manually edit brief
+- Feature requests for "advanced mode"
+- Users switching to old version
 
 **Phase to address:**
-Phase 2 (Design Token Extraction) -- color conversion should be one of the first utilities built and tested.
+UX simplification must be validated with new AND power users. Phase: "UX Simplification User Testing"
 
 ---
 
-### Pitfall 6: Image URLs Expire and Must Be Downloaded Immediately
+### Pitfall 6: Brief Instructions Conflict with Claude Code's Actual Capabilities
 
 **What goes wrong:**
-The `GET /v1/images/:key` endpoint returns temporary S3 URLs for rendered images. These URLs expire after 14-30 days (14 days for image fills, 30 days for rendered images). Storing these URLs in the design brief or delaying download means the images will be broken links when Claude Code tries to reference them. The URLs are publicly accessible (no auth required), which is both a convenience and a security consideration.
+Brief instructs Claude Code to do something it's not good at:
+- Instruction: "Ask clarifying questions about edge cases"
+  - Reality: Claude Code asks 5 questions, most are already in brief. Feels redundant, slows down build.
+- Instruction: "Verify output against PNG preview"
+  - Reality: Claude Code can't easily open and compare PNG. Instruction is ignored or followed poorly.
+- Instruction: "Replicate exact spacing from design tokens"
+  - Reality: Tokens are approximate; exact matching is impossible. Claude Code tries and fails.
 
 **Why it happens:**
-The API returns URLs, not binary data. It is natural to store the URL and defer download. But these are signed S3 URLs with expiration timestamps baked into the query parameters.
+Instruction engineering for Claude Code is evolving. Developers write instructions based on intuition, not validated experience. What sounds good in theory often doesn't work because:
+- Claude Code has different strengths/weaknesses than humans
+- Context limits make verbosity expensive
+- Some instructions conflict with Claude Code's agentic nature
 
 **How to avoid:**
-- Download all images immediately after receiving URLs from the API. Use curl to save them to the project directory as part of the extraction pipeline.
-- For the rendered PNG preview: request it, download it, and save it to a known path in the project before generating the design brief.
-- For SVG/PNG asset exports: batch-request all asset node IDs in a single `GET /v1/images/:key` call, then download all returned URLs.
-- Never store Figma CDN URLs in the design brief -- only reference local file paths.
-- Be aware of the 32-megapixel limit: images larger than this are silently scaled down.
+- Create instruction hypothesis, test with real Claude Code use:
+  - Before: Brief with instruction X
+  - After: Brief without instruction X
+  - Measure: time to complete, output quality, user satisfaction
+  - Keep instruction only if A/B test shows improvement
+- Validate instructions against Claude's capabilities:
+  - "Ask clarifying questions" — is this actually necessary if brief is already specific?
+  - "Verify output" — can Claude Code actually verify a PNG in its workflow?
+  - "Use only provided assets" — is it necessary if brief context makes this obvious?
+- Version instructions like code with changelog
+- Consult prompt engineering best practices:
+  - Shorter instructions (2-3) work better than longer lists
+  - Positive framing works better than constraints
+  - Examples work better than imperatives
 
 **Warning signs:**
-- Design briefs referencing `https://figma-alpha-api.s3.us-west-2.amazonaws.com/...` URLs instead of local paths.
-- Images that work when extracted but show as broken after a few days.
-- Excessively large PNG downloads for high-resolution frames.
+- Users report briefs feel "over-engineered" or "micromanaging"
+- Claude Code ignores instructions
+- Instructions conflict
+- A/B testing shows no improvement from new instructions
+- Instructions are longer than the design context itself
 
 **Phase to address:**
-Phase 2 (Asset Export) -- the image download pipeline must be integrated with the extraction flow, not bolted on afterward.
+Instruction template validation via A/B testing. Phase: "Brief Instruction Testing & Refinement"
+
+---
+
+### Pitfall 7: Asset Heuristics Break on Edge Cases (Rotations, Masks, Nested Masks)
+
+**What goes wrong:**
+Heuristic works on "normal" designs but breaks on edge cases:
+- Rotated vector groups (heuristic checks nesting, ignores rotation)
+- Masks or clip paths (doesn't detect mask complexity)
+- Nested masks (very complex, looks simple in tree)
+- Boolean operations (union, subtract, intersect)
+
+Some complex designs export correctly; edge cases still fail.
+
+**Why it happens:**
+Figma's document model is complex. Heuristics built without accounting for:
+- VectorNode with vectorNetwork (custom paths)
+- BlendMixin and effects (gradients, blur, shadows)
+- MaskMixin and clipping
+- InstanceNode properties (components behave differently)
+
+Easy to miss edge cases without deep Figma API knowledge.
+
+**How to avoid:**
+- Study Figma API node types:
+  - Read Figma's plugin API docs (VectorNode, InstanceNode, BlendMixin, MaskMixin)
+  - Understand what makes each "complex enough to export"
+- Instrument heuristic with debug logging:
+  - Log: "NodeType: GroupNode, Children: 5, HasBlend: true, HasMask: false → EXPORT"
+- Test on diverse Figma files:
+  - Simple app UI
+  - Complex illustration
+  - Design system file
+  - File with edge cases: rotations, masks, Boolean ops
+- Create regression test suite:
+  - For each edge case found, add test file
+  - Prevent regression when heuristic is updated
+- Consider explicit node type handling
+
+**Warning signs:**
+- Heuristic works on most designs but fails on specific types
+- Debug logs show missed complexity
+- Testing finds new edge case almost every session
+- Heuristic rules feel like workarounds
+
+**Phase to address:**
+Edge case testing phase. Phase: "Asset Detection Edge Case Testing"
+
+---
+
+### Pitfall 8: Figma API Rate Limiting Causes Extraction Failures on Complex Designs
+
+**What goes wrong:**
+Plugin extracts complex 100+ layer design. Figma REST API has rate limits:
+- Dev tier: 25-100 requests/minute
+- Pulling full tree + all image exports = 50-150 API calls
+- Plugin hits 429 rate limit partway through, extraction fails
+- User sees error but not told to retry later
+
+Alternative: plugin takes 2+ minutes because of rate limit backoff; user thinks plugin hung.
+
+**Why it happens:**
+Figma API enforces rate limiting via leaky bucket. Plugin makes:
+1. GET /v1/files/{file_id}
+2. GET /v1/files/{file_id}/nodes
+3. GET /v1/images
+4. Multiple GET requests to CloudFront
+
+Each design element + asset = multiple API calls. Complex designs hit limits fast.
+
+Developers might not implement:
+- Retry logic with exponential backoff
+- Request batching (Figma supports fetching multiple nodes in one call)
+- Image caching
+
+**How to avoid:**
+- Implement batch requests aggressively:
+  - Instead of: GET each node separately
+  - Do: GET multiple nodes in one request
+  - Reduces 100 calls → 5-10 calls
+- Implement retry logic with exponential backoff
+- Cache image exports:
+  - Store URLs in plugin storage
+  - Reuse cached URLs if design hasn't changed
+- Measure API call efficiency:
+  - Log: "calls_made, api_time, image_downloads"
+  - Target: complex design (100 layers) should be <30 API calls total
+- Set user expectations:
+  - UI: "Extracting design... (calls: 5/50)"
+  - Show progress so user doesn't think plugin hung
+  - If rate limited: clear message + countdown
+
+**Warning signs:**
+- Extraction fails on large/complex designs
+- Plugin takes 2+ minutes
+- No error message when rate limit hit
+- Plugin doesn't retry
+- API call count seems high (>50 calls for <50 layers)
+
+**Phase to address:**
+Performance & reliability testing phase. Phase: "API Performance & Rate Limit Handling"
 
 ---
 
@@ -161,112 +337,131 @@ Phase 2 (Asset Export) -- the image download pipeline must be integrated with th
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Fetch entire file tree without `ids`/`depth` | Works for small test files | Timeouts on real files, excessive memory, slow UX | Never -- always use targeted fetching |
-| Skip error handling for 429 responses | Faster initial development | Users get cryptic errors, repeated failures | Never -- rate limit handling is core infrastructure |
-| Store raw Figma node JSON in the design brief | Quick to implement, maximum data | Massive clipboard content, too much noise for Claude Code | MVP only -- must be replaced with structured summary |
-| Hardcode color/spacing values instead of extracting tokens | Simpler extraction | Every design needs manual token identification | Never -- token extraction is core value proposition |
-| Single curl call for everything | Simple implementation | Blocks on rate limits, no recovery from partial failures | Never -- pipeline should be multi-step with checkpoints |
-| Skip node type checking during traversal | Fewer conditionals | Crashes on unexpected node types (STICKY, CONNECTOR, WIDGET) | MVP only -- add type guards before public release |
+| Skip edge case testing for heuristics | Faster MVP launch | Heuristics fail on real designs, must be rewritten | Never |
+| Export everything as image | Fewer missed exports | Brief bloat, asset confusion, Claude Code misses instruction | Only as temporary validation; must constrain before shipping |
+| Long instruction lists (5+ behaviors) | Feels thorough | Claude Code ignores instructions, brief feels prescriptive | Never |
+| Skip instruction A/B testing | Faster iteration | Instructions don't improve accuracy | Never |
+| Ignore Figma API rate limiting | Simpler implementation | Fails on complex designs, poor UX | Never |
+| Hide advanced options completely | Cleaner UI | Power users lose workflows | Never |
+| Skip asset mapping in brief | Simpler template | Claude Code guesses wrong asset placement | Never |
+
+---
 
 ## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Figma REST API authentication | Sending token as query parameter or Bearer token | Use `X-Figma-Token` header: `curl -H "X-Figma-Token: <token>"` |
-| Figma URL parsing | Assuming node IDs always use `:` separator | Figma URLs use `-` in the `node-id` parameter (e.g., `node-id=1-2`) but the API expects `:` (e.g., `1:2`). Always convert `-` to `:` when extracting from URLs |
-| Image rendering endpoint | Requesting `format=svg` for complex frames with images | SVG export embeds raster images as black squares. Use PNG for complex frames with image fills. Reserve SVG for icons and simple vector shapes |
-| Variables endpoint | Assuming Variables API is available to all users | Variables REST API is Enterprise-only. Fall back to extracting values from the node tree's `fills`, `strokes`, and `effects` properties for non-Enterprise users |
-| shell.exec with curl | Not handling curl errors or non-zero exit codes | Check curl exit code AND HTTP status code. curl can succeed (exit 0) but return an HTTP 400/429/500 body |
-| Node ID format in API | Passing node IDs with URL encoding issues | Node IDs contain colons (e.g., `123:456`). When used in URL query params, colons must be URL-encoded as `%3A` or the IDs must be comma-separated correctly |
+|-------------|----------------|-----------------|
+| **Figma REST API → Plugin** | Assuming all nodes are simple; missing VectorNode, BlendMixin, MaskMixin complexity | Read Figma plugin API docs, understand each node type's complexity markers, test on diverse file types |
+| **Asset export → Brief inclusion** | Exporting asset but not mapping it to layout | Explicit mapping: "Asset X belongs in Layout Y because Z" |
+| **Instruction template → Claude Code** | Writing instructions without testing if Claude Code follows them | A/B test instruction changes: before vs after, measure impact |
+| **Rate limiting → User experience** | Silent failure or vague error when API limit hit | Implement retry logic, show progress, clear error message with guidance |
+| **UX simplification → Power user workflows** | Removing features under guise of simplification | Separate quick path (default) from advanced path (opt-in toggle) |
+| **Heuristic → Real designs** | Building heuristic from theory, testing on synthetic examples | Start with real problem cases from v1.0 feedback |
+
+---
 
 ## Performance Traps
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Requesting images one node at a time | Extraction takes minutes, frequent 429 errors | Batch all node IDs into a single `GET /v1/images/:key?ids=A,B,C` call | After 10+ sequential image requests |
-| Not using `depth` parameter | API calls take 30+ seconds, occasional timeouts | Set `depth` parameter appropriate to extraction needs | Files with 1000+ nodes or deep nesting (10+ levels) |
-| Downloading full-resolution PNGs for preview | 10MB+ image files, slow clipboard copy | Use `scale=1` (default) or `scale=0.5` for preview images. Reserve higher scales only if user requests it | Frames wider than 2000px at 2x scale |
-| Recursively processing every node type | Extraction processes sticky notes, connectors, widgets that add no code value | Filter by relevant node types: FRAME, GROUP, COMPONENT, INSTANCE, TEXT, RECTANGLE, ELLIPSE, VECTOR, LINE | Files that use FigJam elements or have annotations |
-| Parsing JSON response synchronously in plugin thread | UI freezes during extraction of medium-to-large designs | Offload JSON parsing to a background step or process incrementally | JSON responses larger than 1MB |
+| Exporting all layers as images | Asset directory has 50+ files, Claude Code confused | Only export groups with 3+ children + complexity; aim for <20 assets | Heuristic too aggressive |
+| No API request batching | Plugin takes 2+ min on complex design, API limit hit frequently | Batch requests, reduce 100 calls → 10 calls | Complex designs (100+ layers) |
+| No image caching | User extracts same design twice, both times slow | Cache image URLs in plugin storage | Repeated extractions |
+| Over-specified instructions | Instructions longer than design context, Claude Code ignores them | Limit to 2-3 core instructions, A/B test | Brief instructions grow beyond 300 words |
+| Deep nesting in brief | Layout tree is 10+ levels deep, Claude Code loses context | Flatten tree, use explicit asset-to-layout mapping | Complex designs with many groups |
+
+---
 
 ## Security Mistakes
 
 | Mistake | Risk | Prevention |
-|---------|------|------------|
-| Logging or displaying the full Figma personal access token | Token grants read access to ALL user's Figma files with no scope restriction | Show only last 4 characters in UI. Never log full token. Store in plugin storage (persisted per-project, not globally readable) |
-| Including Figma token in generated design brief | Token ends up in clipboard, pasted into Claude Code, potentially logged | Never include the token in any output. The design brief should contain zero authentication data |
-| Not warning users about token scope | User does not realize the PAT accesses everything in their Figma account | Display a clear warning during token setup: "This token grants access to all files in your Figma account" |
-| Storing token in plaintext in a committed file | Token exposed in git history | Use Ship Studio's plugin storage API (`storage.get`/`storage.set`), which persists per-project and is not committed to git |
+|---------|------|-----------|
+| Storing Figma PAT without encryption | PAT visible in browser dev tools, localStorage dumps | Encrypt token before storage, access only when needed, never log |
+| Embedding design content in brief | Screenshots may contain sensitive design or proprietary patterns | Brief includes structure + tokens + assets only, not design screenshots |
+| Logging asset names/design structure | Logs may be sent to error tracking, revealing design info | Sanitize logs, log only error codes and counts, not content |
+| Not validating Figma API response | Malicious or corrupted response causes failures | Validate response structure, handle null/undefined gracefully |
+
+---
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| No progress indication during extraction | User thinks the plugin is frozen; clicks extract again, doubling API calls | Show step-by-step progress: "Fetching design tree..." / "Rendering preview..." / "Downloading assets..." |
-| Cryptic error messages from API failures | User cannot diagnose whether the issue is their token, the URL, rate limits, or file permissions | Map HTTP status codes to human-readable messages: 403 = "Check your token permissions", 429 = "Rate limited -- try again in X seconds", 404 = "File or node not found" |
-| No validation of pasted Figma URL before API call | User pastes a Figma community URL, prototype link, or dev mode URL that does not resolve to an API-accessible file/node | Validate URL format before making any API calls. Extract file key and node ID with regex. Reject URLs that are not `figma.com/design/` or `figma.com/file/` patterns |
-| Dumping the entire raw node tree into the design brief | Claude Code receives 50,000+ tokens of nested JSON, most of which is irrelevant metadata | Summarize the tree: extract layout structure, meaningful properties, and design tokens. Strip internal Figma metadata (plugin data, version info, change tracking) |
-| Not showing extraction results before copying to clipboard | User cannot verify what was extracted before pasting into Claude Code | Show a preview/summary of the extracted design brief before the user copies it |
+| Hidden complexity in simplified UI | Users don't understand what plugin does or where options are | Progressive disclosure: show quick path by default, reveal details on demand |
+| No feedback during extraction | Plugin seems hung, user force-closes and retries | Show progress: "Extracting... 5/50 layers", "Downloading assets..." |
+| Results screen overwhelms | Users don't know where to start or what's important | Use tiered information: headline, summary, expandable details |
+| Instructions conflict or feel micromanaging | Users feel brief is bossy, ignore instructions | Limit to 2-3 core behaviors, frame as helpful guidance |
+| Asset names auto-generated and meaningless | Users see "Group 42", "Vector 5"; can't identify assets | Export with context-aware names: "hero-illustration", "accent-shape" |
+| Manual verification is tedious | Users can't verify "did plugin extract everything?" before using brief | Add checklist to results: "Layers: 50, Assets: 10, Tokens: 25. Complete?" |
+
+---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **URL Parsing:** Often missing handling for new Figma URL formats (e.g., `/design/` paths vs. legacy `/file/` paths, branch URLs, prototype links) -- verify with 5+ real Figma URLs of different types
-- [ ] **Node ID Conversion:** Often missing the `-` to `:` conversion for node IDs extracted from URLs -- verify extracted IDs work in API calls
-- [ ] **Color Extraction:** Often missing opacity/alpha handling -- verify extracted colors match Figma visually, including semi-transparent colors
-- [ ] **Text Styles:** Often missing mixed-style text nodes (nodes where different character ranges have different fonts/sizes/colors) -- verify with a text node that has bold and regular text
-- [ ] **Nested Components:** Often missing component instance overrides (text overrides, fill overrides, visibility toggles) -- verify with a component instance that has customized properties
-- [ ] **Auto-Layout Gaps:** Often missing `itemSpacing` vs. `counterAxisSpacing` distinction (gap between items vs. gap between rows in wrapped layouts) -- verify with a wrapping auto-layout frame
-- [ ] **Asset Export:** Often missing that SVG export produces black squares for nodes containing raster image fills -- verify SVG output for nodes that contain photographs or image fills
-- [ ] **Empty Nodes:** Often missing null checks -- the `nodes` map from `GET /v1/files/:key/nodes` can contain null values for nodes that failed to render or do not exist
-- [ ] **Gradient Extraction:** Often missing that `GRADIENT_ANGULAR` has no direct CSS equivalent -- verify gradient rendering matches Figma
-- [ ] **Boolean Operations:** Often missing that BOOLEAN_OPERATION nodes (union, subtract, intersect, exclude) should be exported as SVG, not decomposed into child shapes -- verify vector shapes export correctly
+- [ ] **Asset Detection:** Heuristic validated. Problem cases from v1.0 are exported as images; no over-export bloat on simple designs. Tested on 3+ diverse designs.
+- [ ] **Asset Mapping:** Every exported asset explicitly mapped to layout position. Brief reader can identify where each asset belongs. Tested with unfamiliar user.
+- [ ] **Brief Instructions:** A/B tested instruction template. Instructions improve accuracy/speed measurably, don't conflict, <300 words total. Claude Code compliance >80%.
+- [ ] **Rate Limiting:** API calls batched; extraction works on complex designs (100+ layers) without hitting rate limits or taking >60 seconds. Retry + backoff implemented.
+- [ ] **UX Simplification:** Tested with both new AND power users. No workflows broken; advanced options available via toggle. Users understand what plugin does.
+- [ ] **Results Screen:** Tiered information; no overwhelming details. Progress feedback during extraction. Clear, actionable error messages.
+- [ ] **Asset Naming:** Exported assets have meaningful names, not auto-generated IDs. Users can identify "hero-illustration.png" vs "accent-shape.svg" without looking them up.
+- [ ] **Image Caching:** Repeated extractions use cached image URLs; second extraction is 5-10x faster than first.
+
+---
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Full-file fetch causing timeouts | MEDIUM | Refactor API layer to accept node IDs, add `ids` parameter to all file endpoint calls, update URL parser |
-| Rate limit blocking | LOW | Add retry logic with `Retry-After` header, batch image requests, add user-facing wait indicator |
-| Broken color conversion | LOW | Fix multiplication factor (x255), add test suite with known Figma-to-CSS color pairs |
-| Missing auto-layout absolute children | MEDIUM | Add `layoutPositioning` check to tree traversal, restructure layout output to separate flow vs. positioned children |
-| Expired image URLs in briefs | LOW | Change to download-on-extract pattern, replace URL references with local file paths |
-| Token stored insecurely | HIGH | Audit all storage/logging code, rotate compromised tokens, switch to plugin storage API |
-| Raw JSON dumped to clipboard | MEDIUM | Build structured brief formatter, define output schema, filter irrelevant node properties |
+| Over-exporting bloats brief (50+ assets) | HIGH | Redefine heuristic; identify unnecessary assets; batch cleanup. Or: revert to v1.0 logic, ship "conservative export" mode |
+| Heuristic still misses complex designs | HIGH | Debug problem designs; reverse-engineer failures; rewrite heuristic; extensive retesting |
+| Instructions don't improve accuracy | MEDIUM | A/B test revealed no improvement; revert to minimal instructions or redesign based on test data |
+| Rate limiting causes extraction failures | MEDIUM | Implement batching + retry logic; measure API call reduction; retest on complex designs |
+| UX simplification breaks power user workflow | HIGH | Restore advanced options via toggle; test with power users |
+| Asset mapping is still unclear | MEDIUM | Redesign mapping notation; add visual examples; test with unfamiliar user |
+| Instructions too long, Claude Code ignores them | LOW | Trim to 2-3 core behaviors; test compliance improves |
+
+---
 
 ## Pitfall-to-Phase Mapping
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Full-file fetch timeouts | Phase 1: API Client | Test with a 500+ node Figma file; API call returns in under 10s |
-| Rate limit errors | Phase 1: API Client | Run 3 back-to-back extractions without 429 errors; verify retry logic fires on simulated 429 |
-| URL parsing failures | Phase 1: URL Parser | Test with 10+ real Figma URLs of different formats; all correctly extract file key and node ID |
-| Color value conversion | Phase 2: Token Extraction | Compare 10 extracted colors against Figma picker values; all match within rounding tolerance |
-| Auto-layout mishandling | Phase 2: Layout Extraction | Extract a design with absolute-positioned children inside auto-layout; brief correctly identifies both flow and positioned children |
-| Style two-step lookup | Phase 2: Token Extraction | Extract styles from a file with 5+ named styles; all style values (not just names) appear in brief |
-| Image URL expiration | Phase 2: Asset Export | Extract a design with images; verify all referenced files exist locally and are valid images |
-| Clipboard overflow | Phase 3: Brief Formatting | Extract a complex 50+ frame page; clipboard content is under 20,000 tokens and human-readable |
-| SVG black squares | Phase 2: Asset Export | Export an icon set that includes both pure vector icons and icons with image fills; verify SVG quality |
-| Token security | Phase 1: Auth Setup | Verify token never appears in logs, clipboard output, or design brief; verify storage uses plugin storage API |
+| Over/Under-exporting | **Asset Detection Heuristic Design** | Test on 3+ diverse designs; measure % assets used in Claude output; validate v1.0 problem cases export correctly |
+| Incomplete asset mapping | **Asset-to-Layout Mapping Design** | Brief reader identifies where each asset goes; Claude Code uses >80% of assets correctly |
+| Instructions ineffective | **Brief Instruction A/B Testing** | A/B test before/after; measure accuracy, speed, satisfaction; ship only if improvement clear |
+| API rate limiting | **API Performance & Rate Limit Testing** | Complex design (100+ layers) extracts in <60s without hitting limits; batching + retry implemented |
+| UX simplification breaks workflows | **UX Simplification User Testing** | Test with new and power users; no workflows broken; advanced options available and discoverable |
+| Edge case heuristics fail | **Asset Detection Edge Case Testing** | Test suite for edge cases (masks, rotations, Boolean ops); heuristic handles each; prevent regression |
+| Figma API misunderstandings | **Figma API Integration Testing** | Validate node type handling (VectorNode, MaskMixin, BlendMixin); test on diverse file types |
+| Hidden UX complexity | **UX Simplification Design & Testing** | Progressive disclosure validated; quick path feels simple; details available on demand |
+
+---
 
 ## Sources
 
-- [Figma REST API Rate Limits](https://developers.figma.com/docs/rest-api/rate-limits/) -- Official rate limit tiers, leaky bucket algorithm, Retry-After headers (HIGH confidence)
-- [Figma REST API Errors](https://developers.figma.com/docs/rest-api/errors/) -- 400/500 timeout errors for large requests, 429 rate limiting (HIGH confidence)
-- [Figma REST API File Endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- depth parameter, ids parameter, image size limits, node response structure (HIGH confidence)
-- [Figma REST API Variables](https://developers.figma.com/docs/rest-api/variables/) -- Enterprise-only restriction for Variables API (HIGH confidence)
-- [Figma REST API Changelog](https://developers.figma.com/docs/rest-api/changelog/) -- OAuth scope changes, API updates (HIGH confidence)
-- [Figma Forum: Images API 429 after ~10 requests](https://forum.figma.com/report-a-problem-6/rest-api-rate-limit-images-api-returns-429-after-10-requests-cloudfront-49021) -- CloudFront throttling on image endpoint (MEDIUM confidence)
-- [Figma Forum: File endpoint request timeout](https://forum.figma.com/ask-the-community-7/figma-api-file-endpoint-request-timeout-13231) -- 55-second processing limit (MEDIUM confidence)
-- [Figma Forum: REST API color values](https://forum.figma.com/t/trying-to-make-sense-of-the-rgb-values-returned-by-node-fills/10852) -- 0-1 float range for RGB (MEDIUM confidence)
-- [Figma Forum: Styles metadata vs values](https://forum.figma.com/t/get-values-associated-with-styles-with-files-styles-api-call/1778) -- Two-step lookup for style values (MEDIUM confidence)
-- [Figma Plugin API: RGB/RGBA](https://www.figma.com/plugin-docs/api/RGB/) -- Color format specification, opacity vs alpha (HIGH confidence)
-- [Figma REST API spec TypeScript types](https://github.com/figma/rest-api-spec/blob/main/dist/api_types.ts) -- Node types, layout properties, component properties (HIGH confidence)
-- [FigmaToCode](https://github.com/bernaferrari/FigmaToCode) -- Multi-step conversion approach, AltNode intermediate representation (MEDIUM confidence)
-- [Figma Context MCP Issue #142](https://github.com/GLips/Figma-Context-MCP/issues/142) -- Large design context window overflow, chunking strategies (MEDIUM confidence)
-- [figma-extractor](https://github.com/kataras/figma-extractor) -- Recursive tree traversal, color categorization by naming convention (MEDIUM confidence)
-- [Figma Forum: Auto-layout absolute positioning](https://forum.figma.com/ask-the-community-7/auto-layout-makes-contents-absolutely-positioned-32364) -- layoutPositioning AUTO vs ABSOLUTE behavior (MEDIUM confidence)
-- [Figma Plugin API: layoutPositioning](https://www.figma.com/plugin-docs/api/properties/nodes-layoutpositioning/) -- Absolute position within auto-layout documentation (HIGH confidence)
+**Prompt Engineering & Instruction Design:**
+- [Claude Prompt Engineering Best Practices - Anthropic](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)
+- [AI-Assisted Development Best Practices 2026 - DEV Community](https://dev.to/austinwdigital/ai-assisted-development-in-2026-best-practices-real-risks-and-the-new-bar-for-engineers-3fom)
+- [Prompt Engineering Best Practices 2026 - Thomas Wiegold](https://thomas-wiegold.com/blog/prompt-engineering-best-practices-2026/)
+
+**Claude Code Best Practices:**
+- [Best Practices for Claude Code](https://code.claude.com/docs/en/best-practices)
+- [Claude Vision for Document Analysis - GetStream](https://getstream.io/blog/anthropic-claude-visual-reasoning/)
+
+**Figma API & Asset Export:**
+- [Figma REST API Rate Limits - Official Docs](https://developers.figma.com/docs/rest-api/rate-limits/)
+- [Exporting Vectors with Figma API - iAdvize Engineering](https://medium.com/iadvize-engineering/using-figma-api-to-extract-illustrations-and-icons-34e0c7c230fa)
+- [Best Figma Plugins for Vector Export 2026](https://svgmaker.io/blogs/best-figma-plugins-for-vector-illustration-and-clean-svg-export-2026)
+
+**UX Simplification & Complexity:**
+- [Norman's Law in UX: How Complexity Hides in Simplicity - UX Bulletin](https://www.ux-bulletin.com/normans-law-ux/)
+- [Design-to-Code Workflows - UXPin](https://www.uxpin.com/studio/blog/how-no-code-export-tools-simplify-design-to-code-workflows/)
+
+**Design-to-Code Export Common Issues:**
+- [Best Design to Code Tools - GeekFlare](https://geekflare.com/software/best-design-to-code-tools/)
 
 ---
-*Pitfalls research for: Figma design extraction via REST API*
+
+*Pitfalls research for: Ship Studio Figma Plugin v1.1 (Asset Detection, Instruction Engineering, UX Simplification)*
 *Researched: 2026-02-28*

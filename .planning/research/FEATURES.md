@@ -208,3 +208,500 @@ Ship Studio's plugin sits squarely in category 2 but with a critical difference:
 ---
 *Feature research for: Figma design extraction for AI code generation (Ship Studio plugin)*
 *Researched: 2026-02-28*
+
+---
+
+## v1.1 Feature Roadmap: Smart Asset Detection, Brief Instructions, UX Simplification
+
+**Context:** v1.0 user testing (80% first-build accuracy) identified three critical gaps:
+1. **Complex illustrations** (nested vector groups) were described textually instead of exported as images, causing Claude Code to fabricate replacements
+2. **Assets lacked location context** — brief listed assets in a flat table without showing where each belonged in the layout tree
+3. **UX had too many steps** and used jargon ("Extraction Scope", "Single Node") that confused users
+4. **No explicit guidance** for Claude Code on planning, using only provided assets, or verifying output
+
+**Goal for v1.1:** Improve first-build accuracy from 80% → near 100% by fixing asset detection, adding instruction guidance, and simplifying UX.
+
+---
+
+### v1.1 Table Stakes
+
+| Feature | Why Expected | Complexity | Notes | Phase |
+|---------|--------------|------------|-------|-------|
+| **Smarter Asset Detection** | v1.0 gap: complex illustrations described instead of exported, causing fabrication. v1.1 MUST fix this. Users expect "if it looks like an image, export as image". | MEDIUM | Heuristics detect groups with high child count, deep nesting, or many vector paths; export as PNG when complexity exceeds threshold. Figma API provides node structure; plugin infers exportability. | 2 |
+| **Asset-to-Layout Mapping** | v1.0 gap: assets listed without context. Users expect "this asset goes here in the layout" not "here's a pile of 30 files". | HIGH | Each exported asset tracks parent path (breadcrumb: "Card > Header > Icon") and position. Requires traversing layout tree during extraction, maintaining parent context per node. | 2 |
+| **Asset-Only Rule Instruction** | v1.0 problem: Claude Code sometimes creates custom SVGs instead of using provided assets when ambiguous. Brief must prevent this. | LOW | Pure instruction text in brief: "Use ONLY the provided assets. Do not create custom SVGs or graphics not in the assets folder." No backend work. | 1 |
+| **Plan Mode / Clarifying Questions Instruction** | Modern AI pattern: before building, the AI should ask clarifying questions about ambiguities. v1.0 never prompts for this. | LOW | Instruction text: "Before you start building, enter plan mode and ask up to 2 clarifying questions." Guides Claude Code behavior. | 1 |
+| **Brief Verification Instruction** | v1.0 problem: when Claude Code's output differs from design, no clear verification path. Users need explicit step. | LOW | Instruction text: "After building, compare your output against the PNG preview. Check text matches, colors match, asset placement matches." Structured checklist. | 1 |
+| **Human-Friendly Terminology** | v1.0 uses jargon ("Extraction Scope", "Single Node", "transform group"). Users expect natural language. | LOW | UX text only; no backend changes. "What do you want to extract?" → "Just this screen" / "Everything on this page". Reduces cognitive load. | 1 |
+| **Simplified UX Flow** | v1.0 has multiple modal steps; users get lost. v1.1 should reduce steps and use progressive disclosure. | LOW | UX/workflow refactor. Fewer modals, clearer question-answer flow, grouped asset results. No backend changes. | 3 |
+
+---
+
+### v1.1 Differentiators
+
+| Feature | Value Proposition | Complexity | Notes | Phase |
+|---------|-------------------|------------|-------|-------|
+| **Smart Composition Detection** | Intelligently decide: "This is a complex illustration → export as image" vs "This is a layout structure → describe as components". Competitors export either all-as-vectors or all-as-descriptions; hybrid approach is rare. | HIGH | Score complexity: child count, nesting depth, path count, visual density. Figma API provides structure; plugin infers intent. Threshold tuning required. | 2 |
+| **Breadcrumb Asset Mapping in Brief** | Each asset shows exact location in design tree (e.g., "photo-hero.png (Card > Image Section > Featured Image)"). Eliminates guesswork on asset placement. | HIGH | Requires layout tree traversal, maintaining parent path for exportable nodes. High value for Claude Code clarity. | 2 |
+| **Executable Verification Loop** | Brief includes actionable verification checklist tied to extracted tokens/assets: "Check if all text matches, all colors match, all asset placements match." Not vague, but executable. | MEDIUM | Verification instructions reference specific extracted design tokens and asset list. Actionable and concrete. | 1 |
+| **Intelligent Instruction Sequencing** | Brief guides Claude Code through explicit sequence: (1) Plan, (2) Ask questions, (3) Build using only assets, (4) Verify. Rarely explicit in design-to-code tools. | LOW | Ordering of instruction sections in brief template. High impact on Claude Code success rate. | 1 |
+| **Progressive Asset Disclosure** | In results screen, don't overwhelm with 30+ assets. Group by type (Icons, Illustrations, Photos) or show only "important" assets upfront. | MEDIUM | Light clustering logic (file type, size, name patterns) or AI classification. Primarily UI/UX. | 3 |
+
+---
+
+### v1.1 Anti-Features to Avoid
+
+| Feature | Why Requested | Why Problematic | Better Alternative |
+|---------|---------------|-----------------|-------------------|
+| **Automatic Component Detection** | "Detect repeated patterns and extract as components." Sounds smart. | Plugin can't infer component intent from Figma structure alone. Over/under-detects. Component naming in Figma is how intent is expressed. | Brief includes guidance: "If you see repeated patterns (buttons, cards), extract them as components. Check the provided component list." Claude Code uses human intent from Figma naming. |
+| **Real-time Design Sync** | "Keep brief updated as design changes." | Expensive (polling/webhook). Most users extract once per session. Adds fragility. | "Extract on demand." User pastes new URL if design changes. Fast, simple, aligns with workflow. |
+| **Automatic Code Generation** | "Why stop at brief? Generate code too!" | Plugin environment is limited; code quality poor. Shifts focus from extraction (plugin's strength) to generation (Claude Code's strength). | Keep plugin focused on extraction. Claude Code generates code. Clear separation. |
+| **Custom Brief Formats** | "Support HTML, JSON, YAML output." | Brief format must be normalized for Claude Code. Fragments the interface. | Brief is markdown (universal, Claude-friendly). If users need JSON, they pipe through Claude. |
+| **Multi-File Batch Extraction** | "Extract 10 screens at once." | Explodes scope. Shared components across files? Cross-file references? Performance degrades. | v1.1 extracts one page/frame at a time. Users repeat if needed. Simple, scoped. |
+
+---
+
+### v1.1 Feature Dependencies
+
+```
+[Smarter Asset Detection]
+    ├── requires → [Figma API node traversal]
+    │
+    ├── enhances → [Asset-to-Layout Mapping]
+    │
+    └── enables → [Smart Composition Detection]
+
+[Asset-to-Layout Mapping]
+    ├── requires → [Smarter Asset Detection]
+    │
+    ├── requires → [Layout Tree Traversal with parent tracking]
+    │
+    └── enables → [Breadcrumb Asset Mapping in Brief]
+
+[Asset-Only Rule Instruction]
+    ├── requires → [Asset-to-Layout Mapping] (users must know what assets are)
+    │
+    └── no code changes (pure instruction text)
+
+[Plan Mode / Clarifying Questions Instruction]
+    ├── no dependencies (pure instruction text)
+    │
+    └── enhances → [Brief Verification Instruction]
+
+[Brief Verification Instruction]
+    ├── requires → [PNG Preview Export] (users need visual reference)
+    │
+    └── enhances → [Asset-Only Rule Instruction]
+
+[Human-Friendly Terminology]
+    ├── no dependencies (UX text only)
+    │
+    └── enhances → [Simplified UX Flow]
+
+[Simplified UX Flow]
+    ├── requires → [Human-Friendly Terminology]
+    │
+    ├── enhances → [Plan Mode Instruction] (fewer setup steps → fewer questions)
+    │
+    └── no hard code dependencies
+
+[Breadcrumb Asset Mapping in Brief]
+    ├── requires → [Asset-to-Layout Mapping]
+    │
+    └── enhances → [Asset-Only Rule Instruction]
+
+[Executable Verification Loop]
+    ├── requires → [Brief Verification Instruction]
+    │
+    ├── requires → [PNG Preview Export]
+    │
+    └── enhances → [Plan Mode Instruction]
+
+[Progressive Asset Disclosure]
+    ├── enhances → [Simplified UX Flow] (fewer assets shown at once)
+    │
+    └── no hard dependencies
+```
+
+**Dependency Critical Path:**
+1. **Phase 1 (Instruction Improvements)** — All are pure text, no dependencies. Can launch independently.
+2. **Phase 2 (Asset Detection + Mapping)** — Smarter Detection blocks Mapping; both block Breadcrumb text. Highest complexity, highest impact.
+3. **Phase 3 (UX Simplification)** — Polish; depends on earlier phases but doesn't block them.
+
+---
+
+### v1.1 MVP Definition
+
+#### Phase 1: Brief Instruction Improvements (Low Risk, High Impact)
+
+**Launch with these** — all are instruction/text changes:
+
+- [ ] Plan Mode / Clarifying Questions instruction
+- [ ] Asset-Only Rule instruction
+- [ ] Brief Verification instruction with actionable checklist
+- [ ] Human-Friendly Terminology (UX text update)
+
+**Rationale:** Addresses v1.0's biggest problems (fabrication, no verification loop) at zero backend cost. Instructions guide Claude Code behavior. Can launch independently.
+
+**Success Metric:** User testing shows improved accuracy and fewer fabricated components when using Phase 1 instructions.
+
+**Validation Test:**
+- Extract a design with ambiguities (missing some assets, unclear layout intent)
+- Build with Claude Code using Phase 1 brief
+- Verify: (a) Claude Code asks clarifying questions, (b) no custom assets created, (c) verification catches differences
+
+#### Phase 2: Asset Detection + Mapping (Medium Risk, High Impact)
+
+**Add after Phase 1 validation** — core technical work:
+
+- [ ] Smarter Asset Detection (heuristics for complex compositions)
+- [ ] Asset-to-Layout Mapping (breadcrumb tracking in brief)
+- [ ] Smart Composition Detection (differentiator)
+
+**Rationale:** Phase 1 fixes instructions; Phase 2 fixes asset quality. Even with instructions, v1.0 fails because illustrations aren't exported as images and assets lack context.
+
+**Trigger for adding:** Phase 1 testing shows remaining failures are because:
+- Complex illustrations still described as layout, not exported as images
+- Assets listed without location context
+
+**Success Metric:** Extract a design with 15+ assets and complex nested vectors. Verify all complex shapes export as images; each asset shows breadcrumb location.
+
+**Complexity:** HIGH — requires Figma API traversal, complexity scoring, threshold tuning, brief restructuring.
+
+#### Phase 3: UX Simplification (Low Risk, Medium Impact)
+
+**Add in parallel with Phase 2 or after** — improves experience without blocking:
+
+- [ ] Simplified UX Flow (fewer steps, progressive disclosure)
+- [ ] Progressive Asset Disclosure (group assets by category in results)
+
+**Rationale:** Polish. Users can use plugin with current UX; simplification is QoL. Doesn't block core functionality.
+
+**Complexity:** LOW to MEDIUM — mostly UI/UX refactor.
+
+**Out of Scope for v1.1:**
+- Real-time Sync, Automatic Code Generation, Batch Extraction, Design System Mapping, Custom Output Formats
+
+---
+
+### v1.1 Feature Prioritization
+
+| Feature | User Value | Implementation Cost | Priority | Phase | Rationale |
+|---------|------------|---------------------|----------|-------|-----------|
+| Asset-Only Rule instruction | HIGH | LOW | P1 | 1 | Directly fixes "Claude fabricates assets" problem; pure text |
+| Plan Mode instruction | HIGH | LOW | P1 | 1 | Guides Claude Code to ask clarifying questions upfront |
+| Brief Verification instruction | HIGH | LOW | P1 | 1 | Closes verification loop; actionable checklist |
+| Human-Friendly Terminology | HIGH | LOW | P1 | 1 | Reduces cognitive load; UX text only |
+| Smarter Asset Detection | HIGH | HIGH | P1 | 2 | Fixes "illustrations exported as text" core problem |
+| Asset-to-Layout Mapping | HIGH | HIGH | P1 | 2 | Fixes "assets without context" gap |
+| Breadcrumb Asset Mapping in Brief | HIGH | MEDIUM | P1 | 2 | Makes asset placement explicit to Claude Code |
+| Executable Verification Loop | MEDIUM | MEDIUM | P2 | 1 | Makes verification actionable, not vague |
+| Smart Composition Detection | MEDIUM | HIGH | P2 | 2 | Differentiator; intelligent detection |
+| Simplified UX Flow | MEDIUM | MEDIUM | P2 | 3 | Polish; reduces user confusion |
+| Progressive Asset Disclosure | MEDIUM | MEDIUM | P2 | 3 | Polish; less overwhelming results |
+| Real-time Sync | MEDIUM | HIGH | P3+ | DEFER | Complexity, weak use case |
+| Automatic Code Generation | LOW | VERY HIGH | P3+ | NEVER | Out of scope; Claude Code handles this |
+| Automatic Component Detection | MEDIUM | HIGH | P3+ | DEFER | Plugin can't infer intent reliably |
+| Multi-File Batch Extraction | LOW | HIGH | P3+ | DEFER | Feature creep; users can repeat extraction |
+| Design System Mapping | MEDIUM | MEDIUM | P3+ | DEFER | Let Claude Code do it with project context |
+
+**Priority Rationale:**
+- **P1:** Must have for v1.1. Directly address v1.0 gaps (fabrication, no mapping, no verification).
+- **P2:** Should have. Enhance value and UX; add when core is solid.
+- **P3+:** Nice to have. Defer to v2+. Either scope creep or unclear demand.
+
+---
+
+### v1.1 Implementation Patterns
+
+#### Pattern 1: Asset Detection Heuristics
+
+**Complexity Scoring (Figma API):**
+
+```typescript
+function scoreComplexity(node: SceneNode): number {
+  if (!isExportCandidate(node)) return 0;
+  
+  let score = 0;
+  const childCount = node.children?.length ?? 0;
+  let pathCount = 0;
+  let depth = 0;
+
+  // Count paths in nested vectors
+  function countPaths(n: SceneNode, level: number) {
+    depth = Math.max(depth, level);
+    if ('vectorPaths' in n) {
+      pathCount += n.vectorPaths?.length ?? 0;
+    }
+    if (n.children) {
+      for (const child of n.children) {
+        countPaths(child, level + 1);
+      }
+    }
+  }
+
+  countPaths(node, 0);
+
+  // Weighted heuristic
+  score = (childCount * 0.2) + (pathCount * 0.3) + (depth * 0.2);
+  
+  // Bonus for "looks like illustration" patterns
+  if (childCount > 10 && pathCount > 20) score += 5;
+  
+  return score;
+}
+
+const THRESHOLD = 15; // Tunable; start conservative
+if (scoreComplexity(node) > THRESHOLD) {
+  exportAsImage(node); // PNG or SVG as fallback
+}
+```
+
+**Figma API Details:**
+- `node.children` — immediate children (count for simple heuristic)
+- `node.vectorPaths` — available on `VectorNode`; use for path counting
+- Recursively traverse to get total path count and depth
+- Threshold starts at 15; tune down if too many vectors stay as descriptions, up if too many groups export as images
+
+**Validation:** Manually extract 3-5 designs with varying complexity; verify threshold correctly identifies illustrations vs layout structures.
+
+---
+
+#### Pattern 2: Breadcrumb Asset Tracking
+
+**Implementation (TypeScript):**
+
+```typescript
+interface AssetWithBreadcrumb {
+  id: string;
+  name: string;
+  type: 'icon' | 'image' | 'illustration';
+  breadcrumb: string; // "Card > Header > Icon"
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+}
+
+function buildAssetMap(node: SceneNode, parentPath: string[] = []): AssetWithBreadcrumb[] {
+  const assets: AssetWithBreadcrumb[] = [];
+  const currentPath = [...parentPath, node.name];
+
+  if (node.children) {
+    for (const child of node.children) {
+      if (isExportableAsset(child)) {
+        assets.push({
+          id: child.id,
+          name: child.name,
+          type: classifyAsset(child), // 'icon', 'image', 'illustration'
+          breadcrumb: currentPath.join(' > '),
+          position: { x: child.x, y: child.y },
+          size: { width: child.width, height: child.height },
+        });
+      }
+
+      // Recurse into children
+      if (child.children) {
+        assets.push(...buildAssetMap(child, currentPath));
+      }
+    }
+  }
+
+  return assets;
+}
+```
+
+**Brief Template Integration:**
+
+```markdown
+## Assets
+
+Each asset is located in the layout tree as shown below. Use the breadcrumb path to understand where each asset belongs in your component structure.
+
+| Asset Name | Type | Location | Size | Export Path |
+|------------|------|----------|------|-------------|
+| button-primary.svg | Icon | Button Bar > Primary Actions > Icon | 24×24 | assets/button-primary.svg |
+| hero-photo.png | Photo | Header Section > Featured Image | 1200×600 | assets/hero-photo.png |
+| empty-state-illustration.png | Illustration | Empty State > Graphic | 400×300 | assets/empty-state-illustration.png |
+```
+
+**Performance:** Path tracking has negligible overhead (string concatenation during traversal). Memory cost: one string per asset (typically <5KB for 50 assets).
+
+---
+
+#### Pattern 3: Brief Instruction Sequencing
+
+**Structure in Brief:**
+
+```markdown
+# Design Brief: [Component Name]
+
+## How to Use This Brief
+
+### Step 1: Plan
+Before you start building, **enter plan mode and ask 1-2 clarifying questions** about any ambiguities in this brief. Examples:
+- "Is the 'featured image' always user-uploaded or a fixed design asset?"
+- "Should the card expand on click or navigate somewhere?"
+
+### Step 2: Build (Asset-Only Rule)
+Use **ONLY the provided assets** listed below. Do not create custom SVGs, illustrations, or graphics that are not in the assets folder. If you cannot build something with the provided assets, ask a clarifying question instead.
+
+### Step 3: Verify
+After building, compare your output against the PNG preview below:
+- ✓ Do all text labels match exactly?
+- ✓ Do all colors match the design tokens?
+- ✓ Are all asset placements and sizes correct?
+- If anything differs, ask for clarification or request the missing asset.
+
+## Layout Structure
+
+[structured tree here]
+
+## Design Tokens
+
+[tokens here]
+
+## Assets
+
+[breadcrumb asset table here]
+
+## PNG Preview
+
+[image here]
+```
+
+**Why This Sequence:**
+1. **Plan** — Claude Code thinks before building; catches ambiguities upfront
+2. **Asset-Only Rule** — Prevents fabrication (v1.0's #1 problem)
+3. **Verify** — Closes the loop if something's off
+
+**Instruction Placement:** Instructions come BEFORE layout/tokens/assets so Claude Code reads them first.
+
+---
+
+#### Pattern 4: Progressive Asset Disclosure in UX
+
+**Current v1.0 Results Screen:** Flat list of 50+ assets, overwhelming.
+
+**v1.1 Progressive Approach:**
+
+```
+Extract Complete ✓
+
+Results Summary:
+  15 Icons
+  3 Illustrations
+  2 Photos
+  1 Custom font family
+
+Assets (grouped by type):
+
+▶ Icons (15)
+    Show/Hide
+    ▼ button-primary.svg [24×24]
+    ▼ button-secondary.svg [24×24]
+    ▼ icon-check.svg [20×20]
+    ...
+
+▶ Illustrations (3)
+    Show/Hide
+    ▼ hero-scene.png [1200×600]
+    ▼ empty-state.png [400×300]
+
+▶ Photos (2)
+    Show/Hide
+    ▼ photo-1.jpg [600×400]
+
+Ready to copy?
+[Copy Brief to Clipboard]
+[View Detailed Report]
+```
+
+**Benefits:**
+- Users see high-level summary first (15 icons, 3 illustrations)
+- Assets grouped by category; users quickly find what they need
+- Collapsed groups avoid information overload
+- Still includes all data in the brief; just doesn't show it all at once
+
+**Implementation:** Simple categorization logic (file type, size, name patterns) or AI classification if adding complexity is acceptable.
+
+---
+
+### v1.1 Testing & Validation Strategy
+
+#### Phase 1 Testing (Brief Instructions)
+
+**Setup:** Extract a real, moderately-complex design (button component with variants, dropdown, etc.).
+
+**Test Cases:**
+1. **Plan Mode Prompt:** Does Claude Code ask clarifying questions?
+2. **Asset-Only Rule:** When assets are missing or incomplete, does Claude Code ask instead of fabricate?
+3. **Verification:** Does the verification checklist catch real differences between Claude Code's output and the design?
+
+**Success Criteria:**
+- ✓ Claude Code asks 1-2 clarifying questions before building
+- ✓ No fabricated assets appear in the output
+- ✓ Verification checklist identifies 80%+ of differences
+
+#### Phase 2 Testing (Asset Detection & Mapping)
+
+**Setup:** Extract a design with:
+- 5+ simple icon vectors
+- 1-2 complex illustrations (nested groups with 10+ children, 20+ paths)
+- 2-3 photos
+- Mixed layout structure
+
+**Test Cases:**
+1. **Complexity Scoring:** Are complex illustrations exported as images? Are simple layout groups kept as structure?
+2. **Breadcrumb Mapping:** Does each asset show correct location path?
+3. **Brief Quality:** Is the brief still under 12K tokens? Does Claude Code generate accurate code?
+
+**Success Criteria:**
+- ✓ All complex illustrations export as PNG/SVG; no false positives
+- ✓ Breadcrumb paths are correct (verified manually)
+- ✓ Brief is <12K tokens and Claude Code builds with 90%+ accuracy
+
+#### Phase 3 Testing (UX Simplification)
+
+**Setup:** User study with 3-5 users unfamiliar with plugin.
+
+**Test Cases:**
+1. **Terminology:** Do users understand "What do you want to extract?" without jargon?
+2. **Steps:** Can users complete extraction without getting lost?
+3. **Results Screen:** Is the grouped asset view less overwhelming?
+
+**Success Criteria:**
+- ✓ All users complete extraction without asking for help
+- ✓ Users report clearer UI terminology
+- ✓ Results screen feels organized, not overwhelming
+
+---
+
+### v1.1 Sources
+
+**Asset Detection & Figma Heuristics:**
+- [Figma VectorNode API Docs](https://developers.figma.com/docs/plugins/api/VectorNode/)
+- [Figma TransformGroupNode API Docs](https://developers.figma.com/docs/plugins/api/TransformGroupNode/)
+- [Top Figma Plugins for 2026 - Muzli](https://muz.li/blog/best-figma-plugins-for-designers-in-2026/) — mentions asset detection heuristics
+- [Best Figma Plugins for Designers 2026 - Clay](https://clay.global/blog/web-design-guide/figma-plugin) — asset detection patterns
+
+**Design Token & Asset Mapping:**
+- [Design Token-Based UI Architecture - Martin Fowler](https://martinfowler.com/articles/design-token-based-ui-architecture.html) — hierarchical token structure
+- [Figma Tokens, Variables, and Styles Update](https://help.figma.com/hc/en-us/articles/18490793776023-Update-1-Tokens-variables-and-styles) — semantic vs component tokens
+- [Material Design 3 - Design Tokens](https://m3.material.io/foundations/design-tokens/) — token tiering patterns
+- [SAP Design System - Design Tokens](https://www.sap.com/design-system/digital/foundations/tokens/design-tokens/) — asset-to-component mapping
+
+**UX Simplification & Cognitive Load:**
+- [Ultimate Guide to Cognitive Load Reduction in UX Design - DeveloperUX](https://developerux.com/2025/04/18/ultimate-guide-to-cognitive-load-reduction-in-ux-design/) — progressive disclosure, chunking
+- [Simplifying UX/UI Design: Tips for Reducing Cognitive Load - Medium](https://bootcamp.uxdesign.cc/simplifying-ux-ui-design-tips-for-reducing-cognitive-load-f28fce98a4b2) — accordion/tooltip patterns
+- [Why Simplicity in UX Design Matters - Unosquare](https://www.unosquare.com/blog/why-simplicity-in-ux-design-matters-the-impacts-and-steps-to-simplify-your-product/) — reduced steps, clear language
+- [Achieve Better UX by Reducing Cognitive Load - Kellton Design](https://design.kellton.com/achieve-better-ux) — chunking, progressive disclosure
+
+**Brief Instructions & AI Planning:**
+- [Creating Plans Before Working - Goose](https://block.github.io/goose/docs/guides/creating-plans/) — plan mode pattern, clarifying questions
+- [Best Practices for Claude Code - Claude Code Docs](https://code.claude.com/docs/en/best-practices) — brief format, instruction sequencing
+- [Claude Code Best Practices 2026 - Morph](https://www.morphllm.com/claude-code-best-practices) — context management, instruction ordering
+- [Your 2026 Guide to Prompt Engineering - The AI Corner](https://www.the-ai-corner.com/p/your-2026-guide-to-prompt-engineering) — concise, contextual instructions
+
+---
+
+*v1.1 feature research: Smart Asset Detection, Brief Instruction Engineering, UX Simplification*
+*Researched: 2026-02-28*
