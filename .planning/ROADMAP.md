@@ -46,11 +46,11 @@ Plans:
   2. Plugin captures auto-layout properties (direction, spacing, padding, alignment, sizing modes, wrap) on every auto-layout frame
   3. Plugin correctly handles absolute-positioned children within auto-layout frames, marking them distinctly from flow children
   4. Plugin preserves Figma layer names as semantic identifiers and captures node dimensions (width, height, constraints) for every node
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — TDD: Layout types (LayoutNode, AutoLayoutProps, ComponentRef), flexbox mapping, recursive tree normalization, deduplication, node counting
+- [ ] 02-02-PLAN.md — API fetch functions (fetchFileNodes, fetchFullFile), extraction orchestrator, MainView wiring with progress/errors/large-tree warning + end-to-end verification
 
 ### Phase 3: Design Data Extraction
 **Goal**: The plugin extracts all design tokens (colors, typography, spacing, borders, shadows) and identifies component instances with their names and variant properties from the parsed layout tree
@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Plugin Foundation & Figma Connection | 0/3 | Complete    | 2026-02-28 |
-| 2. Layout Extraction | 0/0 | Not started | - |
+| 2. Layout Extraction | 0/2 | In Progress | - |
 | 3. Design Data Extraction | 0/0 | Not started | - |
 | 4. Image & Asset Export | 0/0 | Not started | - |
 | 5. Brief Assembly & Output | 0/0 | Not started | - |
