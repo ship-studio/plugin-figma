@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: active
-last_updated: "2026-02-28T16:47:26Z"
+last_updated: "2026-02-28T16:56:24Z"
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 7
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 3 of 5 (Design Data Extraction)
-Plan: 1 of 2 in current phase (03-01 complete)
-Status: Executing Phase 3 -- Plan 01 complete, Plan 02 next
-Last activity: 2026-02-28 -- Completed 03-01-PLAN.md (token types, color utils, style enrichment)
+Phase: 3 of 5 (Design Data Extraction) -- COMPLETE
+Plan: 2 of 2 in current phase (03-02 complete, phase done)
+Status: Phase 3 complete -- ready for Phase 4 (Asset Export)
+Last activity: 2026-02-28 -- Completed 03-02-PLAN.md (token collection, pipeline integration)
 
-Progress: [############] 60%
+Progress: [################] 70%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 9min
-- Total execution time: 0.9 hours
+- Total plans completed: 7
+- Average duration: 8min
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
@@ -42,11 +42,11 @@ Progress: [############] 60%
 |-------|-------|-------|----------|
 | 1 - Plugin Foundation | 3/3 | 29min | 10min |
 | 2 - Layout Extraction | 2/2 | 19min | 10min |
-| 3 - Design Data Extraction | 1/2 | 4min | 4min |
+| 3 - Design Data Extraction | 2/2 | 10min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (23min), 02-01 (4min), 02-02 (15min), 03-01 (4min)
-- Trend: TDD-only plans (03-01) execute quickly with no UI/checkpoint overhead
+- Last 5 plans: 02-01 (4min), 02-02 (15min), 03-01 (4min), 03-02 (6min)
+- Trend: TDD plans execute quickly with no UI/checkpoint overhead
 
 *Updated after each plan completion*
 
@@ -85,6 +85,10 @@ Recent decisions affecting current work:
 - Opacity of 1 (Figma default) omitted from LayoutNode to reduce noise (03-01)
 - Empty styleOverrideTable omitted from LayoutNode -- no mixed styles on that TEXT node (03-01)
 - Style capture placed before type dispatch so INSTANCE nodes also get fills/strokes/effects (03-01)
+- Shadow colors also extracted as ColorTokens with source 'shadow' for complete color inventory (03-02)
+- Component inventory keyed by componentName+variantProperties JSON since componentId is on componentRef (03-02)
+- Color auto-names use hex suffix (color-ff0000) for easy visual identification (03-02)
+- Spacing usageCount incremented per source occurrence rather than per unique value per node (03-02)
 
 ### Pending Todos
 
@@ -97,5 +101,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 03-01-PLAN.md (token types, color utils, style enrichment)
-Resume file: .planning/phases/03-design-data-extraction/03-01-SUMMARY.md
+Stopped at: Completed 03-02-PLAN.md (token collection, pipeline integration) -- Phase 3 complete
+Resume file: .planning/phases/03-design-data-extraction/03-02-SUMMARY.md

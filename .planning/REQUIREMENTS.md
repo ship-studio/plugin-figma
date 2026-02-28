@@ -32,16 +32,16 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Design Tokens
 
 - [x] **TOKN-01**: Plugin extracts fill colors (solid, gradient) with proper 0-1 to 0-255 conversion
-- [ ] **TOKN-02**: Plugin extracts typography properties (font family, size, weight, line height, letter spacing)
-- [ ] **TOKN-03**: Plugin extracts spacing values (padding, gap, margin) from auto-layout properties
+- [x] **TOKN-02**: Plugin extracts typography properties (font family, size, weight, line height, letter spacing)
+- [x] **TOKN-03**: Plugin extracts spacing values (padding, gap, margin) from auto-layout properties
 - [x] **TOKN-04**: Plugin extracts border properties (radius, stroke color, stroke weight)
 - [x] **TOKN-05**: Plugin extracts shadow effects (drop shadow, inner shadow parameters)
 
 ### Component Identification
 
-- [ ] **COMP-01**: Plugin detects INSTANCE node types and resolves their component name
-- [ ] **COMP-02**: Plugin extracts component descriptions when available
-- [ ] **COMP-03**: Plugin extracts basic variant property values (e.g., variant=primary, size=large)
+- [x] **COMP-01**: Plugin detects INSTANCE node types and resolves their component name
+- [x] **COMP-02**: Plugin extracts component descriptions when available
+- [x] **COMP-03**: Plugin extracts basic variant property values (e.g., variant=primary, size=large)
 
 ### Image & Asset Export
 
@@ -117,13 +117,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LYOT-04 | Phase 2 | Complete |
 | LYOT-05 | Phase 2 | Complete |
 | TOKN-01 | Phase 3 | Complete |
-| TOKN-02 | Phase 3 | Pending |
-| TOKN-03 | Phase 3 | Pending |
+| TOKN-02 | Phase 3 | Complete |
+| TOKN-03 | Phase 3 | Complete |
 | TOKN-04 | Phase 3 | Complete |
 | TOKN-05 | Phase 3 | Complete |
-| COMP-01 | Phase 3 | Pending |
-| COMP-02 | Phase 3 | Pending |
-| COMP-03 | Phase 3 | Pending |
+| COMP-01 | Phase 3 | Complete |
+| COMP-02 | Phase 3 | Complete |
+| COMP-03 | Phase 3 | Complete |
 | ASST-01 | Phase 4 | Pending |
 | ASST-02 | Phase 4 | Pending |
 | ASST-03 | Phase 4 | Pending |
