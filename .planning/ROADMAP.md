@@ -13,7 +13,7 @@ This roadmap delivers a Ship Studio plugin that extracts structured design data 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Plugin Foundation & Figma Connection** - Working plugin with auth, URL parsing, and API client that can fetch Figma node data (completed 2026-02-28)
-- [ ] **Phase 2: Layout Extraction** - Extract component hierarchy, auto-layout properties, and dimensions from Figma design trees
+- [x] **Phase 2: Layout Extraction** - Extract component hierarchy, auto-layout properties, and dimensions from Figma design trees (completed 2026-02-28)
 - [ ] **Phase 3: Design Data Extraction** - Extract design tokens (colors, typography, spacing, borders, shadows) and component identification from parsed nodes
 - [ ] **Phase 4: Image & Asset Export** - Render PNG previews and export SVG/image assets to the project directory
 - [ ] **Phase 5: Brief Assembly & Output** - Format all extracted data into a structured markdown brief and copy to clipboard with progress and error feedback
@@ -105,8 +105,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Plugin Foundation & Figma Connection | 0/3 | Complete    | 2026-02-28 |
-| 2. Layout Extraction | 0/2 | In Progress | - |
+| 1. Plugin Foundation & Figma Connection | 3/3 | Complete    | 2026-02-28 |
+| 2. Layout Extraction | 2/2 | Complete | 2026-02-28 |
 | 3. Design Data Extraction | 0/0 | Not started | - |
 | 4. Image & Asset Export | 0/0 | Not started | - |
 | 5. Brief Assembly & Output | 0/0 | Not started | - |

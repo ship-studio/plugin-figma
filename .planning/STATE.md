@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-02-28T15:12:32Z"
+last_updated: "2026-02-28T15:30:54Z"
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,34 +18,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** Phase 2: Layout Extraction
+**Current focus:** Phase 3: Design Data Extraction
 
 ## Current Position
 
-Phase: 2 of 5 (Layout Extraction) -- IN PROGRESS
-Plan: 1 of 2 in current phase (02-01 complete)
-Status: Executing Phase 2
-Last activity: 2026-02-28 -- Completed 02-01-PLAN.md (layout types, flexbox mapping, normalization)
+Phase: 2 of 5 (Layout Extraction) -- COMPLETE
+Plan: 2 of 2 in current phase (02-02 complete, phase done)
+Status: Phase 2 complete, ready for Phase 3
+Last activity: 2026-02-28 -- Completed 02-02-PLAN.md (extraction pipeline, MainView wiring)
 
-Progress: [######....] 40%
+Progress: [##########] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 9min
-- Total execution time: 0.55 hours
+- Total plans completed: 5
+- Average duration: 10min
+- Total execution time: 0.8 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 - Plugin Foundation | 3/3 | 29min | 10min |
-| 2 - Layout Extraction | 1/2 | 4min | 4min |
+| 2 - Layout Extraction | 2/2 | 19min | 10min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (3min), 01-03 (23min), 02-01 (4min)
-- Trend: 02-01 fast due to pure TDD with no external dependencies
+- Last 5 plans: 01-02 (3min), 01-03 (23min), 02-01 (4min), 02-02 (15min)
+- Trend: 02-02 included checkpoint verification + two post-checkpoint UI fixes
 
 *Updated after each plan completion*
 
@@ -75,6 +75,11 @@ Recent decisions affecting current work:
 - Used 'any' for Figma node input types in normalizeNode -- shared trait-based property access across 20+ node types (02-01)
 - countNodes operates on raw Figma nodes (pre-normalization) for accurate API response size (02-01)
 - buildInstanceFingerprint uses componentId + sorted JSON of variantProperties for deterministic dedup keys (02-01)
+- extractLayout always normalizes even for large trees -- stores result in ref, user confirms without second API call (02-02)
+- fetchFileNodes handles URL-encoded node IDs by checking both formats when lookup fails (02-02)
+- Page scope uses first page's children (rootNodes[0].children) since full file returns CanvasNode[] (02-02)
+- Extraction stats computed via useMemo for zero-cost re-renders (02-02)
+- Tree preview limited to 2 levels of depth to keep UI readable (02-02)
 
 ### Pending Todos
 
@@ -87,5 +92,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-01-PLAN.md
-Resume file: .planning/phases/02-layout-extraction/02-01-SUMMARY.md
+Stopped at: Completed 02-02-PLAN.md (Phase 2 complete)
+Resume file: .planning/phases/02-layout-extraction/02-02-SUMMARY.md
