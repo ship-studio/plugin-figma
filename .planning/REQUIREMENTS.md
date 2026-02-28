@@ -23,11 +23,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Layout Extraction
 
-- [ ] **LYOT-01**: Plugin extracts component hierarchy (parent-child node tree) from selected scope
-- [ ] **LYOT-02**: Plugin extracts auto-layout properties (direction, spacing, padding, alignment, sizing modes, wrap)
-- [ ] **LYOT-03**: Plugin extracts node dimensions (width, height, constraints)
-- [ ] **LYOT-04**: Plugin preserves Figma layer names as semantic hints in the extracted tree
-- [ ] **LYOT-05**: Plugin handles absolute-positioned children within auto-layout frames correctly
+- [x] **LYOT-01**: Plugin extracts component hierarchy (parent-child node tree) from selected scope
+- [x] **LYOT-02**: Plugin extracts auto-layout properties (direction, spacing, padding, alignment, sizing modes, wrap)
+- [x] **LYOT-03**: Plugin extracts node dimensions (width, height, constraints)
+- [x] **LYOT-04**: Plugin preserves Figma layer names as semantic hints in the extracted tree
+- [x] **LYOT-05**: Plugin handles absolute-positioned children within auto-layout frames correctly
 
 ### Design Tokens
 
@@ -111,11 +111,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INPT-02 | Phase 1 | Complete |
 | INPT-03 | Phase 1 | Complete |
 | INPT-04 | Phase 1 | Complete |
-| LYOT-01 | Phase 2 | Pending |
-| LYOT-02 | Phase 2 | Pending |
-| LYOT-03 | Phase 2 | Pending |
-| LYOT-04 | Phase 2 | Pending |
-| LYOT-05 | Phase 2 | Pending |
+| LYOT-01 | Phase 2 | Complete |
+| LYOT-02 | Phase 2 | Complete |
+| LYOT-03 | Phase 2 | Complete |
+| LYOT-04 | Phase 2 | Complete |
+| LYOT-05 | Phase 2 | Complete |
 | TOKN-01 | Phase 3 | Pending |
 | TOKN-02 | Phase 3 | Pending |
 | TOKN-03 | Phase 3 | Pending |
