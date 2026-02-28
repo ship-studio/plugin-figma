@@ -593,7 +593,7 @@ export function MainView({ token }: MainViewProps) {
                 {exportResult.warnings.length} warning{exportResult.warnings.length !== 1 ? 's' : ''}:
                 <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
                   {exportResult.warnings.slice(0, 5).map((w, i) => (
-                    <li key={i}>{w}</li>
+                    <li key={i}>{String(w)}</li>
                   ))}
                   {exportResult.warnings.length > 5 && (
                     <li>...and {exportResult.warnings.length - 5} more</li>

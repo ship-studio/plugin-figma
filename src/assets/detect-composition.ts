@@ -4,9 +4,11 @@
  * Walks a LayoutNode tree and identifies nodes that are complex visual
  * compositions requiring PNG export (rather than individual SVG parts).
  *
- * A node is flagged as a composition when it has BOTH:
- * - Structural complexity (child count >= threshold, deep nesting, or BOOLEAN_OPERATION)
- * - Visual effects (non-default blendMode, isMask child, or opacity layering)
+ * A node is flagged as a composition when EITHER:
+ * 1. It has BOTH structural complexity AND visual effects (blendMode/mask/opacity)
+ * 2. It is a "vector-only group" — a GROUP/FRAME whose entire subtree is visual
+ *    primitives (no TEXT or INSTANCE children). These are illustrations/decorations
+ *    that should be exported as one PNG rather than broken into dozens of SVGs.
  *
  * "Outer wins": once a node is flagged, its children are NOT recursed into
  * for further composition detection.
@@ -24,6 +26,19 @@ export const NESTING_DEPTH_THRESHOLD = 3;
 
 /** Maximum depth to scan for visual effect signals within a candidate. */
 export const SCAN_DEPTH_LIMIT = 3;
+
+/** Node types considered purely visual primitives (no semantic content). */
+const VISUAL_PRIMITIVE_TYPES = new Set([
+  'VECTOR',
+  'ELLIPSE',
+  'LINE',
+  'STAR',
+  'POLYGON',
+  'RECTANGLE',
+  'BOOLEAN_OPERATION',
+  'GROUP',
+  'FRAME',
+]);
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -68,7 +83,12 @@ function detectInNode(
 ): void {
   if (isComposition(node)) {
     compositions.add(node.id);
-    warnings.push(`Auto-detected "${node.name}" as a composition`);
+    // Prefer "composition" label when visual effects are present
+    if (hasStructuralComplexity(node) && hasVisualEffects(node, 0)) {
+      warnings.push(`Auto-detected "${node.name}" as a composition`);
+    } else {
+      warnings.push(`Auto-detected "${node.name}" as an illustration (vector-only group)`);
+    }
     return; // Outer wins -- don't recurse
   }
 
@@ -80,11 +100,39 @@ function detectInNode(
 }
 
 /**
- * A node is a composition if it has BOTH structural complexity
- * AND visual effect signals.
+ * A node is a composition if EITHER:
+ * 1. It has structural complexity AND visual effects (original rule)
+ * 2. It is a vector-only group (all descendants are visual primitives)
  */
 function isComposition(node: LayoutNode): boolean {
-  return hasStructuralComplexity(node) && hasVisualEffects(node, 0);
+  if (hasStructuralComplexity(node) && hasVisualEffects(node, 0)) return true;
+  if (isVectorOnlyGroup(node)) return true;
+  return false;
+}
+
+/**
+ * A "vector-only group" is a GROUP or FRAME whose entire descendant tree
+ * consists only of visual primitive types (no TEXT, INSTANCE, COMPONENT, etc.).
+ * These are illustrations/decorations that should be exported as one PNG.
+ * Requires structural complexity to avoid flagging simple 3-path icons.
+ */
+function isVectorOnlyGroup(node: LayoutNode): boolean {
+  if (node.type !== 'GROUP' && node.type !== 'FRAME') return false;
+  if (!node.children || node.children.length === 0) return false;
+  if (!hasStructuralComplexity(node)) return false;
+  return allDescendantsArePrimitives(node);
+}
+
+/**
+ * Recursively check that ALL descendants are visual primitive types.
+ */
+function allDescendantsArePrimitives(node: LayoutNode): boolean {
+  if (!node.children) return true;
+  for (const child of node.children) {
+    if (!VISUAL_PRIMITIVE_TYPES.has(child.type)) return false;
+    if (!allDescendantsArePrimitives(child)) return false;
+  }
+  return true;
 }
 
 /**

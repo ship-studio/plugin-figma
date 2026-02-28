@@ -52,10 +52,10 @@ export async function downloadFile(
 export async function downloadAllAssets(
   shell: Shell,
   assetsDir: string,
-  assets: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }>,
+  assets: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }>,
   onProgress?: (progress: AssetExportProgress) => void,
-): Promise<{ downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }[]; warnings: string[] }> {
-  const downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }[] = [];
+): Promise<{ downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }[]; warnings: string[] }> {
+  const downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }[] = [];
   const warnings: string[] = [];
 
   for (let i = 0; i < assets.length; i++) {
@@ -73,7 +73,7 @@ export async function downloadAllAssets(
 
     const result = await downloadFile(shell, url, outputPath);
     if (result.success) {
-      const item: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' } = { filename, path: outputPath };
+      const item: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' } = { filename, path: outputPath };
       if (nodeId !== undefined) item.nodeId = nodeId;
       if (assetType !== undefined) item.assetType = assetType;
       downloaded.push(item);

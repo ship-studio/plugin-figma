@@ -191,20 +191,72 @@ describe('detectCompositions', () => {
     expect(result.warnings).toContain('Auto-detected "Comp B" as a composition');
   });
 
-  it('requires BOTH structural AND visual signals (structural only = not flagged)', () => {
-    // 6 vectors but NO visual effects
+  it('flags vector-only group (5+ primitives, no visual effects) as illustration', () => {
+    // 6 vectors, no visual effects — now detected as vector-only illustration
     const group = node({
-      id: 'structural-only',
-      name: 'Dense Group',
+      id: 'illustration',
+      name: 'Hero Illustration',
       type: 'GROUP',
       children: vectors(6),
+    });
+
+    const result = detectCompositions([root([group])]);
+    expect(result.compositionNodeIds.has('illustration')).toBe(true);
+    expect(result.warnings).toContain(
+      'Auto-detected "Hero Illustration" as an illustration (vector-only group)',
+    );
+  });
+
+  it('does NOT flag vector-only group below child count threshold', () => {
+    // 3 vectors — below CHILD_COUNT_THRESHOLD, no nesting
+    const group = node({
+      id: 'small-group',
+      name: 'Simple Icon',
+      type: 'GROUP',
+      children: vectors(3),
     });
 
     const result = detectCompositions([root([group])]);
     expect(result.compositionNodeIds.size).toBe(0);
   });
 
-  it('requires BOTH structural AND visual signals (visual only = not flagged)', () => {
+  it('does NOT flag group with TEXT children as vector-only illustration', () => {
+    // 6 children but includes a TEXT node → not vector-only
+    const children = [
+      ...vectors(5),
+      node({ id: 'txt', name: 'Label', type: 'TEXT' }),
+    ];
+
+    const group = node({
+      id: 'mixed-group',
+      name: 'Card With Text',
+      type: 'GROUP',
+      children,
+    });
+
+    const result = detectCompositions([root([group])]);
+    expect(result.compositionNodeIds.size).toBe(0);
+  });
+
+  it('does NOT flag group with INSTANCE children as vector-only illustration', () => {
+    // 6 children but includes an INSTANCE → not vector-only
+    const children = [
+      ...vectors(5),
+      node({ id: 'inst', name: 'Button', type: 'INSTANCE' }),
+    ];
+
+    const group = node({
+      id: 'mixed-group',
+      name: 'Section With Component',
+      type: 'GROUP',
+      children,
+    });
+
+    const result = detectCompositions([root([group])]);
+    expect(result.compositionNodeIds.size).toBe(0);
+  });
+
+  it('requires visual effects for non-vector-only groups (visual only = not flagged)', () => {
     // 3 vectors with blend mode (below child count threshold, no nesting)
     const children = vectors(3);
     children[0] = node({ ...children[0], blendMode: 'MULTIPLY' });

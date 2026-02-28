@@ -44,6 +44,18 @@ export function generateBrief(input: BriefInput): BriefResult {
   const { extraction, exportResult, projectPath } = input;
   const tokens = extraction.tokens;
 
+  // Build asset node map (nodeId → filename) for tree cross-referencing
+  const assetNodeMap = new Map<string, string>();
+  const compositionNodeIds = new Set<string>();
+  for (const asset of exportResult.assets) {
+    if (asset.nodeId) {
+      assetNodeMap.set(asset.nodeId, asset.filename);
+      if (asset.assetType === 'composition') {
+        compositionNodeIds.add(asset.nodeId);
+      }
+    }
+  }
+
   // Compute breadcrumb map from rootNodes for asset location column
   const rootNodes = input.rootNodes ?? extraction.extraction.rootNodes;
   const breadcrumbMap = buildBreadcrumbMap(rootNodes);
@@ -52,7 +64,7 @@ export function generateBrief(input: BriefInput): BriefResult {
     buildMetadataSection(input),
     buildInstructionsSection(),
     buildPreviewSection(exportResult.previewPath, projectPath),
-    buildLayoutTreeSection(extraction.extraction.rootNodes),
+    buildLayoutTreeSection(extraction.extraction.rootNodes, assetNodeMap, compositionNodeIds),
     buildDesignTokensSection(tokens),
     buildComponentsSection(tokens.components),
     buildAssetsSection(exportResult.previewPath, exportResult.assets, projectPath, breadcrumbMap),
@@ -111,26 +123,48 @@ function buildPreviewSection(previewPath: string, projectPath: string): string {
   return `## Preview\n\n![Preview](${relativePath})`;
 }
 
-function buildLayoutTreeSection(rootNodes: LayoutNode[]): string {
+function buildLayoutTreeSection(
+  rootNodes: LayoutNode[],
+  assetNodeMap: Map<string, string>,
+  compositionNodeIds: Set<string>,
+): string {
   const lines: string[] = [];
   for (const node of rootNodes) {
-    renderTree(node, 0, lines);
+    renderTree(node, 0, lines, assetNodeMap, compositionNodeIds);
   }
   if (lines.length === 0) return '';
   return '## Layout Tree\n\n' + lines.join('\n');
 }
 
-function renderTree(node: LayoutNode, depth: number, lines: string[]): void {
+function renderTree(
+  node: LayoutNode,
+  depth: number,
+  lines: string[],
+  assetNodeMap: Map<string, string>,
+  compositionNodeIds: Set<string>,
+): void {
   if (node.visible === false) return;
 
-  lines.push(renderNodeLine(node, depth));
+  // Composition/illustration nodes — collapse entire subtree to single line
+  if (compositionNodeIds.has(node.id)) {
+    const indent = '  '.repeat(depth);
+    const filename = assetNodeMap.get(node.id);
+    const dims = (node.width != null && node.height != null)
+      ? ` ${Math.round(node.width)}x${Math.round(node.height)}`
+      : '';
+    const ref = filename ? ` -> ${filename}` : '';
+    lines.push(`${indent}[Illustration] '${node.name}'${dims}${ref}`);
+    return;
+  }
+
+  lines.push(renderNodeLine(node, depth, assetNodeMap));
 
   // INSTANCE nodes are leaf -- do not recurse into children
   if (node.componentRef) return;
 
   if (node.children) {
     for (const child of node.children) {
-      renderTree(child, depth + 1, lines);
+      renderTree(child, depth + 1, lines, assetNodeMap, compositionNodeIds);
     }
   }
 }
@@ -143,26 +177,59 @@ function displayType(type: string): string {
   return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 }
 
-function renderNodeLine(node: LayoutNode, depth: number): string {
+/**
+ * Clean up Figma component names for display.
+ * Strips "Property N=" prefixes from variant-encoded component names.
+ * e.g. "Property 1=Green, Property 2=Large" → "Green, Large"
+ */
+function cleanComponentName(name: string): string {
+  if (/Property\s+\d+=/i.test(name)) {
+    return name
+      .split(',')
+      .map(part => {
+        const eqIdx = part.indexOf('=');
+        if (eqIdx !== -1) {
+          const key = part.slice(0, eqIdx).trim();
+          const val = part.slice(eqIdx + 1).trim();
+          if (/^Property\s+\d+$/i.test(key)) return val;
+        }
+        return part.trim();
+      })
+      .join(', ');
+  }
+  return name;
+}
+
+function renderNodeLine(node: LayoutNode, depth: number, assetNodeMap?: Map<string, string>): string {
   const indent = '  '.repeat(depth);
   const parts: string[] = [];
 
   // Type/name/component/text label
   if (node.componentRef) {
-    let label = `Instance "${node.componentRef.componentName}"`;
+    const displayName = cleanComponentName(node.componentRef.componentName);
+    let label = `Instance "${displayName}"`;
     if (node.repeatCount && node.repeatCount > 1) {
       label += ` x${node.repeatCount} (repeated)`;
     }
     if (node.componentRef.variantProperties && Object.keys(node.componentRef.variantProperties).length > 0) {
       const variants = Object.entries(node.componentRef.variantProperties)
-        .map(([k, v]) => `${k}: ${v}`)
+        .map(([k, v]) => {
+          // Strip generic Figma property names like "Property 1"
+          if (/^Property\s+\d+$/i.test(k)) return String(v);
+          return `${k}: ${v}`;
+        })
         .join(', ');
       label += ` (${variants})`;
+    }
+    // Add asset cross-reference if available
+    const assetFile = assetNodeMap?.get(node.id);
+    if (assetFile) {
+      label += ` -> ${assetFile}`;
     }
     parts.push(label);
   } else if (node.type === 'TEXT') {
     const content = node.textContent ?? '';
-    const truncated = content.length > 60 ? content.slice(0, 60) + '...' : content;
+    const truncated = content.length > 200 ? content.slice(0, 200) + '...' : content;
     let fontInfo = '';
     if (node.textStyle) {
       fontInfo = ` (${node.textStyle.fontFamily} ${node.textStyle.fontSize}/${node.textStyle.fontWeight})`;
@@ -396,10 +463,16 @@ function buildComponentsSection(components: ComponentInventoryEntry[]): string {
   if (components.length === 0) return '';
 
   const rows = components.map(c => {
+    const displayName = cleanComponentName(c.componentName);
     const variants = (c.variantProperties && Object.keys(c.variantProperties).length > 0)
-      ? Object.entries(c.variantProperties).map(([k, v]) => `${k}: ${v}`).join(', ')
+      ? Object.entries(c.variantProperties)
+          .map(([k, v]) => {
+            if (/^Property\s+\d+$/i.test(k)) return String(v);
+            return `${k}: ${v}`;
+          })
+          .join(', ')
       : '--';
-    return `| ${c.componentName} | ${c.source} | ${variants} | ${c.usageCount} |`;
+    return `| ${displayName} | ${c.source} | ${variants} | ${c.usageCount} |`;
   });
 
   return [

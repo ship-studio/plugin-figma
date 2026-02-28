@@ -318,8 +318,8 @@ describe('generateBrief', () => {
       expect(result.markdown).toContain("Text 'Welcome Back' (Inter 24/700)");
     });
 
-    it('truncates text content at 60 chars with ellipsis', () => {
-      const longText = 'A'.repeat(80);
+    it('truncates text content at 200 chars with ellipsis', () => {
+      const longText = 'A'.repeat(250);
       const input = makeInput({
         extraction: makeExtraction([{
           id: '1:1', name: 'Root', type: 'FRAME', visible: true,
@@ -332,7 +332,7 @@ describe('generateBrief', () => {
         }]),
       });
       const result = generateBrief(input);
-      expect(result.markdown).toContain(`Text '${longText.slice(0, 60)}...'`);
+      expect(result.markdown).toContain(`Text '${longText.slice(0, 200)}...'`);
     });
 
     it('renders INSTANCE nodes with component name', () => {

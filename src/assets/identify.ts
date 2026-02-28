@@ -18,7 +18,6 @@ import { sanitizeFilename, resolveCollisions } from './sanitize';
 const SVG_TYPES = new Set([
   'VECTOR',
   'BOOLEAN_OPERATION',
-  'LINE',
   'STAR',
   'POLYGON',
   'ELLIPSE',
@@ -60,6 +59,7 @@ function walkTree(
   entries: AssetEntry[],
   compositionIds: Set<string>,
   seenInstances: Set<string>,
+  seenSvgNames: Set<string>,
 ): void {
   // Composition check FIRST
   if (compositionIds.has(node.id)) {
@@ -103,32 +103,43 @@ function walkTree(
     return;
   }
 
-  // SVG types (simple vectors)
+  // LINE nodes are CSS borders — skip as assets
+  if (node.type === 'LINE') return;
+
+  // SVG types (simple vectors) — deduplicate by sanitized name
   if (SVG_TYPES.has(node.type)) {
-    entries.push({
-      nodeId: node.id,
-      nodeName: node.name,
-      exportType: 'svg',
-      filename: sanitizeFilename(node.name) + '.svg',
-    });
+    const filename = sanitizeFilename(node.name) + '.svg';
+    if (!seenSvgNames.has(filename)) {
+      seenSvgNames.add(filename);
+      entries.push({
+        nodeId: node.id,
+        nodeName: node.name,
+        exportType: 'svg',
+        filename,
+      });
+    }
     return;
   }
 
-  // RECTANGLE without image fills → SVG
+  // RECTANGLE without image fills → SVG (deduplicated)
   if (node.type === 'RECTANGLE') {
-    entries.push({
-      nodeId: node.id,
-      nodeName: node.name,
-      exportType: 'svg',
-      filename: sanitizeFilename(node.name) + '.svg',
-    });
+    const filename = sanitizeFilename(node.name) + '.svg';
+    if (!seenSvgNames.has(filename)) {
+      seenSvgNames.add(filename);
+      entries.push({
+        nodeId: node.id,
+        nodeName: node.name,
+        exportType: 'svg',
+        filename,
+      });
+    }
     return;
   }
 
   // Recurse into children for container types
   if (node.children) {
     for (const child of node.children) {
-      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances);
+      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances, seenSvgNames);
     }
   }
 }
@@ -150,11 +161,12 @@ export function identifyAssets(
   const entries: AssetEntry[] = [];
   const matchedNodeIds = new Set<string>();
   const seenInstances = new Set<string>();
+  const seenSvgNames = new Set<string>();
 
   for (const rootNode of rootNodes) {
     if (!rootNode.children) continue;
     for (const child of rootNode.children) {
-      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances);
+      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances, seenSvgNames);
     }
   }
 

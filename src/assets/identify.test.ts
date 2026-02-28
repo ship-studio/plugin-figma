@@ -33,12 +33,11 @@ describe('identifyAssets', () => {
       expect(result[0].exportType).toBe('svg');
     });
 
-    it('identifies LINE as SVG', () => {
+    it('skips LINE nodes (CSS borders, not exportable assets)', () => {
       const result = identifyAssets([root([
         node({ id: '1:3', name: 'Divider', type: 'LINE' }),
       ])], []);
-      expect(result).toHaveLength(1);
-      expect(result[0].exportType).toBe('svg');
+      expect(result).toHaveLength(0);
     });
 
     it('identifies STAR as SVG', () => {
@@ -73,13 +72,19 @@ describe('identifyAssets', () => {
       expect(result[0].exportType).toBe('svg');
     });
 
-    it('identifies INSTANCE node as SVG', () => {
+    it('identifies INSTANCE with componentRef as png-render', () => {
       const result = identifyAssets([root([
-        node({ id: '1:8', name: 'Button', type: 'INSTANCE' }),
+        node({
+          id: '1:8', name: 'Button', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-1', componentName: 'Button',
+            isRemote: false, source: 'local',
+          },
+        }),
       ])], []);
       expect(result).toHaveLength(1);
-      expect(result[0].exportType).toBe('svg');
-      expect(result[0].filename).toBe('button.svg');
+      expect(result[0].exportType).toBe('png-render');
+      expect(result[0].filename).toBe('button.png');
     });
   });
 
@@ -155,7 +160,7 @@ describe('identifyAssets', () => {
       expect(result[0].filename).toBe('nested-icon.svg');
     });
 
-    it('does NOT recurse deeper than component-level (skips deeply nested vectors)', () => {
+    it('recurses into nested containers (full-depth walk)', () => {
       const result = identifyAssets([root([
         node({
           id: '3:5',
@@ -173,8 +178,9 @@ describe('identifyAssets', () => {
           ],
         }),
       ])], []);
-      // The GROUP is not an SVG candidate and we don't recurse further
-      expect(result).toHaveLength(0);
+      // Full-depth walk finds deeply nested vectors
+      expect(result).toHaveLength(1);
+      expect(result[0].nodeId).toBe('3:7');
     });
 
     it('does NOT recurse into INSTANCE children', () => {
@@ -183,16 +189,20 @@ describe('identifyAssets', () => {
           id: '3:8',
           name: 'Button Instance',
           type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-btn', componentName: 'Button',
+            isRemote: false, source: 'local',
+          },
           children: [
             node({ id: '3:9', name: 'Internal Vector', type: 'VECTOR' }),
             node({ id: '3:10', name: 'Internal Text', type: 'TEXT' }),
           ],
         }),
       ])], []);
-      // INSTANCE exported as SVG, but its children are NOT individually exported
+      // INSTANCE exported as png-render, children NOT individually exported
       expect(result).toHaveLength(1);
       expect(result[0].nodeId).toBe('3:8');
-      expect(result[0].exportType).toBe('svg');
+      expect(result[0].exportType).toBe('png-render');
     });
   });
 
@@ -233,18 +243,27 @@ describe('identifyAssets', () => {
     });
   });
 
-  describe('filename collision resolution', () => {
-    it('resolves duplicate filenames with numeric suffixes', () => {
+  describe('SVG deduplication', () => {
+    it('deduplicates SVGs with the same sanitized name', () => {
       const result = identifyAssets([root([
         node({ id: '7:1', name: 'Icon', type: 'VECTOR' }),
         node({ id: '7:2', name: 'Icon', type: 'VECTOR' }),
         node({ id: '7:3', name: 'Icon', type: 'VECTOR' }),
       ])], []);
-      expect(result.map((e) => e.filename)).toEqual([
-        'icon.svg',
-        'icon-2.svg',
-        'icon-3.svg',
-      ]);
+      // Only the first occurrence is exported
+      expect(result).toHaveLength(1);
+      expect(result[0].filename).toBe('icon.svg');
+      expect(result[0].nodeId).toBe('7:1');
+    });
+
+    it('exports SVGs with different names', () => {
+      const result = identifyAssets([root([
+        node({ id: '7:4', name: 'Arrow', type: 'VECTOR' }),
+        node({ id: '7:5', name: 'Star', type: 'STAR' }),
+        node({ id: '7:6', name: 'Arrow', type: 'VECTOR' }),
+      ])], []);
+      expect(result).toHaveLength(2);
+      expect(result.map(e => e.filename)).toEqual(['arrow.svg', 'star.svg']);
     });
   });
 
