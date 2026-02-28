@@ -17,7 +17,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Input
 
 - [ ] **INPT-01**: User can paste a Figma URL (file, frame, or component link)
-- [ ] **INPT-02**: Plugin parses file key and node ID from Figma URLs (`/file/`, `/design/`, `/proto/`, `/board/` formats)
+- [x] **INPT-02**: Plugin parses file key and node ID from Figma URLs (`/file/`, `/design/`, `/proto/`, `/board/` formats)
 - [ ] **INPT-03**: User can choose extraction scope: single node (from URL node-id), frame, or entire page
 - [ ] **INPT-04**: Plugin validates that the URL points to an accessible Figma file before extraction
 
@@ -61,8 +61,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Plugin UI
 
-- [ ] **PLUI-01**: Plugin renders a toolbar button that opens the main plugin modal
-- [ ] **PLUI-02**: Plugin uses Ship Studio's theme system for consistent styling
+- [x] **PLUI-01**: Plugin renders a toolbar button that opens the main plugin modal
+- [x] **PLUI-02**: Plugin uses Ship Studio's theme system for consistent styling
 - [ ] **PLUI-03**: Plugin shows extraction progress during API calls
 - [ ] **PLUI-04**: Plugin shows clear error messages for common failures (invalid token, inaccessible file, rate limit)
 
@@ -108,7 +108,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-03 | Phase 1 | Pending |
 | AUTH-04 | Phase 1 | Pending |
 | INPT-01 | Phase 1 | Pending |
-| INPT-02 | Phase 1 | Pending |
+| INPT-02 | Phase 1 | Complete |
 | INPT-03 | Phase 1 | Pending |
 | INPT-04 | Phase 1 | Pending |
 | LYOT-01 | Phase 2 | Pending |
@@ -134,8 +134,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BREF-03 | Phase 5 | Pending |
 | BREF-04 | Phase 5 | Pending |
 | BREF-05 | Phase 5 | Pending |
-| PLUI-01 | Phase 1 | Pending |
-| PLUI-02 | Phase 1 | Pending |
+| PLUI-01 | Phase 1 | Complete |
+| PLUI-02 | Phase 1 | Complete |
 | PLUI-03 | Phase 5 | Pending |
 | PLUI-04 | Phase 5 | Pending |
 
