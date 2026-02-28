@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-02-28T17:04:35.127Z"
+status: in-progress
+last_updated: "2026-02-28T17:41:36Z"
 progress:
-  total_phases: 3
+  total_phases: 5
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** Phase 3: Design Data Extraction
+**Current focus:** Phase 4: Image & Asset Export
 
 ## Current Position
 
-Phase: 3 of 5 (Design Data Extraction) -- COMPLETE
-Plan: 2 of 2 in current phase (03-02 complete, phase done)
-Status: Phase 3 complete -- ready for Phase 4 (Asset Export)
-Last activity: 2026-02-28 -- Completed 03-02-PLAN.md (token collection, pipeline integration)
+Phase: 4 of 5 (Image & Asset Export)
+Plan: 1 of 2 in current phase (04-01 complete)
+Status: Plan 04-01 complete -- ready for Plan 04-02 (download orchestrator)
+Last activity: 2026-02-28 -- Completed 04-01-PLAN.md (asset identification, sanitizeFilename, identifyAssets)
 
-Progress: [################] 70%
+Progress: [##################] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 8min
 - Total execution time: 1.0 hours
 
@@ -43,9 +43,10 @@ Progress: [################] 70%
 | 1 - Plugin Foundation | 3/3 | 29min | 10min |
 | 2 - Layout Extraction | 2/2 | 19min | 10min |
 | 3 - Design Data Extraction | 2/2 | 10min | 5min |
+| 4 - Image & Asset Export | 1/2 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (4min), 02-02 (15min), 03-01 (4min), 03-02 (6min)
+- Last 5 plans: 02-02 (15min), 03-01 (4min), 03-02 (6min), 04-01 (3min)
 - Trend: TDD plans execute quickly with no UI/checkpoint overhead
 
 *Updated after each plan completion*
@@ -89,6 +90,10 @@ Recent decisions affecting current work:
 - Component inventory keyed by componentName+variantProperties JSON since componentId is on componentRef (03-02)
 - Color auto-names use hex suffix (color-ff0000) for easy visual identification (03-02)
 - Spacing usageCount incremented per source occurrence rather than per unique value per node (03-02)
+- Two-function tree walk: classifyNode (top-level, recurses into containers) and classifyNodeLeaf (component-level, no further recursion) (04-01)
+- INSTANCE nodes treated as SVG export leaf -- children never individually exported (04-01)
+- Orphan imageFills still added as png-fill entries even if not matched by walked nodes (04-01)
+- Collision resolution via -2, -3 numeric suffixes (not node ID fragments) (04-01)
 
 ### Pending Todos
 
@@ -101,5 +106,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 03-02-PLAN.md (token collection, pipeline integration) -- Phase 3 complete
-Resume file: .planning/phases/03-design-data-extraction/03-02-SUMMARY.md
+Stopped at: Completed 04-01-PLAN.md (asset identification, sanitizeFilename, identifyAssets)
+Resume file: .planning/phases/04-image-asset-export/04-01-SUMMARY.md

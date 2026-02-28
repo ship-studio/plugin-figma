@@ -46,9 +46,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Image & Asset Export
 
 - [ ] **ASST-01**: Plugin renders the selected frame/component as PNG via Figma images API and saves to project
-- [ ] **ASST-02**: Plugin identifies vector/icon nodes and exports them as SVG files to project directory
-- [ ] **ASST-03**: Plugin identifies raster image nodes and exports them as PNG files to project directory
-- [ ] **ASST-04**: Plugin generates sensible filenames from Figma layer names for exported assets
+- [x] **ASST-02**: Plugin identifies vector/icon nodes and exports them as SVG files to project directory
+- [x] **ASST-03**: Plugin identifies raster image nodes and exports them as PNG files to project directory
+- [x] **ASST-04**: Plugin generates sensible filenames from Figma layer names for exported assets
 - [ ] **ASST-05**: Plugin downloads image URLs immediately (not stored as references, since URLs expire)
 
 ### Brief Formatting
@@ -125,9 +125,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-02 | Phase 3 | Complete |
 | COMP-03 | Phase 3 | Complete |
 | ASST-01 | Phase 4 | Pending |
-| ASST-02 | Phase 4 | Pending |
-| ASST-03 | Phase 4 | Pending |
-| ASST-04 | Phase 4 | Pending |
+| ASST-02 | Phase 4 | Complete |
+| ASST-03 | Phase 4 | Complete |
+| ASST-04 | Phase 4 | Complete |
 | ASST-05 | Phase 4 | Pending |
 | BREF-01 | Phase 5 | Pending |
 | BREF-02 | Phase 5 | Pending |
