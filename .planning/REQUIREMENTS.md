@@ -16,7 +16,7 @@ Requirements for v1.1 milestone. Each maps to roadmap phases.
 ### Asset Detection & Mapping
 
 - [x] **ASSET-01**: Plugin detects complex compositions (nested groups/vectors with high child count, masks, blend modes) and flags them for image export
-- [ ] **ASSET-02**: Plugin exports detected complex compositions as single PNG images instead of describing their individual parts
+- [x] **ASSET-02**: Plugin exports detected complex compositions as single PNG images instead of describing their individual parts
 - [x] **ASSET-03**: Brief maps each exported asset to its exact position in the layout tree via breadcrumb paths (e.g., "Hero > Header > Icon")
 - [x] **ASSET-04**: Asset-to-layout mapping uses nodeId as stable key to prevent filename/path misalignment
 
@@ -66,7 +66,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INST-02 | Phase 6 | Complete |
 | INST-03 | Phase 6 | Complete |
 | ASSET-01 | Phase 7 | Complete |
-| ASSET-02 | Phase 7 | Pending |
+| ASSET-02 | Phase 7 | Complete |
 | ASSET-03 | Phase 7 | Complete |
 | ASSET-04 | Phase 7 | Complete |
 | UX-01 | Phase 6 | Complete |
