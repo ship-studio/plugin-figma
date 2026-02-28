@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 Ship Studio Figma Plugin** -- Phases 1-5 (shipped 2026-02-28)
-- 🚧 **v1.1 Brief Quality & UX** -- Phases 6-8 (in progress)
+- ✅ **v1.1 Brief Quality & UX** -- Phases 6-8 (shipped 2026-02-28)
 
 ## Phases
 
@@ -20,7 +20,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 </details>
 
-### 🚧 v1.1 Brief Quality & UX (In Progress)
+### ✅ v1.1 Brief Quality & UX (Shipped 2026-02-28)
 
 **Milestone Goal:** Close the 80% to near-100% first-build accuracy gap by improving brief instructions, asset detection, and plugin UX.
 
@@ -28,9 +28,9 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 - Integer phases (6, 7, 8): Planned milestone work
 - Decimal phases (6.1, 6.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 6: Brief Instructions & Terminology** - Add Claude Code behavior instructions to brief and replace jargon with human-friendly language
-- [ ] **Phase 7: Smart Asset Detection & Layout Mapping** - Detect complex compositions, export as images, and map assets to their positions in the layout tree
-- [ ] **Phase 8: UX Flow Simplification** - Reduce steps and surface composition warnings for a less overwhelming experience
+- [x] **Phase 6: Brief Instructions & Terminology** - Add Claude Code behavior instructions to brief and replace jargon with human-friendly language
+- [x] **Phase 7: Smart Asset Detection & Layout Mapping** - Detect complex compositions, export as images, and map assets to their positions in the layout tree
+- [x] **Phase 8: UX Flow Simplification** - Reduce steps and surface composition warnings for a less overwhelming experience
 
 ## Phase Details
 
@@ -47,7 +47,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 Plans:
 - [x] 06-01-PLAN.md -- Add "How to Use This Brief" instructions section to generated brief (TDD)
-- [ ] 06-02-PLAN.md -- Replace developer jargon with human-friendly terminology in plugin UI
+- [x] 06-02-PLAN.md -- Replace developer jargon with human-friendly terminology in plugin UI
 
 ### Phase 7: Smart Asset Detection & Layout Mapping
 **Goal**: Complex illustrations (nested groups of vectors, masks, blend modes) are automatically detected and exported as single images, and every exported asset is mapped to its exact position in the layout tree
@@ -62,8 +62,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md -- Composition detection heuristic and breadcrumb path builder (TDD pure functions + type extensions)
-- [ ] 07-02-PLAN.md -- Pipeline integration: wire detection into export, extend brief Assets table with Type and Location columns
+- [x] 07-01-PLAN.md -- Composition detection heuristic and breadcrumb path builder (TDD pure functions + type extensions)
+- [x] 07-02-PLAN.md -- Pipeline integration: wire detection into export, extend brief Assets table with Type and Location columns
 
 ### Phase 8: UX Flow Simplification
 **Goal**: Users experience a streamlined plugin flow with fewer steps and less overwhelming results
@@ -76,7 +76,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 08-01-PLAN.md -- Merge 3 result sections into single result card and replace 3 spinners with single progress indicator
+- [x] 08-01-PLAN.md -- Merge 3 result sections into single result card and replace 3 spinners with single progress indicator
 
 ## Progress
 
@@ -91,5 +91,5 @@ Phases execute in numeric order: 6 -> 6.x -> 7 -> 7.x -> 8 -> 8.x
 | 4. Image & Asset Export | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 5. Brief Assembly & Output | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 6. Brief Instructions & Terminology | v1.1 | 2/2 | Complete | 2026-02-28 |
-| 7. Smart Asset Detection & Layout Mapping | v1.1 | 0/2 | Not started | - |
-| 8. UX Flow Simplification | v1.1 | 0/1 | Not started | - |
+| 7. Smart Asset Detection & Layout Mapping | v1.1 | 2/2 | Complete | 2026-02-28 |
+| 8. UX Flow Simplification | v1.1 | 1/1 | Complete | 2026-02-28 |

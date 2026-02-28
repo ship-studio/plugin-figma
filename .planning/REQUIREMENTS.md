@@ -23,7 +23,7 @@ Requirements for v1.1 milestone. Each maps to roadmap phases.
 ### UX Simplification
 
 - [x] **UX-01**: Plugin uses human-friendly terminology throughout (no "Extraction Scope", "Single Node", "auto-layout frames")
-- [ ] **UX-02**: Plugin flow is simplified with fewer visible steps
+- [x] **UX-02**: Plugin flow is simplified with fewer visible steps
 
 ## v2 Requirements
 
@@ -70,7 +70,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-03 | Phase 7 | Complete |
 | ASSET-04 | Phase 7 | Complete |
 | UX-01 | Phase 6 | Complete |
-| UX-02 | Phase 8 | Pending |
+| UX-02 | Phase 8 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 9 total
