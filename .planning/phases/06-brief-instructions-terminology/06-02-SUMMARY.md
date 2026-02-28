@@ -66,7 +66,7 @@ Each task was committed atomically:
 
 1. **Task 1: Replace all UI terminology in MainView.tsx** - `85f2dcc` (feat)
 
-**Plan metadata:** [pending] (docs: complete plan)
+**Plan metadata:** `c68bbcb` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/views/MainView.tsx` - All user-facing terminology replaced with human-friendly language; ExtractionStats interface cleaned up

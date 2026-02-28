@@ -72,7 +72,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Plugin flow has fewer visible steps between pasting a URL and getting the brief
   2. Results screen surfaces key information (brief size, asset count, composition count) without overwhelming the user with raw data
-  3. When complex compositions are detected, user sees a clear count/warning before extraction begins (e.g., "5 compositions will export as PNG")
+  3. When complex compositions are detected, user sees a clear count in the result card (e.g., "5 compositions exported as PNG")
 **Plans**: 1 plan
 
 Plans:
