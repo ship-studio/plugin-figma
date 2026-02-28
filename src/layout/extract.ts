@@ -31,6 +31,8 @@ export interface ExtractLayoutOptions {
 export interface ExtractLayoutResult {
   extraction: ExtractionResult;
   tokens: DesignTokens;
+  /** Figma file key, passed through for asset export. */
+  fileKey: string;
   /** Set when nodeCount exceeds WARN_THRESHOLD before normalization. */
   largeTreeWarning?: { nodeCount: number; message: string };
 }
@@ -104,5 +106,5 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
   // 5. Collect design tokens from the normalized tree
   const tokens = collectTokens(extraction.rootNodes, styles);
 
-  return { extraction, tokens, largeTreeWarning };
+  return { extraction, tokens, fileKey, largeTreeWarning };
 }

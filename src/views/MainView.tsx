@@ -7,6 +7,8 @@ import { extractLayout } from '../layout/extract';
 import type { ExtractLayoutResult } from '../layout/extract';
 import type { ExtractionResult, LayoutNode } from '../layout/types';
 import type { FigmaUrlParts, ExtractionScope, FigmaFileInfo } from '../types';
+import { exportAssets } from '../assets/export';
+import type { ExportResult, AssetExportProgress } from '../assets/types';
 
 interface ExtractionStats {
   frames: number;
@@ -108,6 +110,11 @@ export function MainView({ token }: MainViewProps) {
   const [awaitingLargeTreeConfirm, setAwaitingLargeTreeConfirm] = useState(false);
   const [showTree, setShowTree] = useState(false);
 
+  // Asset export state
+  const [exportingAssets, setExportingAssets] = useState(false);
+  const [assetProgress, setAssetProgress] = useState(null as AssetExportProgress | null);
+  const [exportResult, setExportResult] = useState(null as ExportResult | null);
+
   const extractionStats = useMemo(
     () => extractionResult ? collectStats(extractionResult.rootNodes) : null,
     [extractionResult],
@@ -126,6 +133,42 @@ export function MainView({ token }: MainViewProps) {
   // Counter to discard stale extraction responses
   const extractRequestIdRef = useRef(0);
 
+  const runAssetExport = useCallback(async (result: ExtractLayoutResult) => {
+    if (!shellRef.current || !ctx?.project?.path || !parsedUrl) return;
+
+    setExportingAssets(true);
+    setAssetProgress(null);
+    setExportResult(null);
+
+    try {
+      const exportRes = await exportAssets({
+        shell: shellRef.current,
+        token,
+        fileKey: result.fileKey,
+        selectedNodeId: parsedUrl.nodeId || result.extraction.rootNodes[0]?.id || '0:0',
+        rootNodes: result.extraction.rootNodes,
+        imageFills: result.tokens.imageFills,
+        projectPath: ctx.project.path,
+        onProgress: setAssetProgress,
+      });
+
+      setExportResult(exportRes);
+      if (actions) {
+        const assetCount = exportRes.assets.length;
+        const warnCount = exportRes.warnings.length;
+        const msg = `Exported ${assetCount} asset${assetCount !== 1 ? 's' : ''}${warnCount > 0 ? ` (${warnCount} warning${warnCount !== 1 ? 's' : ''})` : ''}`;
+        actions.showToast(msg, warnCount > 0 ? 'info' : 'success');
+      }
+    } catch (err: any) {
+      if (actions) {
+        actions.showToast(`Asset export failed: ${err?.message || 'Unknown error'}`, 'error');
+      }
+    } finally {
+      setExportingAssets(false);
+      setAssetProgress(null);
+    }
+  }, [token, parsedUrl, ctx, actions]);
+
   const handleUrlChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -142,6 +185,10 @@ export function MainView({ token }: MainViewProps) {
         setAwaitingLargeTreeConfirm(false);
         setShowTree(false);
         pendingResultRef.current = null;
+        // Clear asset export state
+        setExportResult(null);
+        setExportingAssets(false);
+        setAssetProgress(null);
         return;
       }
 
@@ -163,6 +210,10 @@ export function MainView({ token }: MainViewProps) {
       setAwaitingLargeTreeConfirm(false);
       setShowTree(false);
       pendingResultRef.current = null;
+      // Clear asset export state
+      setExportResult(null);
+      setExportingAssets(false);
+      setAssetProgress(null);
 
       if (parsed.nodeId) {
         setScope('node');
@@ -222,6 +273,10 @@ export function MainView({ token }: MainViewProps) {
     setLargeTreeWarning(null);
     setAwaitingLargeTreeConfirm(false);
     pendingResultRef.current = null;
+    // Clear asset export state
+    setExportResult(null);
+    setExportingAssets(false);
+    setAssetProgress(null);
 
     (async () => {
       try {
@@ -250,6 +305,8 @@ export function MainView({ token }: MainViewProps) {
         if (actions) {
           actions.showToast(`Extracted ${result.extraction.nodeCount} nodes`, 'success');
         }
+        // Automatically run asset export after successful extraction
+        runAssetExport(result);
       } catch (err: any) {
         if (extractRequestIdRef.current !== currentExtractId) return;
 
@@ -271,7 +328,7 @@ export function MainView({ token }: MainViewProps) {
         }
       }
     })();
-  }, [parsedUrl, token, scope, actions]);
+  }, [parsedUrl, token, scope, actions, runAssetExport]);
 
   const handleConfirmLargeTree = useCallback(() => {
     const pending = pendingResultRef.current;
@@ -286,7 +343,9 @@ export function MainView({ token }: MainViewProps) {
     if (actions) {
       actions.showToast(`Extracted ${pending.extraction.nodeCount} nodes`, 'success');
     }
-  }, [actions]);
+    // Automatically run asset export after large tree confirmation
+    runAssetExport(pending);
+  }, [actions, runAssetExport]);
 
   const handleCancelLargeTree = useCallback(() => {
     setAwaitingLargeTreeConfirm(false);
@@ -294,7 +353,7 @@ export function MainView({ token }: MainViewProps) {
     pendingResultRef.current = null;
   }, []);
 
-  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting;
+  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets;
 
   return (
     <div>
@@ -486,6 +545,49 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
+      {/* Asset Export Progress */}
+      {exportingAssets && assetProgress && (
+        <div className="figma-plugin-section">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="figma-plugin-spinner" />
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {assetProgress.phase === 'preview'
+                ? 'Rendering preview...'
+                : `Downloading ${assetProgress.currentAsset} (${assetProgress.current}/${assetProgress.total})...`
+              }
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Asset Export Result */}
+      {exportResult && (
+        <div className="figma-plugin-section">
+          <div className="figma-plugin-file-info">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <span style={{ color: '#38a169' }}>&#10003;</span>
+              <span style={{ fontWeight: 600, fontSize: '13px' }}>Assets exported</span>
+            </div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
+              {exportResult.previewPath ? 'Preview + ' : ''}{exportResult.assets.length} asset{exportResult.assets.length !== 1 ? 's' : ''} saved to .shipstudio/assets/
+            </div>
+            {exportResult.warnings.length > 0 && (
+              <div style={{ marginTop: '6px', fontSize: '11px', color: '#f59e0b' }}>
+                {exportResult.warnings.length} warning{exportResult.warnings.length !== 1 ? 's' : ''}:
+                <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                  {exportResult.warnings.slice(0, 5).map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                  {exportResult.warnings.length > 5 && (
+                    <li>...and {exportResult.warnings.length - 5} more</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Extract Button */}
       <button
         className="btn-primary"
@@ -493,7 +595,7 @@ export function MainView({ token }: MainViewProps) {
         disabled={extractDisabled}
         style={{ width: '100%' }}
       >
-        {extracting ? 'Extracting...' : 'Extract Design Brief'}
+        {extracting ? 'Extracting...' : exportingAssets ? 'Exporting assets...' : 'Extract Design Brief'}
       </button>
     </div>
   );
