@@ -1,5 +1,5 @@
 import type { Shell, FigmaUser, FigmaFileInfo } from './types';
-import type { GetFileResponse, GetFileNodesResponse } from '@figma/rest-api-spec';
+import type { GetFileResponse, GetFileNodesResponse, GetImagesResponse } from '@figma/rest-api-spec';
 
 const FIGMA_API_BASE = 'https://api.figma.com/v1';
 
@@ -169,4 +169,55 @@ export async function fetchFullFile(
     components: response.components,
     styles: (response as any).styles ?? {},
   };
+}
+
+/**
+ * Render node IDs as images (PNG or SVG) via Figma's GET /v1/images endpoint.
+ * Batches all node IDs into a single API call. Returns a map of nodeId -> URL.
+ *
+ * @param shell - Shell for executing curl
+ * @param token - Figma personal access token
+ * @param fileKey - Figma file key
+ * @param nodeIds - Node IDs to render
+ * @param format - Output format ('png' or 'svg')
+ * @param scale - Scale factor (e.g., 2 for 2x). Only applies to PNG.
+ * @returns Map of nodeId -> rendered image URL (null if render failed)
+ */
+export async function fetchImages(
+  shell: Shell,
+  token: string,
+  fileKey: string,
+  nodeIds: string[],
+  format: 'png' | 'svg' = 'png',
+  scale?: number,
+): Promise<Record<string, string | null>> {
+  const ids = nodeIds.map(id => encodeURIComponent(id)).join(',');
+  let endpoint = `/images/${fileKey}?ids=${ids}&format=${format}`;
+  if (scale != null) endpoint += `&scale=${scale}`;
+  // SVG options: outline text for visual accuracy, include IDs for readability, simplify strokes
+  if (format === 'svg') endpoint += '&svg_outline_text=true&svg_include_id=true&svg_simplify_stroke=true';
+  const response = await figmaApiCall<GetImagesResponse>(
+    shell, endpoint, token, { timeout: 120000 },
+  );
+  return response.images;
+}
+
+/**
+ * Fetch all image fill URLs for a Figma file via GET /v1/files/{fileKey}/images.
+ * Returns a map of imageRef -> download URL.
+ *
+ * @param shell - Shell for executing curl
+ * @param token - Figma personal access token
+ * @param fileKey - Figma file key
+ * @returns Map of imageRef -> image URL
+ */
+export async function fetchImageFills(
+  shell: Shell,
+  token: string,
+  fileKey: string,
+): Promise<Record<string, string>> {
+  const response = await figmaApiCall<{ meta: { images: Record<string, string> } }>(
+    shell, `/files/${fileKey}/images`, token, { timeout: 120000 },
+  );
+  return response.meta.images;
 }

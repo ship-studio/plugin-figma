@@ -1,0 +1,83 @@
+/**
+ * Asset download utilities.
+ *
+ * Handles filesystem lifecycle (clean/create assets directory) and
+ * binary file downloads via shell.exec('curl', ...) with retry-once
+ * and 30-second timeout per download.
+ */
+
+import type { Shell } from '../types';
+import type { AssetExportProgress } from './types';
+
+/**
+ * Clean and recreate the assets directory.
+ * Wipes existing assets to ensure no stale files from previous runs.
+ */
+export async function prepareAssetsDir(shell: Shell, projectPath: string): Promise<string> {
+  const assetsDir = `${projectPath}/.shipstudio/assets`;
+  await shell.exec('rm', ['-rf', assetsDir]);
+  await shell.exec('mkdir', ['-p', assetsDir]);
+  return assetsDir;
+}
+
+/**
+ * Download a single file from URL to disk using curl -o.
+ * Retries once on failure. Returns success/error status.
+ * Uses -L to follow redirects (S3 URLs may redirect).
+ */
+export async function downloadFile(
+  shell: Shell,
+  url: string,
+  outputPath: string,
+): Promise<{ success: boolean; error?: string }> {
+  const args = ['-sS', '-o', outputPath, '--max-time', '30', '-L', url];
+
+  const result = await shell.exec('curl', args, { timeout: 35000 });
+  if (result.exit_code === 0) return { success: true };
+
+  // Retry once
+  const retry = await shell.exec('curl', args, { timeout: 35000 });
+  if (retry.exit_code === 0) return { success: true };
+
+  return {
+    success: false,
+    error: retry.stderr || `curl exit code ${retry.exit_code}`,
+  };
+}
+
+/**
+ * Download all assets sequentially, calling onProgress for each.
+ * Returns list of successfully downloaded assets and warnings for failures.
+ */
+export async function downloadAllAssets(
+  shell: Shell,
+  assetsDir: string,
+  assets: Array<{ filename: string; url: string }>,
+  onProgress?: (progress: AssetExportProgress) => void,
+): Promise<{ downloaded: { filename: string; path: string }[]; warnings: string[] }> {
+  const downloaded: { filename: string; path: string }[] = [];
+  const warnings: string[] = [];
+
+  for (let i = 0; i < assets.length; i++) {
+    const { filename, url } = assets[i];
+    const outputPath = `${assetsDir}/${filename}`;
+
+    if (onProgress) {
+      onProgress({
+        current: i + 1,
+        total: assets.length,
+        currentAsset: filename,
+        phase: 'assets',
+      });
+    }
+
+    const result = await downloadFile(shell, url, outputPath);
+    if (result.success) {
+      downloaded.push({ filename, path: outputPath });
+    } else {
+      warnings.push(`Failed to download ${filename}: ${result.error}`);
+    }
+  }
+
+  return { downloaded, warnings };
+}
