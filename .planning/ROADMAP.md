@@ -59,11 +59,11 @@ Plans:
   3. Generated brief includes an asset mapping section that shows each exported asset's position in the layout tree via breadcrumb paths (e.g., "Hero > Header > Icon")
   4. Asset-to-layout mapping uses nodeId as the stable key, so filenames and breadcrumb paths stay aligned even when layer names collide
   5. Previously working asset exports (SVGs, image fills, simple icons) continue to work without regression
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [ ] 07-01-PLAN.md -- Composition detection heuristic and breadcrumb path builder (TDD pure functions + type extensions)
+- [ ] 07-02-PLAN.md -- Pipeline integration: wire detection into export, extend brief Assets table with Type and Location columns
 
 ### Phase 8: UX Flow Simplification
 **Goal**: Users experience a streamlined plugin flow with fewer steps and less overwhelming results
@@ -91,5 +91,5 @@ Phases execute in numeric order: 6 -> 6.x -> 7 -> 7.x -> 8 -> 8.x
 | 4. Image & Asset Export | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 5. Brief Assembly & Output | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 6. Brief Instructions & Terminology | v1.1 | 2/2 | Complete | 2026-02-28 |
-| 7. Smart Asset Detection & Layout Mapping | v1.1 | 0/? | Not started | - |
+| 7. Smart Asset Detection & Layout Mapping | v1.1 | 0/2 | Not started | - |
 | 8. UX Flow Simplification | v1.1 | 0/? | Not started | - |
