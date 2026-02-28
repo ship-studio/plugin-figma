@@ -73,10 +73,10 @@ Plans:
   1. Plugin flow has fewer visible steps between pasting a URL and getting the brief
   2. Results screen surfaces key information (brief size, asset count, composition count) without overwhelming the user with raw data
   3. When complex compositions are detected, user sees a clear count/warning before extraction begins (e.g., "5 compositions will export as PNG")
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 08-01: TBD
+- [ ] 08-01-PLAN.md -- Merge 3 result sections into single result card and replace 3 spinners with single progress indicator
 
 ## Progress
 
@@ -92,4 +92,4 @@ Phases execute in numeric order: 6 -> 6.x -> 7 -> 7.x -> 8 -> 8.x
 | 5. Brief Assembly & Output | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 6. Brief Instructions & Terminology | v1.1 | 2/2 | Complete | 2026-02-28 |
 | 7. Smart Asset Detection & Layout Mapping | v1.1 | 0/2 | Not started | - |
-| 8. UX Flow Simplification | v1.1 | 0/? | Not started | - |
+| 8. UX Flow Simplification | v1.1 | 0/1 | Not started | - |
