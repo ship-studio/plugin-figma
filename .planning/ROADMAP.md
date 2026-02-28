@@ -30,12 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can update or remove their stored Figma token
   4. User can paste a Figma URL (file, frame, or component link in any format) and the plugin correctly identifies the file key and node ID
   5. User can select extraction scope (single node, frame, or entire page) and the plugin confirms the target is accessible before proceeding
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md — Project scaffolding, types, API client, URL parser, and plugin entry point
+- [ ] 01-02-PLAN.md — Modal component, SetupView (token entry/validation), SettingsView (token management)
+- [ ] 01-03-PLAN.md — MainView (URL input, scope selection, file validation) + end-to-end verification
 
 ### Phase 2: Layout Extraction
 **Goal**: The plugin produces a complete, normalized layout tree from any Figma selection, preserving hierarchy, auto-layout semantics, dimensions, and layer names
@@ -105,7 +105,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Plugin Foundation & Figma Connection | 0/0 | Not started | - |
+| 1. Plugin Foundation & Figma Connection | 0/3 | Planned | - |
 | 2. Layout Extraction | 0/0 | Not started | - |
 | 3. Design Data Extraction | 0/0 | Not started | - |
 | 4. Image & Asset Export | 0/0 | Not started | - |
