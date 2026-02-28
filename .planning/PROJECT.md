@@ -26,7 +26,24 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 
 ### Active
 
-(None — define with `/gsd:new-milestone`)
+- [ ] Plugin detects complex compositions (nested groups/vectors) and exports them as single images
+- [ ] Plugin maps every exported asset to its exact position in the layout tree
+- [ ] Brief includes instructions for Claude Code to enter plan mode and ask clarifying questions
+- [ ] Brief instructs Claude Code to use only provided assets and never fabricate replacements
+- [ ] Brief instructs Claude Code to verify its output against the PNG preview when done
+- [ ] UX uses clear, human-friendly terminology (no "Extraction Scope", "Single Node", etc.)
+- [ ] UX flow is simplified with fewer steps
+- [ ] UX results screen is less overwhelming
+
+## Current Milestone: v1.1 Brief Quality & UX
+
+**Goal:** Get from 80% accuracy on first Claude Code build to near-100% by improving asset detection, brief instructions, and plugin UX.
+
+**Target features:**
+- Smarter asset detection — recognize complex illustrations and export as images, not textual descriptions
+- Asset-to-layout mapping — brief explicitly ties each asset to where it belongs in the design
+- Smarter brief instructions — plan mode, clarifying questions, asset-only rule, visual verification
+- UX simplification — fewer steps, clearer terminology, less overwhelming results
 
 ### Out of Scope
 
@@ -46,6 +63,7 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - Plugin has shell access (`shell.exec`) for HTTP requests (curl) to Figma REST API
 - Plugin storage persists data per-project — used for Figma token storage
 - `dist/index.js` must be committed to the repo — Ship Studio clones without building
+- v1.0 user testing: ~80% accuracy on first Claude Code build. Main gap: complex illustrations (groups of nested vectors) were described textually instead of exported as images, causing Claude Code to fabricate replacements. Asset-to-layout mapping also missing — brief lists assets in flat table without showing where each belongs.
 
 ## Constraints
 
@@ -69,4 +87,4 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 | Pure function brief generator | `generateBrief()` is synchronous, no side effects, fully testable | ✓ Good — 40 tests, deterministic output |
 
 ---
-*Last updated: 2026-02-28 after v1.0 milestone*
+*Last updated: 2026-02-28 after v1.1 milestone started*
