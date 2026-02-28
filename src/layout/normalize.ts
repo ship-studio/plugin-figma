@@ -145,6 +145,12 @@ export function normalizeNode(
   if ('opacity' in node && node.opacity != null && node.opacity !== 1) {
     result.opacity = node.opacity;
   }
+  if ('blendMode' in node && node.blendMode && node.blendMode !== 'PASS_THROUGH' && node.blendMode !== 'NORMAL') {
+    result.blendMode = node.blendMode;
+  }
+  if ('isMask' in node && node.isMask === true) {
+    result.isMask = true;
+  }
   if ('styles' in node && node.styles) {
     result.styleRefs = node.styles;
   }
