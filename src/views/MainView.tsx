@@ -180,6 +180,7 @@ export function MainView({ token }: MainViewProps) {
             projectPath: ctx.project.path,
             fileName: fileInfo?.name ?? 'Untitled',
             figmaUrl: urlInput,
+            rootNodes: result.extraction.rootNodes,
           });
 
           setBriefResult(brief);

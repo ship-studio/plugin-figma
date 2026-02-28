@@ -8,6 +8,7 @@
 
 import type { ExtractLayoutResult } from '../layout/extract';
 import type { ExportResult } from '../assets/types';
+import type { LayoutNode } from '../layout/types';
 
 /** Input to the brief generator. */
 export interface BriefInput {
@@ -18,6 +19,8 @@ export interface BriefInput {
   figmaUrl: string;
   /** Optional date override for test determinism (YYYY-MM-DD). */
   date?: string;
+  /** Root nodes for breadcrumb computation (optional; falls back to extraction.extraction.rootNodes). */
+  rootNodes?: LayoutNode[];
 }
 
 /** Summary statistics for the plugin UI. */

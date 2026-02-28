@@ -12,6 +12,7 @@ import type { BriefInput, BriefResult, BriefStats } from './types';
 import type { LayoutNode } from '../layout/types';
 import type { DesignTokens, ColorToken, GradientToken, TypographyToken, SpacingToken, BorderToken, ShadowToken, ComponentInventoryEntry } from '../tokens/types';
 import type { ExportResult } from '../assets/types';
+import { buildBreadcrumbMap } from '../assets/breadcrumb';
 
 /** Token count above which a warning is shown in the UI. */
 export const TOKEN_WARNING_THRESHOLD = 12_000;
@@ -42,6 +43,10 @@ export function generateBrief(input: BriefInput): BriefResult {
   const { extraction, exportResult, projectPath } = input;
   const tokens = extraction.tokens;
 
+  // Compute breadcrumb map from rootNodes for asset location column
+  const rootNodes = input.rootNodes ?? extraction.extraction.rootNodes;
+  const breadcrumbMap = buildBreadcrumbMap(rootNodes);
+
   const sections = [
     buildMetadataSection(input),
     buildInstructionsSection(),
@@ -49,7 +54,7 @@ export function generateBrief(input: BriefInput): BriefResult {
     buildLayoutTreeSection(extraction.extraction.rootNodes),
     buildDesignTokensSection(tokens),
     buildComponentsSection(tokens.components),
-    buildAssetsSection(exportResult.previewPath, exportResult.assets, projectPath),
+    buildAssetsSection(exportResult.previewPath, exportResult.assets, projectPath, breadcrumbMap),
   ].filter(Boolean);
 
   const markdown = sections.join('\n\n');
@@ -332,6 +337,7 @@ function buildAssetsSection(
   previewPath: string,
   assets: ExportResult['assets'],
   projectPath: string,
+  breadcrumbMap: Map<string, string>,
 ): string {
   if (!previewPath && assets.length === 0) return '';
 
@@ -340,22 +346,35 @@ function buildAssetsSection(
   if (previewPath) {
     const relPreview = toRelativePath(previewPath, projectPath);
     const filename = relPreview.split('/').pop() ?? relPreview;
-    rows.push(`| ${filename} | Preview | ${relPreview} |`);
+    rows.push(`| ${filename} | Preview | -- | ${relPreview} |`);
   }
 
   for (const asset of assets) {
     const relPath = toRelativePath(asset.path, projectPath);
-    const ext = asset.filename.split('.').pop()?.toUpperCase() ?? 'FILE';
-    rows.push(`| ${asset.filename} | ${ext} | ${relPath} |`);
+    const typeLabel = assetTypeLabel(asset.assetType);
+    const location = asset.nodeId ? (breadcrumbMap.get(asset.nodeId) || '--') : '--';
+    rows.push(`| ${asset.filename} | ${typeLabel} | ${location} | ${relPath} |`);
   }
 
   return [
     '## Assets',
     '',
-    '| File | Type | Path |',
-    '|------|------|------|',
+    '| File | Type | Location | Path |',
+    '|------|------|----------|------|',
     ...rows,
   ].join('\n');
+}
+
+/**
+ * Map asset type to display label for the brief table.
+ */
+function assetTypeLabel(assetType?: 'icon' | 'image' | 'composition'): string {
+  switch (assetType) {
+    case 'icon': return 'Icon';
+    case 'image': return 'Image';
+    case 'composition': return 'Composition';
+    default: return 'File';
+  }
 }
 
 /**
