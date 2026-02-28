@@ -9,29 +9,29 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 1 of 5 (Plugin Foundation & Figma Connection)
-Plan: 2 of 3 in current phase (01-02 complete)
-Status: Executing
-Last activity: 2026-02-28 -- Completed 01-02-PLAN.md
+Phase: 1 of 5 (Plugin Foundation & Figma Connection) -- COMPLETE
+Plan: 3 of 3 in current phase (01-03 complete -- phase done)
+Status: Phase Complete
+Last activity: 2026-02-28 -- Completed 01-03-PLAN.md (final plan of Phase 1)
 
-Progress: [##........] 13%
+Progress: [####......] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 3min
-- Total execution time: 0.1 hours
+- Total plans completed: 3
+- Average duration: 10min
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 - Plugin Foundation | 2/3 | 6min | 3min |
+| 1 - Plugin Foundation | 3/3 | 29min | 10min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (3min)
-- Trend: Stable
+- Last 5 plans: 01-01 (3min), 01-02 (3min), 01-03 (23min)
+- Trend: 01-03 longer due to human verification + bug fixes
 
 *Updated after each plan completion*
 
@@ -53,6 +53,11 @@ Recent decisions affecting current work:
 - Token persistence uses read-before-write pattern to avoid overwriting other stored data (01-02)
 - User handle stored alongside token to display status without re-validating on mount (01-02)
 - useState cast pattern (null as T | null) for untyped React from window global (01-02)
+- Stale request guard via counter pattern to prevent out-of-order validation responses (01-03)
+- Scope auto-defaults: 'node' when URL has node-id, 'page' when it does not (01-03)
+- Extract button shows toast placeholder -- extraction logic deferred to Phase 2 (01-03)
+- React hooks imported from 'react' module (externalized by Vite) instead of window global access (01-03)
+- View components must call all hooks before any conditional returns to avoid React hooks ordering violations (01-03)
 
 ### Pending Todos
 
@@ -65,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 01-02-PLAN.md
-Resume file: .planning/phases/01-plugin-foundation-figma-connection/01-02-SUMMARY.md
+Stopped at: Completed 01-03-PLAN.md (Phase 1 complete)
+Resume file: .planning/phases/01-plugin-foundation-figma-connection/01-03-SUMMARY.md

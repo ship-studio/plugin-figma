@@ -16,10 +16,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Input
 
-- [ ] **INPT-01**: User can paste a Figma URL (file, frame, or component link)
+- [x] **INPT-01**: User can paste a Figma URL (file, frame, or component link)
 - [x] **INPT-02**: Plugin parses file key and node ID from Figma URLs (`/file/`, `/design/`, `/proto/`, `/board/` formats)
-- [ ] **INPT-03**: User can choose extraction scope: single node (from URL node-id), frame, or entire page
-- [ ] **INPT-04**: Plugin validates that the URL points to an accessible Figma file before extraction
+- [x] **INPT-03**: User can choose extraction scope: single node (from URL node-id), frame, or entire page
+- [x] **INPT-04**: Plugin validates that the URL points to an accessible Figma file before extraction
 
 ### Layout Extraction
 
@@ -107,10 +107,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
-| INPT-01 | Phase 1 | Pending |
+| INPT-01 | Phase 1 | Complete |
 | INPT-02 | Phase 1 | Complete |
-| INPT-03 | Phase 1 | Pending |
-| INPT-04 | Phase 1 | Pending |
+| INPT-03 | Phase 1 | Complete |
+| INPT-04 | Phase 1 | Complete |
 | LYOT-01 | Phase 2 | Pending |
 | LYOT-02 | Phase 2 | Pending |
 | LYOT-03 | Phase 2 | Pending |
