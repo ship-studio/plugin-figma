@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Brief Quality & UX
-status: unknown
-last_updated: "2026-02-28T20:29:48.888Z"
+status: in-progress
+last_updated: "2026-02-28T21:35:00Z"
 progress:
-  total_phases: 1
+  total_phases: 3
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 6
+  completed_plans: 3
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** Phase 6 -- Brief Instructions & Terminology
+**Current focus:** Phase 7 -- Smart Asset Detection & Layout Mapping
 
 ## Current Position
 
-Phase: 6 of 8 (Brief Instructions & Terminology) -- first phase of v1.1
-Plan: 2 of 2 complete
-Status: Phase 6 complete
-Last activity: 2026-02-28 -- Completed 06-02 (UI terminology replacements)
+Phase: 7 of 8 (Smart Asset Detection & Layout Mapping)
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-02-28 -- Completed 07-01 (core algorithms: composition detection + breadcrumb builder)
 
-Progress: [██████████] 100% (Phase 6)
+Progress: [█████-----] 50% (Phase 7)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [██████████] 100% (Phase 6)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 6. Brief Instructions & Terminology | 2/2 | 4min | 2min |
-| 7. Smart Asset Detection & Layout Mapping | 0/? | -- | -- |
+| 7. Smart Asset Detection & Layout Mapping | 1/2 | 4min | 4min |
 | 8. UX Flow Simplification | 0/? | -- | -- |
 
 *Updated after each plan completion*
@@ -59,6 +59,9 @@ Recent decisions affecting current work:
 - Test adjusted to verify negative instruction wording rather than asserting word absence (06-01)
 - Removed autoLayoutFrames from ExtractionStats interface (YAGNI) -- only user-visible strings changed (06-02)
 - Code identifiers (nodeCount, rootNodes) kept unchanged -- only user-facing text updated (06-02)
+- ExportResult.assets nodeId/assetType made optional to avoid breaking existing pipeline (07-01)
+- CHILD_COUNT_THRESHOLD=5, NESTING_DEPTH_THRESHOLD=3, SCAN_DEPTH_LIMIT=3 for composition heuristic (07-01)
+- Generic name pattern expanded to include Line, Star, Polygon Figma node types (07-01)
 
 ### Pending Todos
 
@@ -72,5 +75,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 06-02-PLAN.md (Phase 6 complete)
-Resume file: .planning/phases/06-brief-instructions-terminology/06-02-SUMMARY.md
+Stopped at: Completed 07-01-PLAN.md
+Resume file: .planning/phases/07-smart-asset-detection-layout-mapping/07-01-SUMMARY.md
