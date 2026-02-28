@@ -109,7 +109,7 @@ export async function fetchFileNodes(
   token: string,
   fileKey: string,
   nodeId: string,
-): Promise<{ rootNode: any; components: Record<string, any> }> {
+): Promise<{ rootNode: any; components: Record<string, any>; styles: Record<string, any> }> {
   const response = await figmaApiCall<GetFileNodesResponse>(
     shell,
     `/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}`,
@@ -128,6 +128,7 @@ export async function fetchFileNodes(
       return {
         rootNode: response.nodes[match].document,
         components: response.nodes[match].components,
+        styles: response.nodes[match].styles ?? {},
       };
     }
     throw new Error(
@@ -138,6 +139,7 @@ export async function fetchFileNodes(
   return {
     rootNode: nodeData.document,
     components: nodeData.components,
+    styles: nodeData.styles ?? {},
   };
 }
 
@@ -154,7 +156,7 @@ export async function fetchFullFile(
   shell: Shell,
   token: string,
   fileKey: string,
-): Promise<{ rootNodes: any[]; components: Record<string, any> }> {
+): Promise<{ rootNodes: any[]; components: Record<string, any>; styles: Record<string, any> }> {
   const response = await figmaApiCall<GetFileResponse>(
     shell,
     `/files/${fileKey}`,
@@ -165,5 +167,6 @@ export async function fetchFullFile(
   return {
     rootNodes: response.document.children,
     components: response.components,
+    styles: (response as any).styles ?? {},
   };
 }

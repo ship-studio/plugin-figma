@@ -9,8 +9,10 @@
 
 import type { Shell, ExtractionScope } from '../types';
 import type { ExtractionResult } from './types';
+import type { DesignTokens } from '../tokens/types';
 import { fetchFileNodes, fetchFullFile } from '../figma-api';
 import { normalizeTree, countNodes } from './normalize';
+import { collectTokens } from '../tokens/collect';
 
 /** Node count above which a warning is shown to the user. */
 export const WARN_THRESHOLD = 500;
@@ -28,6 +30,7 @@ export interface ExtractLayoutOptions {
 
 export interface ExtractLayoutResult {
   extraction: ExtractionResult;
+  tokens: DesignTokens;
   /** Set when nodeCount exceeds WARN_THRESHOLD before normalization. */
   largeTreeWarning?: { nodeCount: number; message: string };
 }
@@ -48,6 +51,7 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
 
   let rootNodes: any[];
   let components: Record<string, any>;
+  let styles: Record<string, any>;
 
   // 1. Fetch based on scope
   if (scope === 'node' || scope === 'frame') {
@@ -61,6 +65,7 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
     // fetchFileNodes returns a single root node; wrap in array for normalizeTree
     rootNodes = [result.rootNode];
     components = result.components;
+    styles = result.styles;
   } else {
     // scope === 'page': fetch full file, use first page's children
     const result = await fetchFullFile(shell, token, fileKey);
@@ -68,6 +73,7 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
     const firstPage = result.rootNodes[0];
     rootNodes = firstPage?.children || [];
     components = result.components;
+    styles = result.styles;
   }
 
   // 2. Count raw nodes before normalization
@@ -95,5 +101,8 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
     extraction.truncated = true;
   }
 
-  return { extraction, largeTreeWarning };
+  // 5. Collect design tokens from the normalized tree
+  const tokens = collectTokens(extraction.rootNodes, styles);
+
+  return { extraction, tokens, largeTreeWarning };
 }
