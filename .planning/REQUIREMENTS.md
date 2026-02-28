@@ -31,11 +31,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Design Tokens
 
-- [ ] **TOKN-01**: Plugin extracts fill colors (solid, gradient) with proper 0-1 to 0-255 conversion
+- [x] **TOKN-01**: Plugin extracts fill colors (solid, gradient) with proper 0-1 to 0-255 conversion
 - [ ] **TOKN-02**: Plugin extracts typography properties (font family, size, weight, line height, letter spacing)
 - [ ] **TOKN-03**: Plugin extracts spacing values (padding, gap, margin) from auto-layout properties
-- [ ] **TOKN-04**: Plugin extracts border properties (radius, stroke color, stroke weight)
-- [ ] **TOKN-05**: Plugin extracts shadow effects (drop shadow, inner shadow parameters)
+- [x] **TOKN-04**: Plugin extracts border properties (radius, stroke color, stroke weight)
+- [x] **TOKN-05**: Plugin extracts shadow effects (drop shadow, inner shadow parameters)
 
 ### Component Identification
 
@@ -116,11 +116,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LYOT-03 | Phase 2 | Complete |
 | LYOT-04 | Phase 2 | Complete |
 | LYOT-05 | Phase 2 | Complete |
-| TOKN-01 | Phase 3 | Pending |
+| TOKN-01 | Phase 3 | Complete |
 | TOKN-02 | Phase 3 | Pending |
 | TOKN-03 | Phase 3 | Pending |
-| TOKN-04 | Phase 3 | Pending |
-| TOKN-05 | Phase 3 | Pending |
+| TOKN-04 | Phase 3 | Complete |
+| TOKN-05 | Phase 3 | Complete |
 | COMP-01 | Phase 3 | Pending |
 | COMP-02 | Phase 3 | Pending |
 | COMP-03 | Phase 3 | Pending |
