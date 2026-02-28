@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-02-28T17:41:36Z"
+last_updated: "2026-02-28T17:47:46Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** Phase 4: Image & Asset Export
+**Current focus:** Phase 5: Brief Assembly
 
 ## Current Position
 
-Phase: 4 of 5 (Image & Asset Export)
-Plan: 1 of 2 in current phase (04-01 complete)
-Status: Plan 04-01 complete -- ready for Plan 04-02 (download orchestrator)
-Last activity: 2026-02-28 -- Completed 04-01-PLAN.md (asset identification, sanitizeFilename, identifyAssets)
+Phase: 4 of 5 (Image & Asset Export) -- COMPLETE
+Plan: 2 of 2 in current phase (04-02 complete)
+Status: Phase 4 complete -- ready for Phase 5 (brief assembly)
+Last activity: 2026-02-28 -- Completed 04-02-PLAN.md (asset export pipeline, download orchestrator, MainView wiring)
 
-Progress: [##################] 80%
+Progress: [####################] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 8min
-- Total execution time: 1.0 hours
+- Total plans completed: 9
+- Average duration: 7min
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
@@ -43,11 +43,11 @@ Progress: [##################] 80%
 | 1 - Plugin Foundation | 3/3 | 29min | 10min |
 | 2 - Layout Extraction | 2/2 | 19min | 10min |
 | 3 - Design Data Extraction | 2/2 | 10min | 5min |
-| 4 - Image & Asset Export | 1/2 | 3min | 3min |
+| 4 - Image & Asset Export | 2/2 | 6min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (15min), 03-01 (4min), 03-02 (6min), 04-01 (3min)
-- Trend: TDD plans execute quickly with no UI/checkpoint overhead
+- Last 5 plans: 03-01 (4min), 03-02 (6min), 04-01 (3min), 04-02 (3min)
+- Trend: Consistent 3-6min execution with no UI/checkpoint overhead
 
 *Updated after each plan completion*
 
@@ -94,6 +94,10 @@ Recent decisions affecting current work:
 - INSTANCE nodes treated as SVG export leaf -- children never individually exported (04-01)
 - Orphan imageFills still added as png-fill entries even if not matched by walked nodes (04-01)
 - Collision resolution via -2, -3 numeric suffixes (not node ID fragments) (04-01)
+- Used GetImagesResponse from @figma/rest-api-spec for fetchImages type safety (04-02)
+- fetchImageFills uses inline type to avoid status field collision with error detection (04-02)
+- ExtractLayoutResult extended with fileKey for asset export consumption (04-02)
+- Asset export runs automatically after extraction -- no separate user action needed (04-02)
 
 ### Pending Todos
 
@@ -106,5 +110,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 04-01-PLAN.md (asset identification, sanitizeFilename, identifyAssets)
-Resume file: .planning/phases/04-image-asset-export/04-01-SUMMARY.md
+Stopped at: Completed 04-02-PLAN.md (asset export pipeline, download orchestrator, MainView wiring)
+Resume file: .planning/phases/04-image-asset-export/04-02-SUMMARY.md
