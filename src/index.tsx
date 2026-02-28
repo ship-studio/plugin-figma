@@ -2,6 +2,7 @@ import { usePluginContext } from './context';
 import { Modal } from './components/Modal';
 import { SetupView } from './views/SetupView';
 import { SettingsView } from './views/SettingsView';
+import { MainView } from './views/MainView';
 import type { FigmaUser } from './types';
 
 const React = (window as any).__SHIPSTUDIO_REACT__;
@@ -145,12 +146,7 @@ function FigmaToolbarButton() {
         />
       );
     } else {
-      // Main view placeholder — will be replaced in Plan 03
-      modalContent = (
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-          Connected to Figma. URL input coming in the next update.
-        </p>
-      );
+      modalContent = <MainView token={token} />;
     }
   }
 
