@@ -938,4 +938,84 @@ describe('normalizeNode style enrichment', () => {
     expect(result).not.toBeNull();
     expect(result!.textStyleOverrides).toBeUndefined();
   });
+
+  it('captures blendMode when not PASS_THROUGH or NORMAL', () => {
+    const input = {
+      id: 'blend:1',
+      name: 'Blended',
+      type: 'FRAME',
+      blendMode: 'MULTIPLY',
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.blendMode).toBe('MULTIPLY');
+  });
+
+  it('does not capture blendMode when PASS_THROUGH', () => {
+    const input = {
+      id: 'blend:2',
+      name: 'PassThrough',
+      type: 'FRAME',
+      blendMode: 'PASS_THROUGH',
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.blendMode).toBeUndefined();
+  });
+
+  it('does not capture blendMode when NORMAL', () => {
+    const input = {
+      id: 'blend:3',
+      name: 'Normal',
+      type: 'FRAME',
+      blendMode: 'NORMAL',
+      children: [],
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.blendMode).toBeUndefined();
+  });
+
+  it('captures isMask when true', () => {
+    const input = {
+      id: 'mask:1',
+      name: 'MaskNode',
+      type: 'RECTANGLE',
+      isMask: true,
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.isMask).toBe(true);
+  });
+
+  it('does not capture isMask when false', () => {
+    const input = {
+      id: 'mask:2',
+      name: 'NotMask',
+      type: 'RECTANGLE',
+      isMask: false,
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.isMask).toBeUndefined();
+  });
+
+  it('does not capture isMask when absent', () => {
+    const input = {
+      id: 'mask:3',
+      name: 'NoMask',
+      type: 'RECTANGLE',
+    };
+
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.isMask).toBeUndefined();
+  });
 });

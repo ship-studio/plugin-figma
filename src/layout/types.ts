@@ -71,6 +71,10 @@ export interface LayoutNode {
   textStyleOverrides?: any;
   /** Node-level opacity */
   opacity?: number;
+  /** Node-level blend mode (for composition detection; only set when non-default) */
+  blendMode?: string;
+  /** Whether this node is a mask (for composition detection) */
+  isMask?: boolean;
   /** References to named Figma styles { fill: 'styleId', text: 'styleId', ... } */
   styleRefs?: Record<string, string>;
 }

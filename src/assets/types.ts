@@ -31,7 +31,14 @@ export interface ExportResult {
   /** Path to preview.png */
   previewPath: string;
   /** Successfully exported assets */
-  assets: { filename: string; path: string }[];
+  assets: {
+    filename: string;
+    path: string;
+    /** Stable key for breadcrumb lookup (populated when pipeline threads nodeId) */
+    nodeId?: string;
+    /** Asset classification for Type column in brief */
+    assetType?: 'icon' | 'image' | 'composition';
+  }[];
   /** Skipped assets, failed downloads */
   warnings: string[];
 }
