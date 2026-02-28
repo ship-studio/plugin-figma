@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Brief Quality & UX
-status: unknown
-last_updated: "2026-02-28T22:51:07.719Z"
+milestone: v1.2
+milestone_name: Brief Quality Overhaul
+status: complete
+last_updated: "2026-03-01"
 progress:
-  total_phases: 3
-  completed_phases: 3
+  total_phases: 6
+  completed_phases: 6
   total_plans: 5
   completed_plans: 5
 ---
@@ -15,19 +15,18 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-28)
+See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** Phase 8 -- UX Flow Simplification -- COMPLETE
+**Current focus:** v1.2 milestone complete. All milestones shipped. No active work.
 
 ## Current Position
 
-Phase: 8 of 8 (UX Flow Simplification) -- COMPLETE
-Plan: 1 of 1 complete
-Status: Phase 8 complete, v1.1 milestone complete
-Last activity: 2026-02-28 -- Completed 08-01 (merged result card, auto-derived scope, streamlined UX)
+Phase: 11 of 11 -- COMPLETE (all milestones shipped)
+Status: v1.0, v1.1, v1.2 all complete. Post-milestone temp dir migration applied.
+Last activity: 2026-03-01 -- v1.2 phases 9-11 + temp directory migration documented in GSD
 
-Progress: [██████████] 100% (Phase 8)
+Progress: [██████████] 100% (v1.2)
 
 ## Performance Metrics
 
@@ -71,6 +70,19 @@ Recent decisions affecting current work:
 - Extraction scope auto-derived from URL nodeId (element) vs no nodeId (page) (08-01)
 - Button shows gray "Get New Brief" after completion for clear state feedback (08-01)
 - Copy button at top of merged result card as most prominent element (08-01)
+- Vector-only group detection: GROUPs/FRAMEs with ALL primitive descendants (no TEXT/INSTANCE) exported as single PNG (v1.2 phase 9)
+- LINE nodes excluded from SVG export — they represent CSS borders, not icons (v1.2 phase 9)
+- SVG deduplication by sanitized filename — prevents duplicate exports (v1.2 phase 9)
+- Composition/illustration subtrees collapsed to single `[Illustration]` line in layout tree (v1.2 phase 10)
+- INSTANCE tree lines cross-reference assets with `-> filename.png` suffix (v1.2 phase 10)
+- Text content truncation increased from 60 → 200 chars for better brief fidelity (v1.2 phase 10)
+- Component name cleaning: "Property N=Value" → "Value" in tree and components table (v1.2 phase 10)
+- Defensive `String(w)` wrapper for warning rendering in MainView (v1.2 phase 11)
+- `downloadAllAssets` assetType union extended with `'component'` (v1.2 phase 11)
+- Assets written to OS temp dir via `mktemp -d` instead of `${projectPath}/.shipstudio/assets/` — eliminates risk of clobbering user files (post-v1.2)
+- Brief saved into temp dir next to assets — no more `.shipstudio/` directory in user's project (post-v1.2)
+- `ExportResult` gained `assetsDir: string` field to propagate temp path downstream (post-v1.2)
+- `exportAssets` no longer requires `projectPath` option (post-v1.2)
 
 ### Pending Todos
 
@@ -83,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: Completed 08-01-PLAN.md (Phase 8 complete, v1.1 milestone complete)
-Resume file: .planning/phases/08-ux-flow-simplification/08-01-SUMMARY.md
+Last session: 2026-03-01
+Stopped at: All milestones complete (v1.0, v1.1, v1.2). GSD docs updated to reflect v1.2 phases 9-11 and temp dir migration.
+Next: End-to-end testing, or start planning next milestone/features.

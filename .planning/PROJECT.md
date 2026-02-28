@@ -24,26 +24,37 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - ✓ User can extract a single frame/component or an entire page — v1.0
 - ✓ Plugin uses Ship Studio's theme system for consistent UI — v1.0
 
+- ✓ Plugin detects complex compositions (nested groups/vectors) and exports them as single images — v1.1/v1.2
+- ✓ Plugin maps every exported asset to its exact position in the layout tree — v1.1
+- ✓ Brief includes instructions for Claude Code to enter plan mode and ask clarifying questions — v1.1
+- ✓ Brief instructs Claude Code to use only provided assets and never fabricate replacements — v1.1
+- ✓ Brief instructs Claude Code to verify its output against the PNG preview when done — v1.1
+- ✓ UX uses clear, human-friendly terminology (no "Extraction Scope", "Single Node", etc.) — v1.1
+- ✓ UX flow is simplified with fewer steps — v1.1
+- ✓ UX results screen is less overwhelming — v1.1
+- ✓ Vector-only illustration groups detected and exported as single PNG — v1.2
+- ✓ Layout tree collapses illustration subtrees and cross-references assets — v1.2
+- ✓ Component names cleaned of generic Figma property prefixes — v1.2
+- ✓ Assets written to OS temp dir instead of project directory — post-v1.2
+
 ### Active
 
-- [ ] Plugin detects complex compositions (nested groups/vectors) and exports them as single images
-- [ ] Plugin maps every exported asset to its exact position in the layout tree
-- [ ] Brief includes instructions for Claude Code to enter plan mode and ask clarifying questions
-- [ ] Brief instructs Claude Code to use only provided assets and never fabricate replacements
-- [ ] Brief instructs Claude Code to verify its output against the PNG preview when done
-- [ ] UX uses clear, human-friendly terminology (no "Extraction Scope", "Single Node", etc.)
-- [ ] UX flow is simplified with fewer steps
-- [ ] UX results screen is less overwhelming
+None — all current requirements validated. See deferred features below.
 
-## Current Milestone: v1.1 Brief Quality & UX
+## Completed Milestones
 
-**Goal:** Get from 80% accuracy on first Claude Code build to near-100% by improving asset detection, brief instructions, and plugin UX.
+- **v1.0** (shipped 2026-02-28) — Core plugin: extraction, tokens, assets, brief
+- **v1.1** (shipped 2026-02-28) — Brief instructions, asset detection, UX simplification
+- **v1.2** (shipped 2026-03-01) — Illustration detection, layout tree quality, UI fixes
 
-**Target features:**
-- Smarter asset detection — recognize complex illustrations and export as images, not textual descriptions
-- Asset-to-layout mapping — brief explicitly ties each asset to where it belongs in the design
-- Smarter brief instructions — plan mode, clarifying questions, asset-only rule, visual verification
-- UX simplification — fewer steps, clearer terminology, less overwhelming results
+## Deferred Features
+
+- Progressive asset disclosure in results UI
+- Collapsible tree preview
+- Executable verification loop/checklist
+- Text alignment in brief (textAlignHorizontal from Figma)
+- Plugin icon SVG
+- Advanced options behind progressive disclosure
 
 ### Out of Scope
 
@@ -80,11 +91,14 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 | Figma REST API via curl | Plugin can't make direct HTTP requests; shell.exec + curl is the supported pattern | ✓ Good — reliable, handles all API endpoints |
 | Personal access token | Simpler than OAuth, lower setup friction, sufficient for read-only access | ✓ Good — one-time setup, persists across sessions |
 | Clipboard output | Keeps plugin focused on extraction; user controls Claude Code interaction | ✓ Good — clean separation of concerns |
-| Assets saved to project | SVGs and images need to exist as files for Claude Code to reference them | ✓ Good — `.shipstudio/assets/` convention works well |
+| Assets saved to OS temp dir | SVGs and images need to exist as files for Claude Code to reference them | ✓ Good — `mktemp -d` avoids clobbering user files (was `.shipstudio/assets/`, changed post-v1.1) |
 | Include rendered PNG | Visual reference + structured data together give Claude Code the best context | ✓ Good — 2x preview at minimal cost |
 | Framework-agnostic brief | CSS flexbox terms describe layout intent without locking to React/Vue/etc. | ✓ Good — Claude Code adapts to any project |
 | Base64 shell encoding | Markdown contains shell metacharacters; base64 avoids escaping issues | ✓ Good — zero escaping bugs |
-| Pure function brief generator | `generateBrief()` is synchronous, no side effects, fully testable | ✓ Good — 40 tests, deterministic output |
+| Pure function brief generator | `generateBrief()` is synchronous, no side effects, fully testable | ✓ Good — 54 tests, deterministic output |
+| Vector-only illustration detection | GROUPs/FRAMEs with all primitive descendants exported as single PNG | ✓ Good — eliminates dozens of redundant SVGs (v1.2) |
+| Layout tree cross-referencing | INSTANCE and illustration lines show `-> filename` when asset exists | ✓ Good — ties brief sections together (v1.2) |
+| Component name cleaning | Strip "Property N=" prefixes from Figma variant names | ✓ Good — cleaner brief output (v1.2) |
 
 ---
-*Last updated: 2026-02-28 after v1.1 milestone started*
+*Last updated: 2026-03-01 after v1.2 + temp directory migration*

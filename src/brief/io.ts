@@ -9,19 +9,15 @@
 import type { Shell } from '../types';
 
 /**
- * Save brief markdown to .shipstudio/brief.md in the project directory.
+ * Save brief markdown to brief.md in the given directory (typically the temp assets dir).
  * Uses base64 encoding to avoid shell metacharacter issues.
  */
 export async function saveBrief(
   shell: Shell,
-  projectPath: string,
+  assetsDir: string,
   markdown: string,
 ): Promise<void> {
-  const briefDir = `${projectPath}/.shipstudio`;
-  const briefPath = `${briefDir}/brief.md`;
-
-  // Ensure directory exists
-  await shell.exec('mkdir', ['-p', briefDir]);
+  const briefPath = `${assetsDir}/brief.md`;
 
   // Encode to base64 to safely pass through shell.
   // btoa only handles Latin1, so encode UTF-8 first via encodeURIComponent + unescape.

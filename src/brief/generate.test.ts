@@ -36,6 +36,7 @@ function makeExtraction(
 
 function makeExportResult(overrides: Partial<ExportResult> = {}): ExportResult {
   return {
+    assetsDir: '/Users/test/project/.shipstudio/assets',
     previewPath: '/Users/test/project/.shipstudio/assets/preview.png',
     assets: [
       { filename: 'icon-arrow.svg', path: '/Users/test/project/.shipstudio/assets/icon-arrow.svg', nodeId: '2:1', assetType: 'icon' },

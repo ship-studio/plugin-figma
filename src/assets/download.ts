@@ -10,14 +10,16 @@ import type { Shell } from '../types';
 import type { AssetExportProgress } from './types';
 
 /**
- * Clean and recreate the assets directory.
- * Wipes existing assets to ensure no stale files from previous runs.
+ * Create a fresh temp directory for assets.
+ * Each run gets its own isolated directory via mktemp -d,
+ * avoiding any risk of clobbering user files.
  */
-export async function prepareAssetsDir(shell: Shell, projectPath: string): Promise<string> {
-  const assetsDir = `${projectPath}/.shipstudio/assets`;
-  await shell.exec('rm', ['-rf', assetsDir]);
-  await shell.exec('mkdir', ['-p', assetsDir]);
-  return assetsDir;
+export async function prepareAssetsDir(shell: Shell): Promise<string> {
+  const result = await shell.exec('mktemp', ['-d', '-t', 'shipstudio-assets']);
+  if (result.exit_code !== 0) {
+    throw new Error(`Failed to create temp directory: ${result.stderr}`);
+  }
+  return result.stdout.trim();
 }
 
 /**

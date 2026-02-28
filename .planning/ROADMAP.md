@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 Ship Studio Figma Plugin** -- Phases 1-5 (shipped 2026-02-28)
 - ✅ **v1.1 Brief Quality & UX** -- Phases 6-8 (shipped 2026-02-28)
+- ✅ **v1.2 Brief Quality Overhaul** -- Phases 9-11 (shipped 2026-03-01, outside GSD workflow)
 
 ## Phases
 
@@ -20,63 +21,94 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 </details>
 
-### ✅ v1.1 Brief Quality & UX (Shipped 2026-02-28)
+<details>
+<summary>✅ v1.1 Brief Quality & UX (Phases 6-8) -- SHIPPED 2026-02-28</summary>
 
-**Milestone Goal:** Close the 80% to near-100% first-build accuracy gap by improving brief instructions, asset detection, and plugin UX.
+- [x] Phase 6: Brief Instructions & Terminology (2/2 plans) -- completed 2026-02-28
+- [x] Phase 7: Smart Asset Detection & Layout Mapping (2/2 plans) -- completed 2026-02-28
+- [x] Phase 8: UX Flow Simplification (1/1 plans) -- completed 2026-02-28
 
-**Phase Numbering:**
-- Integer phases (6, 7, 8): Planned milestone work
-- Decimal phases (6.1, 6.2): Urgent insertions (marked with INSERTED)
+See phase details below.
 
-- [x] **Phase 6: Brief Instructions & Terminology** - Add Claude Code behavior instructions to brief and replace jargon with human-friendly language
-- [x] **Phase 7: Smart Asset Detection & Layout Mapping** - Detect complex compositions, export as images, and map assets to their positions in the layout tree
-- [x] **Phase 8: UX Flow Simplification** - Reduce steps and surface composition warnings for a less overwhelming experience
+</details>
+
+### ✅ v1.2 Brief Quality Overhaul (Shipped 2026-03-01)
+
+**Milestone Goal:** Refine brief output quality — smarter illustration detection, cleaner layout tree, and bugfixes. Executed outside GSD workflow.
+
+- [x] **Phase 9: Smart Illustration Detection** - Detect vector-only groups as illustrations, deduplicate SVGs, filter LINE nodes
+- [x] **Phase 10: Layout Tree Quality** - Collapse illustration subtrees, add asset cross-references, clean component names
+- [x] **Phase 11: UI Fixes** - Defensive warning rendering, component assetType support
+
+### Post-milestone Fixes (applied outside GSD workflow)
+
+- **Temp directory migration (2026-03-01):** Assets and brief now written to OS temp dir (`mktemp -d`) instead of `${projectPath}/.shipstudio/assets/`. Eliminates risk of `rm -rf` destroying user files. Files changed: `download.ts`, `types.ts`, `export.ts`, `io.ts`, `MainView.tsx`. All 276 tests pass.
 
 ## Phase Details
 
-### Phase 6: Brief Instructions & Terminology
+<details>
+<summary>Phase 6: Brief Instructions & Terminology (v1.1)</summary>
+
 **Goal**: Users get a brief that tells Claude Code how to behave (plan first, use only provided assets, verify against preview) and a plugin UI that speaks plain language
 **Depends on**: Phase 5 (v1.0 brief assembly complete)
 **Requirements**: INST-01, INST-02, INST-03, UX-01
-**Success Criteria** (what must be TRUE):
-  1. Generated brief contains a plan mode instruction telling Claude Code to plan its approach and ask clarifying questions before building
-  2. Generated brief contains an asset-only rule telling Claude Code to use only the provided assets and never fabricate replacements
-  3. Generated brief contains a verification instruction telling Claude Code to compare its output against the PNG preview when done
-  4. All user-facing text in the plugin uses plain, human-friendly language -- no "Extraction Scope", "Single Node", "auto-layout frames", or other developer jargon
-**Plans**: 2 plans
 
 Plans:
 - [x] 06-01-PLAN.md -- Add "How to Use This Brief" instructions section to generated brief (TDD)
 - [x] 06-02-PLAN.md -- Replace developer jargon with human-friendly terminology in plugin UI
 
-### Phase 7: Smart Asset Detection & Layout Mapping
-**Goal**: Complex illustrations (nested groups of vectors, masks, blend modes) are automatically detected and exported as single images, and every exported asset is mapped to its exact position in the layout tree
+</details>
+
+<details>
+<summary>Phase 7: Smart Asset Detection & Layout Mapping (v1.1)</summary>
+
+**Goal**: Complex illustrations are automatically detected and exported as single images, and every exported asset is mapped to its exact position in the layout tree
 **Depends on**: Phase 6
 **Requirements**: ASSET-01, ASSET-02, ASSET-03, ASSET-04
-**Success Criteria** (what must be TRUE):
-  1. Plugin identifies complex compositions (nodes with high child count, nested vectors, masks, or blend modes) and flags them for image export instead of textual description
-  2. Detected complex compositions are exported as single PNG images alongside the existing SVG/PNG asset pipeline
-  3. Generated brief includes an asset mapping section that shows each exported asset's position in the layout tree via breadcrumb paths (e.g., "Hero > Header > Icon")
-  4. Asset-to-layout mapping uses nodeId as the stable key, so filenames and breadcrumb paths stay aligned even when layer names collide
-  5. Previously working asset exports (SVGs, image fills, simple icons) continue to work without regression
-**Plans**: 2 plans
 
 Plans:
 - [x] 07-01-PLAN.md -- Composition detection heuristic and breadcrumb path builder (TDD pure functions + type extensions)
 - [x] 07-02-PLAN.md -- Pipeline integration: wire detection into export, extend brief Assets table with Type and Location columns
 
-### Phase 8: UX Flow Simplification
+</details>
+
+<details>
+<summary>Phase 8: UX Flow Simplification (v1.1)</summary>
+
 **Goal**: Users experience a streamlined plugin flow with fewer steps and less overwhelming results
-**Depends on**: Phase 7 (composition detection needed for warnings)
+**Depends on**: Phase 7
 **Requirements**: UX-02
-**Success Criteria** (what must be TRUE):
-  1. Plugin flow has fewer visible steps between pasting a URL and getting the brief
-  2. Results screen surfaces key information (brief size, asset count, composition count) without overwhelming the user with raw data
-  3. When complex compositions are detected, user sees a clear count in the result card (e.g., "5 compositions exported as PNG")
-**Plans**: 1 plan
 
 Plans:
 - [x] 08-01-PLAN.md -- Merge 3 result sections into single result card and replace 3 spinners with single progress indicator
+
+</details>
+
+### Phase 9: Smart Illustration Detection (v1.2)
+**Goal**: Vector-only groups (GROUPs/FRAMEs where ALL descendants are primitives — no TEXT or INSTANCE) are detected and exported as single PNGs instead of dozens of individual SVGs
+**Depends on**: Phase 7 (composition detection)
+**Changes**:
+  - `detect-composition.ts` — Added vector-only group detection heuristic
+  - `identify.ts` — LINE nodes excluded from SVG export (they're CSS borders)
+  - SVG deduplication by sanitized filename — one `linkedin.svg` instead of six copies
+  - Warning messages now distinguish "composition" (visual effects) from "illustration" (vector-only group)
+
+### Phase 10: Layout Tree Quality (v1.2)
+**Goal**: Layout tree output is cleaner and more useful for Claude Code
+**Depends on**: Phase 9
+**Changes**:
+  - Composition/illustration subtrees collapsed to single line: `[Illustration] 'Hero' 500x400 -> hero.png`
+  - INSTANCE tree lines show `-> filename.png` when matching asset exists (cross-referencing)
+  - Text content truncation increased from 60 to 200 chars
+  - Component names cleaned: `"Property 1=Green"` → `"Green"` (strips generic Figma property prefixes)
+  - Components table uses same cleaning logic
+
+### Phase 11: UI Fixes (v1.2)
+**Goal**: Fix minor bugs in the plugin UI
+**Depends on**: Phase 10
+**Changes**:
+  - `MainView.tsx` — Defensive `String(w)` wrapper for warning rendering
+  - `download.ts` — `downloadAllAssets` type updated to include `'component'` in assetType union
 
 ## Progress
 
@@ -93,3 +125,6 @@ Phases execute in numeric order: 6 -> 6.x -> 7 -> 7.x -> 8 -> 8.x
 | 6. Brief Instructions & Terminology | v1.1 | 2/2 | Complete | 2026-02-28 |
 | 7. Smart Asset Detection & Layout Mapping | v1.1 | 2/2 | Complete | 2026-02-28 |
 | 8. UX Flow Simplification | v1.1 | 1/1 | Complete | 2026-02-28 |
+| 9. Smart Illustration Detection | v1.2 | N/A | Complete | 2026-03-01 |
+| 10. Layout Tree Quality | v1.2 | N/A | Complete | 2026-03-01 |
+| 11. UI Fixes | v1.2 | N/A | Complete | 2026-03-01 |

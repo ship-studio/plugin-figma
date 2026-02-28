@@ -14,3 +14,33 @@
 
 ---
 
+## v1.1 Brief Quality & UX (Shipped: 2026-02-28)
+
+**Phases completed:** 3 phases (6-8), 5 plans
+
+**Key accomplishments:**
+- "How to Use This Brief" instructions section guiding Claude Code behavior (plan mode, asset-only rule, verification)
+- Human-friendly terminology throughout plugin UI (no jargon)
+- Composition detection heuristic for complex illustrations (exported as single PNG)
+- Asset-to-layout breadcrumb mapping in brief Assets table (4-column: File, Type, Location, Path)
+- Merged 3 result sections into single card, auto-derived extraction scope from URL
+- 272 tests — built in ~44 minutes
+
+---
+
+## v1.2 Brief Quality Overhaul (Shipped: 2026-03-01)
+
+**Phases completed:** 3 phases (9-11), executed outside GSD workflow
+
+**Key accomplishments:**
+- Vector-only illustration detection — groups with all primitive descendants exported as single PNG instead of dozens of SVGs
+- LINE nodes excluded from SVG export (CSS borders, not icons)
+- SVG deduplication by sanitized filename
+- Layout tree quality: illustration subtrees collapsed, asset cross-references on INSTANCE lines, text truncation at 200 chars
+- Component name cleaning: strips "Property N=" Figma prefixes
+- UI bugfixes: defensive warning rendering, component assetType support
+- Post-milestone: temp directory migration — assets/brief written to OS temp dir via `mktemp -d` instead of `.shipstudio/`
+- 276 tests
+
+---
+

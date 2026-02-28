@@ -29,16 +29,15 @@ export interface ExportAssetsOptions {
   selectedNodeId: string;
   rootNodes: LayoutNode[];
   imageFills: ImageFillRef[];
-  projectPath: string;
   onProgress?: (progress: AssetExportProgress) => void;
 }
 
 export async function exportAssets(options: ExportAssetsOptions): Promise<ExportResult> {
-  const { shell, token, fileKey, selectedNodeId, rootNodes, imageFills, projectPath, onProgress } = options;
+  const { shell, token, fileKey, selectedNodeId, rootNodes, imageFills, onProgress } = options;
   const warnings: string[] = [];
 
-  // 1. Clean and recreate assets directory
-  const assetsDir = await prepareAssetsDir(shell, projectPath);
+  // 1. Create fresh temp directory for assets
+  const assetsDir = await prepareAssetsDir(shell);
 
   // 2. Detect compositions and identify exportable assets
   const { compositionNodeIds, warnings: compositionWarnings } = detectCompositions(rootNodes);
@@ -144,6 +143,7 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
   warnings.push(...dlWarnings);
 
   return {
+    assetsDir,
     previewPath,
     assets: downloaded,
     warnings,

@@ -28,6 +28,8 @@ export interface AssetExportProgress {
 
 /** Result of the complete asset export operation. */
 export interface ExportResult {
+  /** Temp directory containing all exported assets and brief */
+  assetsDir: string;
   /** Path to preview.png */
   previewPath: string;
   /** Successfully exported assets */

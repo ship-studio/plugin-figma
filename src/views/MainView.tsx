@@ -141,7 +141,7 @@ export function MainView({ token }: MainViewProps) {
   const extractRequestIdRef = useRef(0);
 
   const runAssetExport = useCallback(async (result: ExtractLayoutResult) => {
-    if (!shellRef.current || !ctx?.project?.path || !parsedUrl) return;
+    if (!shellRef.current || !parsedUrl) return;
 
     setExportingAssets(true);
     setAssetProgress(null);
@@ -155,7 +155,6 @@ export function MainView({ token }: MainViewProps) {
         selectedNodeId: parsedUrl.nodeId || result.extraction.rootNodes[0]?.id || '0:0',
         rootNodes: result.extraction.rootNodes,
         imageFills: result.tokens.imageFills,
-        projectPath: ctx.project.path,
         onProgress: setAssetProgress,
       });
 
@@ -178,7 +177,7 @@ export function MainView({ token }: MainViewProps) {
           const brief = generateBrief({
             extraction: result,
             exportResult: exportRes,
-            projectPath: ctx.project.path,
+            projectPath: exportRes.assetsDir,
             fileName: fileInfo?.name ?? 'Untitled',
             figmaUrl: urlInput,
             rootNodes: result.extraction.rootNodes,
@@ -189,7 +188,7 @@ export function MainView({ token }: MainViewProps) {
 
           // Save to file (non-blocking -- fire and forget with error logging)
           if (shellRef.current) {
-            saveBrief(shellRef.current, ctx.project.path, brief.markdown).catch(err => {
+            saveBrief(shellRef.current, exportRes.assetsDir, brief.markdown).catch(err => {
               console.error('Brief save failed:', err);
               // Non-fatal -- brief is still in memory for clipboard copy
             });
@@ -625,7 +624,7 @@ export function MainView({ token }: MainViewProps) {
 
             {/* File save note */}
             <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
-              Also saved to .shipstudio/brief.md
+              Also saved to {exportResult.assetsDir}/brief.md
             </div>
           </div>
         </div>
