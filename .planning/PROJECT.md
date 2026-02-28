@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Ship Studio plugin that extracts structured design data from Figma and prepares it for Claude Code. Instead of screenshotting designs and hoping for the best, users get rich layout structure, design tokens, component mapping, exported assets, and a rendered image — all formatted as a design brief that Claude Code can use to produce accurate code.
+A Ship Studio plugin that extracts structured design data from Figma and formats it as a complete design brief for Claude Code. Users paste a Figma URL, and the plugin extracts layout structure, design tokens, component mapping, and image assets — then assembles everything into a structured markdown brief ready to paste into Claude Code.
 
 ## Core Value
 
@@ -12,21 +12,21 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ User can enter and store their Figma personal access token (persisted via plugin storage) — v1.0
+- ✓ User can paste a Figma URL (file, frame, or component) to select what to extract — v1.0
+- ✓ Plugin extracts layout structure (component hierarchy, auto-layout/flex properties, spacing, sizing) — v1.0
+- ✓ Plugin extracts design tokens (colors, typography, spacing, borders, shadows) with deduplication — v1.0
+- ✓ Plugin extracts component mapping (names, descriptions, variant properties) — v1.0
+- ✓ Plugin renders PNG preview and saves it to the project — v1.0
+- ✓ Plugin exports SVG icons and image assets to the project directory — v1.0
+- ✓ Plugin formats all extracted data into a structured design brief — v1.0
+- ✓ Plugin copies the design brief to clipboard — v1.0
+- ✓ User can extract a single frame/component or an entire page — v1.0
+- ✓ Plugin uses Ship Studio's theme system for consistent UI — v1.0
 
 ### Active
 
-- [ ] User can enter and store their Figma personal access token once (persisted via plugin storage)
-- [ ] User can paste a Figma URL (file, frame, or component) to select what to extract
-- [ ] Plugin extracts layout structure from Figma (component hierarchy, auto-layout/flex properties, spacing, sizing)
-- [ ] Plugin extracts design tokens (colors, typography, spacing scales, border radii, shadows)
-- [ ] Plugin extracts component mapping (which Figma components are used and their properties)
-- [ ] Plugin renders the selected frame/component as a PNG image and saves it to the project
-- [ ] Plugin exports SVG icons and image assets found in the design and saves them to the project
-- [ ] Plugin formats all extracted data into a structured design brief
-- [ ] Plugin copies the design brief to clipboard, ready to paste into Claude Code
-- [ ] User can extract a single frame/component or an entire page
-- [ ] Plugin uses Ship Studio's theme system for consistent UI
+(None — define with `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -40,12 +40,12 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 ## Context
 
 - Built on the Ship Studio plugin starter template (React/TypeScript/Vite, Tauri runtime)
+- Shipped v1.0 with 6,985 LOC TypeScript, 208 tests, 66.54 kB bundle
+- Tech stack: React 18, TypeScript, Vite, Vitest, @figma/rest-api-spec
 - Plugins render in the "toolbar" slot and can open modals for richer UI
-- Plugin has shell access (`shell.exec`) for making HTTP requests (curl) to the Figma REST API
+- Plugin has shell access (`shell.exec`) for HTTP requests (curl) to Figma REST API
 - Plugin storage persists data per-project — used for Figma token storage
 - `dist/index.js` must be committed to the repo — Ship Studio clones without building
-- The Figma REST API provides full design tree access, image rendering, and node data via personal access tokens
-- Ship Studio starter repo: https://github.com/ship-studio/plugin-starter
 
 ## Constraints
 
@@ -53,17 +53,20 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - **No direct network**: Must use `shell.exec` with curl for Figma API calls
 - **Bundle committed**: `dist/index.js` must be in the repo
 - **10s load timeout**: Keep module scope lightweight, defer work to effects
-- **120s shell timeout**: Figma API calls need to complete within this window (configurable)
+- **120s shell timeout**: Figma API calls need to complete within this window
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Figma REST API via curl | Plugin can't make direct HTTP requests; shell.exec + curl is the supported pattern | — Pending |
-| Personal access token | Simpler than OAuth, lower setup friction, sufficient for read-only access | — Pending |
-| Clipboard output | Keeps plugin focused on extraction; user controls Claude Code interaction | — Pending |
-| Assets saved to project | SVGs and images need to exist as files for Claude Code to reference them | — Pending |
-| Include rendered PNG | Visual reference + structured data together give Claude Code the best context | — Pending |
+| Figma REST API via curl | Plugin can't make direct HTTP requests; shell.exec + curl is the supported pattern | ✓ Good — reliable, handles all API endpoints |
+| Personal access token | Simpler than OAuth, lower setup friction, sufficient for read-only access | ✓ Good — one-time setup, persists across sessions |
+| Clipboard output | Keeps plugin focused on extraction; user controls Claude Code interaction | ✓ Good — clean separation of concerns |
+| Assets saved to project | SVGs and images need to exist as files for Claude Code to reference them | ✓ Good — `.shipstudio/assets/` convention works well |
+| Include rendered PNG | Visual reference + structured data together give Claude Code the best context | ✓ Good — 2x preview at minimal cost |
+| Framework-agnostic brief | CSS flexbox terms describe layout intent without locking to React/Vue/etc. | ✓ Good — Claude Code adapts to any project |
+| Base64 shell encoding | Markdown contains shell metacharacters; base64 avoids escaping issues | ✓ Good — zero escaping bugs |
+| Pure function brief generator | `generateBrief()` is synchronous, no side effects, fully testable | ✓ Good — 40 tests, deterministic output |
 
 ---
-*Last updated: 2026-02-28 after initialization*
+*Last updated: 2026-02-28 after v1.0 milestone*
