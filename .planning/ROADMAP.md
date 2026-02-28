@@ -61,11 +61,11 @@ Plans:
   2. Plugin extracts typography properties (font family, size, weight, line height, letter spacing), spacing values (padding, gap), border properties (radius, stroke color, weight), and shadow effects (drop shadow, inner shadow)
   3. Plugin detects component instances (INSTANCE nodes), resolves their component names, includes descriptions when available, and extracts variant property values
   4. Extracted tokens are deduplicated -- repeated colors, font stacks, and spacing values appear once each with usage counts or references
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — TDD: Token types, color/gradient conversion utilities, LayoutNode style enrichment, normalizeNode extension
+- [ ] 03-02-PLAN.md — TDD: Token collection/deduplication engine (collectTokens), API styles map plumbing, extraction pipeline wiring
 
 ### Phase 4: Image & Asset Export
 **Goal**: The plugin renders a PNG preview of the selected design and exports all SVG icons and raster images as local files in the project directory, ready for Claude Code to reference
@@ -107,6 +107,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Plugin Foundation & Figma Connection | 3/3 | Complete    | 2026-02-28 |
 | 2. Layout Extraction | 2/2 | Complete | 2026-02-28 |
-| 3. Design Data Extraction | 0/0 | Not started | - |
+| 3. Design Data Extraction | 0/2 | In progress | - |
 | 4. Image & Asset Export | 0/0 | Not started | - |
 | 5. Brief Assembly & Output | 0/0 | Not started | - |
