@@ -17,6 +17,7 @@ import type { LayoutNode } from '../layout/types';
 import type { ImageFillRef } from '../tokens/types';
 import type { AssetExportProgress, ExportResult } from './types';
 import { identifyAssets } from './identify';
+import { detectCompositions } from './detect-composition';
 import { fetchImages, fetchImageFills } from '../figma-api';
 import { prepareAssetsDir, downloadFile, downloadAllAssets } from './download';
 
@@ -39,13 +40,16 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
   // 1. Clean and recreate assets directory
   const assetsDir = await prepareAssetsDir(shell, projectPath);
 
-  // 2. Identify exportable assets
-  const assetEntries = identifyAssets(rootNodes, imageFills);
+  // 2. Detect compositions and identify exportable assets
+  const { compositionNodeIds, warnings: compositionWarnings } = detectCompositions(rootNodes);
+  warnings.push(...compositionWarnings);
+  const assetEntries = identifyAssets(rootNodes, imageFills, compositionNodeIds);
 
   // 3. Batch API calls for render URLs
   //    - One call for preview PNG (2x scale)
   //    - One call for all SVG assets (if any)
   //    - One call for image fills resolution (if any raster assets)
+  //    - One call for png-render compositions (2x scale PNG)
 
   // 3a. Preview PNG
   if (onProgress) onProgress({ current: 0, total: assetEntries.length + 1, currentAsset: 'preview.png', phase: 'preview' });
@@ -90,13 +94,24 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
     }
   }
 
+  // 3d. PNG render URLs for compositions (batch at 2x scale)
+  const pngRenderEntries = assetEntries.filter(a => a.exportType === 'png-render');
+  let pngRenderUrls: Record<string, string | null> = {};
+  if (pngRenderEntries.length > 0) {
+    try {
+      pngRenderUrls = await fetchImages(shell, token, fileKey, pngRenderEntries.map(a => a.nodeId), 'png', 2);
+    } catch (err: any) {
+      warnings.push(`Composition PNG render failed: ${err?.message || 'Unknown error'}`);
+    }
+  }
+
   // 4. Build download list: map each asset to its resolved URL
-  const downloadList: Array<{ filename: string; url: string }> = [];
+  const downloadList: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }> = [];
 
   for (const entry of svgEntries) {
     const url = svgUrls[entry.nodeId];
     if (url) {
-      downloadList.push({ filename: entry.filename, url });
+      downloadList.push({ filename: entry.filename, url, nodeId: entry.nodeId, assetType: 'icon' });
     } else {
       warnings.push(`No render URL for ${entry.filename} (node ${entry.nodeId})`);
     }
@@ -104,9 +119,18 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
 
   for (const entry of fillEntries) {
     if (entry.imageRef && fillUrls[entry.imageRef]) {
-      downloadList.push({ filename: entry.filename, url: fillUrls[entry.imageRef] });
+      downloadList.push({ filename: entry.filename, url: fillUrls[entry.imageRef], nodeId: entry.nodeId, assetType: 'image' });
     } else {
       warnings.push(`No download URL for image fill ${entry.filename} (ref: ${entry.imageRef})`);
+    }
+  }
+
+  for (const entry of pngRenderEntries) {
+    const url = pngRenderUrls[entry.nodeId];
+    if (url) {
+      downloadList.push({ filename: entry.filename, url, nodeId: entry.nodeId, assetType: 'composition' });
+    } else {
+      warnings.push(`No render URL for composition ${entry.filename} (node ${entry.nodeId})`);
     }
   }
 

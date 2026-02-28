@@ -52,14 +52,14 @@ export async function downloadFile(
 export async function downloadAllAssets(
   shell: Shell,
   assetsDir: string,
-  assets: Array<{ filename: string; url: string }>,
+  assets: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }>,
   onProgress?: (progress: AssetExportProgress) => void,
-): Promise<{ downloaded: { filename: string; path: string }[]; warnings: string[] }> {
-  const downloaded: { filename: string; path: string }[] = [];
+): Promise<{ downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }[]; warnings: string[] }> {
+  const downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }[] = [];
   const warnings: string[] = [];
 
   for (let i = 0; i < assets.length; i++) {
-    const { filename, url } = assets[i];
+    const { filename, url, nodeId, assetType } = assets[i];
     const outputPath = `${assetsDir}/${filename}`;
 
     if (onProgress) {
@@ -73,7 +73,10 @@ export async function downloadAllAssets(
 
     const result = await downloadFile(shell, url, outputPath);
     if (result.success) {
-      downloaded.push({ filename, path: outputPath });
+      const item: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' } = { filename, path: outputPath };
+      if (nodeId !== undefined) item.nodeId = nodeId;
+      if (assetType !== undefined) item.assetType = assetType;
+      downloaded.push(item);
     } else {
       warnings.push(`Failed to download ${filename}: ${result.error}`);
     }

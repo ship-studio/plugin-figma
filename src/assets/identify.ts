@@ -49,7 +49,19 @@ function classifyNode(
   imageFillMap: Map<string, string>,
   matchedNodeIds: Set<string>,
   entries: AssetEntry[],
+  compositionIds: Set<string>,
 ): void {
+  // Composition check FIRST -- before all other classification
+  if (compositionIds.has(child.id)) {
+    entries.push({
+      nodeId: child.id,
+      nodeName: child.name,
+      exportType: 'png-render',
+      filename: sanitizeFilename(child.name) + '.png',
+    });
+    return; // Do NOT recurse into children
+  }
+
   // INSTANCE nodes -> SVG, do NOT recurse into children
   if (child.type === 'INSTANCE') {
     entries.push({
@@ -103,7 +115,7 @@ function classifyNode(
   // but do NOT recurse further
   if (CONTAINER_TYPES.has(child.type) && child.children) {
     for (const grandchild of child.children) {
-      classifyNodeLeaf(grandchild, imageFillMap, matchedNodeIds, entries);
+      classifyNodeLeaf(grandchild, imageFillMap, matchedNodeIds, entries, compositionIds);
     }
   }
 }
@@ -116,7 +128,19 @@ function classifyNodeLeaf(
   imageFillMap: Map<string, string>,
   matchedNodeIds: Set<string>,
   entries: AssetEntry[],
+  compositionIds: Set<string>,
 ): void {
+  // Composition check FIRST -- before all other classification
+  if (compositionIds.has(child.id)) {
+    entries.push({
+      nodeId: child.id,
+      nodeName: child.name,
+      exportType: 'png-render',
+      filename: sanitizeFilename(child.name) + '.png',
+    });
+    return; // Do NOT recurse into children
+  }
+
   // INSTANCE nodes -> SVG
   if (child.type === 'INSTANCE') {
     entries.push({
@@ -179,6 +203,7 @@ function classifyNodeLeaf(
 export function identifyAssets(
   rootNodes: LayoutNode[],
   imageFills: ImageFillRef[],
+  compositionIds: Set<string> = new Set(),
 ): AssetEntry[] {
   // Build lookup maps from imageFills
   const imageFillMap = new Map<string, string>();
@@ -193,7 +218,7 @@ export function identifyAssets(
   for (const rootNode of rootNodes) {
     if (!rootNode.children) continue;
     for (const child of rootNode.children) {
-      classifyNode(child, imageFillMap, matchedNodeIds, entries);
+      classifyNode(child, imageFillMap, matchedNodeIds, entries, compositionIds);
     }
   }
 
