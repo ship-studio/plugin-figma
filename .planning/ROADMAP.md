@@ -76,11 +76,11 @@ Plans:
   2. Plugin identifies vector/icon nodes and exports them as SVG files, and identifies raster image nodes and exports them as PNG files, all saved to the project directory
   3. Exported assets have sensible filenames derived from their Figma layer names (sanitized for filesystem use)
   4. All image URLs are downloaded immediately during extraction -- no expired S3 URLs are stored as references
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — TDD: Asset types, identification pure function (tree walk to AssetEntry[]), filename sanitization with collision handling
+- [ ] 04-02-PLAN.md — Figma image API wrappers (fetchImages, fetchImageFills), download orchestrator, export pipeline, MainView wiring with progress feedback
 
 ### Phase 5: Brief Assembly & Output
 **Goal**: The plugin assembles all extracted data (layout tree, design tokens, components, asset references) into a structured markdown design brief and copies it to the clipboard, with progress feedback and clear error messages throughout the extraction process
