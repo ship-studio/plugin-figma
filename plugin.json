@@ -1,0 +1,7 @@
+{
+  "id": "figma",
+  "name": "Figma",
+  "description": "Extract structured design briefs from Figma designs",
+  "version": "0.1.0",
+  "entry": "dist/index.js"
+}
