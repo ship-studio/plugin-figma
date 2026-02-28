@@ -9,9 +9,9 @@ Requirements for v1.1 milestone. Each maps to roadmap phases.
 
 ### Brief Instructions
 
-- [ ] **INST-01**: Brief includes a plan mode instruction telling Claude Code to plan and ask questions before building
-- [ ] **INST-02**: Brief includes an asset-only rule telling Claude Code to use only provided assets, never fabricate replacements
-- [ ] **INST-03**: Brief includes a verification instruction telling Claude Code to compare its output against the PNG preview when done
+- [x] **INST-01**: Brief includes a plan mode instruction telling Claude Code to plan and ask questions before building
+- [x] **INST-02**: Brief includes an asset-only rule telling Claude Code to use only provided assets, never fabricate replacements
+- [x] **INST-03**: Brief includes a verification instruction telling Claude Code to compare its output against the PNG preview when done
 
 ### Asset Detection & Mapping
 
@@ -22,7 +22,7 @@ Requirements for v1.1 milestone. Each maps to roadmap phases.
 
 ### UX Simplification
 
-- [ ] **UX-01**: Plugin uses human-friendly terminology throughout (no "Extraction Scope", "Single Node", "auto-layout frames")
+- [x] **UX-01**: Plugin uses human-friendly terminology throughout (no "Extraction Scope", "Single Node", "auto-layout frames")
 - [ ] **UX-02**: Plugin flow is simplified with fewer visible steps
 
 ## v2 Requirements
@@ -62,14 +62,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INST-01 | Phase 6 | Pending |
-| INST-02 | Phase 6 | Pending |
-| INST-03 | Phase 6 | Pending |
+| INST-01 | Phase 6 | Complete |
+| INST-02 | Phase 6 | Complete |
+| INST-03 | Phase 6 | Complete |
 | ASSET-01 | Phase 7 | Pending |
 | ASSET-02 | Phase 7 | Pending |
 | ASSET-03 | Phase 7 | Pending |
 | ASSET-04 | Phase 7 | Pending |
-| UX-01 | Phase 6 | Pending |
+| UX-01 | Phase 6 | Complete |
 | UX-02 | Phase 8 | Pending |
 
 **Coverage:**

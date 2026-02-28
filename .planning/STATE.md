@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Brief Quality & UX
 status: active
-last_updated: "2026-02-28T21:30:00.000Z"
+last_updated: "2026-02-28T20:25:17.000Z"
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 6 of 8 (Brief Instructions & Terminology) -- first phase of v1.1
-Plan: --
-Status: Ready to plan
-Last activity: 2026-02-28 -- Roadmap created for v1.1 milestone
+Plan: 2 of 2 complete
+Status: Phase 6 complete
+Last activity: 2026-02-28 -- Completed 06-02 (UI terminology replacements)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100% (Phase 6)
 
 ## Performance Metrics
 
@@ -40,7 +40,7 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 6. Brief Instructions & Terminology | 0/? | -- | -- |
+| 6. Brief Instructions & Terminology | 2/2 | 4min | 2min |
 | 7. Smart Asset Detection & Layout Mapping | 0/? | -- | -- |
 | 8. UX Flow Simplification | 0/? | -- | -- |
 
@@ -56,6 +56,9 @@ Recent decisions affecting current work:
 - Base64 encoding via btoa for UTF-8-safe shell content transfer (05-02)
 - Brief generation deferred via setTimeout(0) to allow spinner paint (05-02)
 - Pure function brief generator -- generateBrief() is synchronous, testable (v1.0)
+- Test adjusted to verify negative instruction wording rather than asserting word absence (06-01)
+- Removed autoLayoutFrames from ExtractionStats interface (YAGNI) -- only user-visible strings changed (06-02)
+- Code identifiers (nodeCount, rootNodes) kept unchanged -- only user-facing text updated (06-02)
 
 ### Pending Todos
 
@@ -69,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-brief-instructions-terminology/06-CONTEXT.md
+Stopped at: Completed 06-02-PLAN.md (Phase 6 complete)
+Resume file: .planning/phases/06-brief-instructions-terminology/06-02-SUMMARY.md
