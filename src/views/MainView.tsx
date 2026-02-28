@@ -319,26 +319,18 @@ export function MainView({ token }: MainViewProps) {
 
       {/* Large Tree Warning */}
       {awaitingLargeTreeConfirm && largeTreeWarning && (
-        <div
-          className="figma-plugin-section"
-          style={{
-            background: 'var(--bg-warning, #fff3cd)',
-            border: '1px solid var(--border-warning, #ffc107)',
-            borderRadius: '6px',
-            padding: '12px',
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: '4px' }}>Large selection</div>
-          <div style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>
-            {largeTreeWarning.message}
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn-primary" onClick={handleConfirmLargeTree}>
-              Extract Anyway
-            </button>
-            <button className="btn-secondary" onClick={handleCancelLargeTree}>
-              Cancel
-            </button>
+        <div className="figma-plugin-section">
+          <div className="figma-plugin-warning">
+            <strong>{largeTreeWarning.nodeCount} nodes detected</strong>
+            <p>Large selections may take longer and produce verbose output. Continue?</p>
+            <div className="figma-plugin-warning-actions">
+              <button className="btn-primary" onClick={handleConfirmLargeTree}>
+                Continue
+              </button>
+              <button className="btn-secondary" onClick={handleCancelLargeTree}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -347,9 +339,12 @@ export function MainView({ token }: MainViewProps) {
       {extractionResult && (
         <div className="figma-plugin-section">
           <div className="figma-plugin-file-info">
-            <div style={{ fontWeight: 600 }}>Extraction Complete</div>
-            <div style={{ color: 'var(--text-secondary)' }}>
-              {extractionResult.nodeCount} nodes extracted
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <span style={{ color: '#38a169' }}>&#10003;</span>
+              <span style={{ fontWeight: 600, fontSize: '13px' }}>Layout extracted</span>
+            </div>
+            <div style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              {extractionResult.nodeCount} nodes &middot; {extractionResult.rootNodes.length} top-level {extractionResult.rootNodes.length === 1 ? 'frame' : 'frames'}
               {extractionResult.truncated && ' (truncated)'}
             </div>
           </div>

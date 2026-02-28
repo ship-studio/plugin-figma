@@ -112,6 +112,33 @@ export const PLUGIN_CSS = `
   margin-top: 8px;
 }
 
+.figma-plugin-warning {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid #b45309;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.figma-plugin-warning strong {
+  color: #f59e0b;
+  font-size: 12px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.figma-plugin-warning p {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.figma-plugin-warning-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .figma-plugin-spinner {
   display: inline-block;
   width: 14px;
