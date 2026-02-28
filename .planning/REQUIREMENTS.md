@@ -103,47 +103,47 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| INPT-01 | — | Pending |
-| INPT-02 | — | Pending |
-| INPT-03 | — | Pending |
-| INPT-04 | — | Pending |
-| LYOT-01 | — | Pending |
-| LYOT-02 | — | Pending |
-| LYOT-03 | — | Pending |
-| LYOT-04 | — | Pending |
-| LYOT-05 | — | Pending |
-| TOKN-01 | — | Pending |
-| TOKN-02 | — | Pending |
-| TOKN-03 | — | Pending |
-| TOKN-04 | — | Pending |
-| TOKN-05 | — | Pending |
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| COMP-03 | — | Pending |
-| ASST-01 | — | Pending |
-| ASST-02 | — | Pending |
-| ASST-03 | — | Pending |
-| ASST-04 | — | Pending |
-| ASST-05 | — | Pending |
-| BREF-01 | — | Pending |
-| BREF-02 | — | Pending |
-| BREF-03 | — | Pending |
-| BREF-04 | — | Pending |
-| BREF-05 | — | Pending |
-| PLUI-01 | — | Pending |
-| PLUI-02 | — | Pending |
-| PLUI-03 | — | Pending |
-| PLUI-04 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| INPT-01 | Phase 1 | Pending |
+| INPT-02 | Phase 1 | Pending |
+| INPT-03 | Phase 1 | Pending |
+| INPT-04 | Phase 1 | Pending |
+| LYOT-01 | Phase 2 | Pending |
+| LYOT-02 | Phase 2 | Pending |
+| LYOT-03 | Phase 2 | Pending |
+| LYOT-04 | Phase 2 | Pending |
+| LYOT-05 | Phase 2 | Pending |
+| TOKN-01 | Phase 3 | Pending |
+| TOKN-02 | Phase 3 | Pending |
+| TOKN-03 | Phase 3 | Pending |
+| TOKN-04 | Phase 3 | Pending |
+| TOKN-05 | Phase 3 | Pending |
+| COMP-01 | Phase 3 | Pending |
+| COMP-02 | Phase 3 | Pending |
+| COMP-03 | Phase 3 | Pending |
+| ASST-01 | Phase 4 | Pending |
+| ASST-02 | Phase 4 | Pending |
+| ASST-03 | Phase 4 | Pending |
+| ASST-04 | Phase 4 | Pending |
+| ASST-05 | Phase 4 | Pending |
+| BREF-01 | Phase 5 | Pending |
+| BREF-02 | Phase 5 | Pending |
+| BREF-03 | Phase 5 | Pending |
+| BREF-04 | Phase 5 | Pending |
+| BREF-05 | Phase 5 | Pending |
+| PLUI-01 | Phase 1 | Pending |
+| PLUI-02 | Phase 1 | Pending |
+| PLUI-03 | Phase 5 | Pending |
+| PLUI-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 35 total
-- Mapped to phases: 0
-- Unmapped: 35
+- Mapped to phases: 35
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after initial definition*
+*Last updated: 2026-02-28 after roadmap creation*
