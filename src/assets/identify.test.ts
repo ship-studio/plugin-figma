@@ -256,4 +256,68 @@ describe('identifyAssets', () => {
       expect(result[0].filename).toBe('icon-arrow-right.svg');
     });
   });
+
+  describe('composition detection (compositionIds)', () => {
+    it('classifies a top-level node in compositionIds as png-render', () => {
+      const compositionIds = new Set(['9:1']);
+      const result = identifyAssets([root([
+        node({ id: '9:1', name: 'Illustration', type: 'FRAME', children: [
+          node({ id: '9:2', name: 'Shape', type: 'VECTOR' }),
+          node({ id: '9:3', name: 'Mask', type: 'ELLIPSE' }),
+        ] }),
+      ])], [], compositionIds);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('png-render');
+      expect(result[0].filename).toBe('illustration.png');
+      expect(result[0].nodeId).toBe('9:1');
+    });
+
+    it('does NOT recurse into children of composition nodes', () => {
+      const compositionIds = new Set(['9:4']);
+      const result = identifyAssets([root([
+        node({ id: '9:4', name: 'Complex', type: 'FRAME', children: [
+          node({ id: '9:5', name: 'Inner Vector', type: 'VECTOR' }),
+          node({ id: '9:6', name: 'Inner Image', type: 'RECTANGLE', fills: [{ type: 'IMAGE', imageRef: 'ref1', scaleMode: 'FILL' }] }),
+        ] }),
+      ])], [], compositionIds);
+      // Only the composition parent, not its children
+      expect(result).toHaveLength(1);
+      expect(result[0].nodeId).toBe('9:4');
+    });
+
+    it('composition check happens BEFORE INSTANCE classification', () => {
+      const compositionIds = new Set(['9:7']);
+      const result = identifyAssets([root([
+        node({ id: '9:7', name: 'Widget', type: 'INSTANCE' }),
+      ])], [], compositionIds);
+      // Should be png-render, not svg (INSTANCE default)
+      expect(result[0].exportType).toBe('png-render');
+      expect(result[0].filename).toBe('widget.png');
+    });
+
+    it('composition check works at component-level (inside a container)', () => {
+      const compositionIds = new Set(['9:10']);
+      const result = identifyAssets([root([
+        node({ id: '9:8', name: 'Card', type: 'FRAME', children: [
+          node({ id: '9:9', name: 'Icon', type: 'VECTOR' }),
+          node({ id: '9:10', name: 'Nested Comp', type: 'FRAME', children: [
+            node({ id: '9:11', name: 'Deep Vector', type: 'VECTOR' }),
+          ] }),
+        ] }),
+      ])], [], compositionIds);
+      expect(result).toHaveLength(2); // Icon SVG + Nested Comp png-render
+      const comp = result.find(e => e.nodeId === '9:10');
+      expect(comp).toBeDefined();
+      expect(comp!.exportType).toBe('png-render');
+    });
+
+    it('existing tests still pass with default empty compositionIds', () => {
+      // Verify backward compat: identifyAssets without third param
+      const result = identifyAssets([root([
+        node({ id: '10:1', name: 'Arrow', type: 'VECTOR' }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('svg');
+    });
+  });
 });
