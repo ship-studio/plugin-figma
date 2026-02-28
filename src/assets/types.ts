@@ -37,7 +37,7 @@ export interface ExportResult {
     /** Stable key for breadcrumb lookup (populated when pipeline threads nodeId) */
     nodeId?: string;
     /** Asset classification for Type column in brief */
-    assetType?: 'icon' | 'image' | 'composition';
+    assetType?: 'icon' | 'image' | 'composition' | 'component';
   }[];
   /** Skipped assets, failed downloads */
   warnings: string[];

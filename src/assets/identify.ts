@@ -1,13 +1,13 @@
 /**
  * Asset identification pure function.
  *
- * Walks a LayoutNode tree and produces an AssetEntry[] list of nodes to export.
- * SVG candidates: VECTOR, BOOLEAN_OPERATION, LINE, STAR, POLYGON, ELLIPSE,
- * RECTANGLE (without image fills), INSTANCE.
- * PNG candidates: nodes with IMAGE fills.
+ * Walks a LayoutNode tree (full depth) and produces an AssetEntry[] list of
+ * nodes to export.
  *
- * Depth: top-level children + one level into containers (component-level).
- * INSTANCE nodes are leaf nodes for export -- children are not individually exported.
+ * - INSTANCE nodes → png-render (2x), deduplicated by componentId+variant
+ * - Nodes with IMAGE fills → png-fill
+ * - SVG types (VECTOR, BOOLEAN_OPERATION, etc.) → svg
+ * - Composition nodes → png-render (2x)
  */
 
 import type { LayoutNode } from '../layout/types';
@@ -23,8 +23,6 @@ const SVG_TYPES = new Set([
   'POLYGON',
   'ELLIPSE',
 ]);
-
-const CONTAINER_TYPES = new Set(['FRAME', 'GROUP', 'SECTION']);
 
 /**
  * Check if a node has an IMAGE fill.
@@ -42,170 +40,108 @@ function getImageRefFromFills(node: LayoutNode): string | undefined {
 }
 
 /**
- * Classify a single node and add it to the entries list if exportable.
+ * Build a dedup key for component instances: componentId + sorted variant string.
  */
-function classifyNode(
-  child: LayoutNode,
-  imageFillMap: Map<string, string>,
-  matchedNodeIds: Set<string>,
-  entries: AssetEntry[],
-  compositionIds: Set<string>,
-): void {
-  // Composition check FIRST -- before all other classification
-  if (compositionIds.has(child.id)) {
-    entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
-      exportType: 'png-render',
-      filename: sanitizeFilename(child.name) + '.png',
-    });
-    return; // Do NOT recurse into children
-  }
-
-  // INSTANCE nodes -> SVG, do NOT recurse into children
-  if (child.type === 'INSTANCE') {
-    entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
-      exportType: 'svg',
-      filename: sanitizeFilename(child.name) + '.svg',
-    });
-    return;
-  }
-
-  // Nodes with IMAGE fills -> png-fill
-  if (hasImageFill(child)) {
-    const imageRef = imageFillMap.get(child.id) ?? getImageRefFromFills(child);
-    if (imageFillMap.has(child.id)) {
-      matchedNodeIds.add(child.id);
-    }
-    entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
-      exportType: 'png-fill',
-      filename: sanitizeFilename(child.name) + '.png',
-      imageRef,
-    });
-    return;
-  }
-
-  // RECTANGLE without image fills -> SVG
-  if (child.type === 'RECTANGLE') {
-    entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
-      exportType: 'svg',
-      filename: sanitizeFilename(child.name) + '.svg',
-    });
-    return;
-  }
-
-  // Other SVG types
-  if (SVG_TYPES.has(child.type)) {
-    entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
-      exportType: 'svg',
-      filename: sanitizeFilename(child.name) + '.svg',
-    });
-    return;
-  }
-
-  // Container types (FRAME, GROUP, SECTION) -> recurse ONE level (component-level)
-  // but do NOT recurse further
-  if (CONTAINER_TYPES.has(child.type) && child.children) {
-    for (const grandchild of child.children) {
-      classifyNodeLeaf(grandchild, imageFillMap, matchedNodeIds, entries, compositionIds);
-    }
-  }
+function instanceDedupKey(node: LayoutNode): string {
+  const ref = node.componentRef!;
+  const variants = ref.variantProperties
+    ? Object.entries(ref.variantProperties).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join(',')
+    : '';
+  return `${ref.componentId}|${variants}`;
 }
 
 /**
- * Classify a node at component-level (no further recursion into containers).
+ * Recursively walk the full tree and collect exportable assets.
  */
-function classifyNodeLeaf(
-  child: LayoutNode,
+function walkTree(
+  node: LayoutNode,
   imageFillMap: Map<string, string>,
   matchedNodeIds: Set<string>,
   entries: AssetEntry[],
   compositionIds: Set<string>,
+  seenInstances: Set<string>,
 ): void {
-  // Composition check FIRST -- before all other classification
-  if (compositionIds.has(child.id)) {
+  // Composition check FIRST
+  if (compositionIds.has(node.id)) {
     entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
+      nodeId: node.id,
+      nodeName: node.name,
       exportType: 'png-render',
-      filename: sanitizeFilename(child.name) + '.png',
+      filename: sanitizeFilename(node.name) + '.png',
     });
-    return; // Do NOT recurse into children
+    return; // Don't recurse into compositions
   }
 
-  // INSTANCE nodes -> SVG
-  if (child.type === 'INSTANCE') {
-    entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
-      exportType: 'svg',
-      filename: sanitizeFilename(child.name) + '.svg',
-    });
-    return;
+  // INSTANCE nodes → export as PNG, deduplicated by component+variant
+  if (node.type === 'INSTANCE' && node.componentRef) {
+    const key = instanceDedupKey(node);
+    if (!seenInstances.has(key)) {
+      seenInstances.add(key);
+      entries.push({
+        nodeId: node.id,
+        nodeName: node.componentRef.componentName,
+        exportType: 'png-render',
+        filename: sanitizeFilename(node.componentRef.componentName) + '.png',
+      });
+    }
+    return; // Don't recurse into instance children
   }
 
-  // Nodes with IMAGE fills -> png-fill
-  if (hasImageFill(child)) {
-    const imageRef = imageFillMap.get(child.id) ?? getImageRefFromFills(child);
-    if (imageFillMap.has(child.id)) {
-      matchedNodeIds.add(child.id);
+  // Nodes with IMAGE fills → png-fill
+  if (hasImageFill(node)) {
+    const imageRef = imageFillMap.get(node.id) ?? getImageRefFromFills(node);
+    if (imageFillMap.has(node.id)) {
+      matchedNodeIds.add(node.id);
     }
     entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
+      nodeId: node.id,
+      nodeName: node.name,
       exportType: 'png-fill',
-      filename: sanitizeFilename(child.name) + '.png',
+      filename: sanitizeFilename(node.name) + '.png',
       imageRef,
     });
     return;
   }
 
-  // RECTANGLE without image fills -> SVG
-  if (child.type === 'RECTANGLE') {
+  // SVG types (simple vectors)
+  if (SVG_TYPES.has(node.type)) {
     entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
+      nodeId: node.id,
+      nodeName: node.name,
       exportType: 'svg',
-      filename: sanitizeFilename(child.name) + '.svg',
+      filename: sanitizeFilename(node.name) + '.svg',
     });
     return;
   }
 
-  // Other SVG types
-  if (SVG_TYPES.has(child.type)) {
+  // RECTANGLE without image fills → SVG
+  if (node.type === 'RECTANGLE') {
     entries.push({
-      nodeId: child.id,
-      nodeName: child.name,
+      nodeId: node.id,
+      nodeName: node.name,
       exportType: 'svg',
-      filename: sanitizeFilename(child.name) + '.svg',
+      filename: sanitizeFilename(node.name) + '.svg',
     });
     return;
   }
 
-  // At component-level, containers are NOT recursed further
+  // Recurse into children for container types
+  if (node.children) {
+    for (const child of node.children) {
+      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances);
+    }
+  }
 }
 
 /**
  * Walk a LayoutNode tree and produce a list of assets to export.
- *
- * @param rootNodes - Top-level layout nodes (e.g., frames, pages)
- * @param imageFills - Image fill references collected by Phase 3 token pipeline
- * @returns Deduplicated AssetEntry[] with sanitized filenames and collision resolution
+ * Full-depth recursive walk. Instances deduplicated by componentId+variant.
  */
 export function identifyAssets(
   rootNodes: LayoutNode[],
   imageFills: ImageFillRef[],
   compositionIds: Set<string> = new Set(),
 ): AssetEntry[] {
-  // Build lookup maps from imageFills
   const imageFillMap = new Map<string, string>();
   for (const fill of imageFills) {
     imageFillMap.set(fill.nodeId, fill.imageRef);
@@ -213,12 +149,12 @@ export function identifyAssets(
 
   const entries: AssetEntry[] = [];
   const matchedNodeIds = new Set<string>();
+  const seenInstances = new Set<string>();
 
-  // Walk each root node's direct children (top-level)
   for (const rootNode of rootNodes) {
     if (!rootNode.children) continue;
     for (const child of rootNode.children) {
-      classifyNode(child, imageFillMap, matchedNodeIds, entries, compositionIds);
+      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances);
     }
   }
 

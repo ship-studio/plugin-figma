@@ -106,7 +106,9 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
   }
 
   // 4. Build download list: map each asset to its resolved URL
-  const downloadList: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' }> = [];
+  // Track which png-render entries are composition vs component
+  const compositionNodeIdSet = new Set(compositionNodeIds);
+  const downloadList: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }> = [];
 
   for (const entry of svgEntries) {
     const url = svgUrls[entry.nodeId];
@@ -128,9 +130,10 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
   for (const entry of pngRenderEntries) {
     const url = pngRenderUrls[entry.nodeId];
     if (url) {
-      downloadList.push({ filename: entry.filename, url, nodeId: entry.nodeId, assetType: 'composition' });
+      const type = compositionNodeIdSet.has(entry.nodeId) ? 'composition' : 'component';
+      downloadList.push({ filename: entry.filename, url, nodeId: entry.nodeId, assetType: type });
     } else {
-      warnings.push(`No render URL for composition ${entry.filename} (node ${entry.nodeId})`);
+      warnings.push(`No render URL for ${entry.filename} (node ${entry.nodeId})`);
     }
   }
 

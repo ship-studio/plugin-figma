@@ -11,6 +11,7 @@
 import type { BriefInput, BriefResult, BriefStats } from './types';
 import type { LayoutNode } from '../layout/types';
 import type { DesignTokens, ColorToken, GradientToken, TypographyToken, SpacingToken, BorderToken, ShadowToken, ComponentInventoryEntry } from '../tokens/types';
+import { figmaColorToCSS } from '../tokens/color-utils';
 import type { ExportResult } from '../assets/types';
 import { buildBreadcrumbMap } from '../assets/breadcrumb';
 
@@ -198,7 +199,84 @@ function renderNodeLine(node: LayoutNode, depth: number): string {
     parts.push('[absolute]');
   }
 
+  // Inline visual styles — bg, text color, border-radius, opacity
+  const styles = buildInlineStyles(node);
+  if (styles) {
+    parts.push(styles);
+  }
+
   return `${indent}${parts.join(' ')}`;
+}
+
+/**
+ * Extract primary solid fill color from a Figma fills array.
+ */
+function getPrimaryFill(fills: any[] | undefined): string | null {
+  if (!fills) return null;
+  // Find the first visible solid fill
+  for (const f of fills) {
+    if (f.visible === false) continue;
+    if (f.type === 'SOLID' && f.color) {
+      const opacity = f.opacity ?? 1;
+      const color = { ...f.color, a: (f.color.a ?? 1) * opacity };
+      return figmaColorToCSS(color);
+    }
+  }
+  return null;
+}
+
+/**
+ * Build compact inline style annotation for a node.
+ * Returns string like "bg:#191a23 r:14 opacity:0.5" or null if nothing interesting.
+ */
+function buildInlineStyles(node: LayoutNode): string | null {
+  const props: string[] = [];
+
+  // Size modes (FILL/HUG are interesting; FIXED is default)
+  if (node.widthMode === 'FILL') props.push('w:fill');
+  if (node.heightMode === 'FILL') props.push('h:fill');
+  if (node.widthMode === 'HUG') props.push('w:hug');
+  if (node.heightMode === 'HUG') props.push('h:hug');
+
+  // Background color (skip for TEXT nodes — their fills are text color)
+  if (node.type !== 'TEXT') {
+    const bg = getPrimaryFill(node.fills);
+    if (bg && bg !== '#ffffff' && bg !== '#000000') {
+      // Skip ultra-common defaults to reduce noise
+      props.push(`bg:${bg}`);
+    } else if (bg) {
+      props.push(`bg:${bg}`);
+    }
+  }
+
+  // Text color (from fills on TEXT nodes)
+  if (node.type === 'TEXT') {
+    const textColor = getPrimaryFill(node.fills);
+    if (textColor) {
+      props.push(`color:${textColor}`);
+    }
+  }
+
+  // Border radius
+  if (node.cornerRadius && node.cornerRadius > 0) {
+    props.push(`r:${Math.round(node.cornerRadius)}`);
+  }
+
+  // Stroke
+  if (node.strokeWeight && node.strokeWeight > 0 && node.strokes?.length) {
+    const strokeColor = getPrimaryFill(node.strokes);
+    if (strokeColor) {
+      props.push(`border:${node.strokeWeight}px ${strokeColor}`);
+    }
+  }
+
+  // Opacity (only when < 1)
+  if (node.opacity != null && node.opacity < 1) {
+    props.push(`opacity:${node.opacity.toFixed(2)}`);
+  }
+
+  if (props.length === 0) return null;
+  return `{${props.join(' ')}}`;
 }
 
 function formatPadding(p: { top: number; right: number; bottom: number; left: number }): string | null {
@@ -368,11 +446,12 @@ function buildAssetsSection(
 /**
  * Map asset type to display label for the brief table.
  */
-function assetTypeLabel(assetType?: 'icon' | 'image' | 'composition'): string {
+function assetTypeLabel(assetType?: 'icon' | 'image' | 'composition' | 'component'): string {
   switch (assetType) {
     case 'icon': return 'Icon';
     case 'image': return 'Image';
     case 'composition': return 'Composition';
+    case 'component': return 'Component';
     default: return 'File';
   }
 }
