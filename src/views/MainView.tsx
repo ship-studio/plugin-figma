@@ -9,6 +9,9 @@ import type { ExtractionResult, LayoutNode } from '../layout/types';
 import type { FigmaUrlParts, ExtractionScope, FigmaFileInfo } from '../types';
 import { exportAssets } from '../assets/export';
 import type { ExportResult, AssetExportProgress } from '../assets/types';
+import { generateBrief, TOKEN_WARNING_THRESHOLD } from '../brief/generate';
+import type { BriefResult } from '../brief/types';
+import { saveBrief, copyToClipboard } from '../brief/io';
 
 interface ExtractionStats {
   frames: number;
@@ -115,6 +118,11 @@ export function MainView({ token }: MainViewProps) {
   const [assetProgress, setAssetProgress] = useState(null as AssetExportProgress | null);
   const [exportResult, setExportResult] = useState(null as ExportResult | null);
 
+  // Brief generation state
+  const [generatingBrief, setGeneratingBrief] = useState(false);
+  const [briefResult, setBriefResult] = useState(null as BriefResult | null);
+  const [briefError, setBriefError] = useState(null as string | null);
+
   const extractionStats = useMemo(
     () => extractionResult ? collectStats(extractionResult.rootNodes) : null,
     [extractionResult],
@@ -159,6 +167,45 @@ export function MainView({ token }: MainViewProps) {
         const msg = `Exported ${assetCount} asset${assetCount !== 1 ? 's' : ''}${warnCount > 0 ? ` (${warnCount} warning${warnCount !== 1 ? 's' : ''})` : ''}`;
         actions.showToast(msg, warnCount > 0 ? 'info' : 'success');
       }
+
+      // Trigger brief generation after successful asset export
+      setGeneratingBrief(true);
+      setBriefResult(null);
+      setBriefError(null);
+
+      // Defer to allow spinner paint before synchronous generation
+      setTimeout(() => {
+        try {
+          const brief = generateBrief({
+            extraction: result,
+            exportResult: exportRes,
+            projectPath: ctx.project.path,
+            fileName: fileInfo?.name ?? 'Untitled',
+            figmaUrl: urlInput,
+          });
+
+          setBriefResult(brief);
+          setGeneratingBrief(false);
+
+          // Save to file (non-blocking -- fire and forget with error logging)
+          if (shellRef.current) {
+            saveBrief(shellRef.current, ctx.project.path, brief.markdown).catch(err => {
+              console.error('Brief save failed:', err);
+              // Non-fatal -- brief is still in memory for clipboard copy
+            });
+          }
+
+          if (actions) {
+            actions.showToast(
+              `Brief ready: ${brief.stats.nodeCount} nodes, ${brief.stats.colorCount} colors, ${brief.stats.fontCount} fonts, ${brief.stats.assetCount} assets, ~${Math.round(brief.stats.estimatedTokens / 1000)}K tokens`,
+              'success',
+            );
+          }
+        } catch (err: any) {
+          setBriefError(err?.message || 'Brief generation failed');
+          setGeneratingBrief(false);
+        }
+      }, 0);
     } catch (err: any) {
       if (actions) {
         actions.showToast(`Asset export failed: ${err?.message || 'Unknown error'}`, 'error');
@@ -167,7 +214,7 @@ export function MainView({ token }: MainViewProps) {
       setExportingAssets(false);
       setAssetProgress(null);
     }
-  }, [token, parsedUrl, ctx, actions]);
+  }, [token, parsedUrl, ctx, actions, fileInfo, urlInput]);
 
   const handleUrlChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -189,6 +236,10 @@ export function MainView({ token }: MainViewProps) {
         setExportResult(null);
         setExportingAssets(false);
         setAssetProgress(null);
+        // Clear brief state
+        setBriefResult(null);
+        setGeneratingBrief(false);
+        setBriefError(null);
         return;
       }
 
@@ -214,6 +265,10 @@ export function MainView({ token }: MainViewProps) {
       setExportResult(null);
       setExportingAssets(false);
       setAssetProgress(null);
+      // Clear brief state
+      setBriefResult(null);
+      setGeneratingBrief(false);
+      setBriefError(null);
 
       if (parsed.nodeId) {
         setScope('node');
@@ -277,6 +332,10 @@ export function MainView({ token }: MainViewProps) {
     setExportResult(null);
     setExportingAssets(false);
     setAssetProgress(null);
+    // Clear brief state
+    setBriefResult(null);
+    setGeneratingBrief(false);
+    setBriefError(null);
 
     (async () => {
       try {
@@ -353,7 +412,21 @@ export function MainView({ token }: MainViewProps) {
     pendingResultRef.current = null;
   }, []);
 
-  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets;
+  const handleCopyBrief = useCallback(async () => {
+    if (!briefResult || !shellRef.current) return;
+    try {
+      await copyToClipboard(shellRef.current, briefResult.markdown);
+      if (actions) {
+        actions.showToast('Brief copied to clipboard', 'success');
+      }
+    } catch (err: any) {
+      if (actions) {
+        actions.showToast(`Copy failed: ${err?.message || 'Unknown error'}`, 'error');
+      }
+    }
+  }, [briefResult, actions]);
+
+  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets || generatingBrief;
 
   return (
     <div>
@@ -588,6 +661,73 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
+      {/* Brief Generation Spinner */}
+      {generatingBrief && (
+        <div className="figma-plugin-section">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="figma-plugin-spinner" />
+            <span style={{ color: 'var(--text-secondary)' }}>Generating brief...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Brief Error */}
+      {briefError && (
+        <div className="figma-plugin-section">
+          <div className="figma-plugin-error">{briefError}</div>
+        </div>
+      )}
+
+      {/* Brief Result */}
+      {briefResult && (
+        <div className="figma-plugin-section">
+          <div className="figma-plugin-file-info">
+            {/* Success header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <span style={{ color: '#38a169' }}>&#10003;</span>
+              <span style={{ fontWeight: 600, fontSize: '13px' }}>Brief ready</span>
+            </div>
+
+            {/* Summary stats */}
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
+              {briefResult.stats.nodeCount} nodes &middot;{' '}
+              {briefResult.stats.colorCount} colors &middot;{' '}
+              {briefResult.stats.fontCount} fonts &middot;{' '}
+              {briefResult.stats.assetCount} assets &middot;{' '}
+              <span style={{
+                color: briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD
+                  ? '#f59e0b'
+                  : 'inherit',
+              }}>
+                ~{Math.round(briefResult.stats.estimatedTokens / 1000)}K tokens
+              </span>
+            </div>
+
+            {/* Token warning banner */}
+            {briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD && (
+              <div className="figma-plugin-warning" style={{ marginTop: '8px' }}>
+                <strong>Large brief (~{Math.round(briefResult.stats.estimatedTokens / 1000)}K tokens)</strong>
+                <p>Recommended max: ~12K tokens. Consider selecting a smaller frame.</p>
+              </div>
+            )}
+
+            {/* Copy button */}
+            <button
+              className="btn-primary"
+              onClick={handleCopyBrief}
+              style={{ width: '100%', marginTop: '12px' }}
+            >
+              Copy Brief to Clipboard
+            </button>
+
+            {/* File save note */}
+            <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
+              Also saved to .shipstudio/brief.md
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Extract Button */}
       <button
         className="btn-primary"
@@ -595,7 +735,7 @@ export function MainView({ token }: MainViewProps) {
         disabled={extractDisabled}
         style={{ width: '100%' }}
       >
-        {extracting ? 'Extracting...' : exportingAssets ? 'Exporting assets...' : 'Extract Design Brief'}
+        {extracting ? 'Extracting...' : exportingAssets ? 'Exporting assets...' : generatingBrief ? 'Generating brief...' : 'Extract Design Brief'}
       </button>
     </div>
   );
