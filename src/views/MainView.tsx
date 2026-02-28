@@ -99,7 +99,8 @@ export function MainView({ token }: MainViewProps) {
 
   const [urlInput, setUrlInput] = useState('');
   const [parsedUrl, setParsedUrl] = useState(null as FigmaUrlParts | null);
-  const [scope, setScope] = useState('page' as ExtractionScope);
+  // Scope is derived from URL: if nodeId present, extract that node; otherwise whole page
+  const scope: ExtractionScope = parsedUrl?.nodeId ? 'node' : 'page';
   const [fileInfo, setFileInfo] = useState(null as FigmaFileInfo | null);
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState(null as string | null);
@@ -269,11 +270,6 @@ export function MainView({ token }: MainViewProps) {
       setGeneratingBrief(false);
       setBriefError(null);
 
-      if (parsed.nodeId) {
-        setScope('node');
-      } else {
-        setScope('page');
-      }
     },
     []
   );
@@ -473,47 +469,13 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
-      {/* Scope Selection */}
-      {parsedUrl && (
+      {/* Scope hint -- tells user what will be extracted based on their URL */}
+      {parsedUrl && fileInfo && !validating && (
         <div className="figma-plugin-section">
-          <label className="figma-plugin-label">What to extract</label>
-          <div className="figma-plugin-radio-group">
-            <label className="figma-plugin-radio-label" style={!parsedUrl.nodeId ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
-              <input
-                type="radio"
-                name="scope"
-                value="node"
-                checked={scope === 'node'}
-                onChange={() => setScope('node')}
-                disabled={!parsedUrl.nodeId}
-              />
-              This element
-              {!parsedUrl.nodeId && (
-                <span className="figma-plugin-hint" style={{ marginTop: 0, marginLeft: '4px' }}>
-                  Select a specific element in Figma to use this option
-                </span>
-              )}
-            </label>
-            <label className="figma-plugin-radio-label">
-              <input
-                type="radio"
-                name="scope"
-                value="frame"
-                checked={scope === 'frame'}
-                onChange={() => setScope('frame')}
-              />
-              This section
-            </label>
-            <label className="figma-plugin-radio-label">
-              <input
-                type="radio"
-                name="scope"
-                value="page"
-                checked={scope === 'page'}
-                onChange={() => setScope('page')}
-              />
-              Whole page
-            </label>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
+            {parsedUrl.nodeId
+              ? 'Will extract the selected element'
+              : 'Will extract the whole page — select a specific element in Figma to narrow scope'}
           </div>
         </div>
       )}
@@ -532,24 +494,6 @@ export function MainView({ token }: MainViewProps) {
                 Cancel
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Progress indicator -- single spinner for all stages */}
-      {(extracting || exportingAssets || generatingBrief) && (
-        <div className="figma-plugin-section">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="figma-plugin-spinner" />
-            <span style={{ color: 'var(--text-secondary)' }}>
-              {extracting
-                ? 'Extracting layout...'
-                : exportingAssets
-                  ? assetProgress?.phase === 'preview'
-                    ? 'Rendering preview...'
-                    : `Exporting assets (${assetProgress?.current ?? 0}/${assetProgress?.total ?? 0})...`
-                  : 'Generating brief...'}
-            </span>
           </div>
         </div>
       )}
@@ -688,14 +632,31 @@ export function MainView({ token }: MainViewProps) {
       )}
 
       {/* Extract Button */}
-      <button
-        className="btn-primary"
-        onClick={handleExtract}
-        disabled={extractDisabled}
-        style={{ width: '100%' }}
-      >
-        {extracting ? 'Extracting...' : exportingAssets ? 'Exporting assets...' : generatingBrief ? 'Generating brief...' : 'Get Brief'}
-      </button>
+      {(() => {
+        const isLoading = extracting || exportingAssets || generatingBrief;
+        const label = extracting
+          ? 'Extracting layout...'
+          : exportingAssets
+            ? assetProgress?.phase === 'preview'
+              ? 'Rendering preview...'
+              : `Exporting assets${assetProgress?.total ? ` (${assetProgress.current ?? 0}/${assetProgress.total})` : ''}...`
+            : generatingBrief
+              ? 'Generating brief...'
+              : briefResult
+                ? 'Get New Brief'
+                : 'Get Brief';
+        return (
+          <button
+            className={briefResult && !isLoading ? 'btn-secondary' : 'btn-primary'}
+            onClick={handleExtract}
+            disabled={extractDisabled}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          >
+            {isLoading && <span className="figma-plugin-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />}
+            {label}
+          </button>
+        );
+      })()}
     </div>
   );
 }
