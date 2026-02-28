@@ -15,21 +15,19 @@ import { saveBrief, copyToClipboard } from '../brief/io';
 
 interface ExtractionStats {
   frames: number;
-  autoLayoutFrames: number;
   components: { name: string; count: number }[];
   textNodes: number;
   hiddenNodes: number;
 }
 
 function collectStats(nodes: LayoutNode[]): ExtractionStats {
-  const stats: ExtractionStats = { frames: 0, autoLayoutFrames: 0, components: [], textNodes: 0, hiddenNodes: 0 };
+  const stats: ExtractionStats = { frames: 0, components: [], textNodes: 0, hiddenNodes: 0 };
   const componentMap = new Map<string, number>();
 
   function walk(node: LayoutNode) {
     if (!node.visible) stats.hiddenNodes++;
     if (node.type === 'FRAME' || node.type === 'GROUP' || node.type === 'SECTION') {
       stats.frames++;
-      if (node.autoLayout) stats.autoLayoutFrames++;
     }
     if (node.type === 'TEXT') stats.textNodes++;
     if (node.componentRef) {
@@ -197,7 +195,7 @@ export function MainView({ token }: MainViewProps) {
 
           if (actions) {
             actions.showToast(
-              `Brief ready: ${brief.stats.nodeCount} nodes, ${brief.stats.colorCount} colors, ${brief.stats.fontCount} fonts, ${brief.stats.assetCount} assets, ~${Math.round(brief.stats.estimatedTokens / 1000)}K tokens`,
+              `Brief ready: ${brief.stats.nodeCount} layers, ${brief.stats.assetCount} assets, ~${Math.round(brief.stats.estimatedTokens / 1000)}K tokens`,
               'success',
             );
           }
@@ -362,7 +360,7 @@ export function MainView({ token }: MainViewProps) {
         // No warning -- set result directly
         setExtractionResult(result.extraction);
         if (actions) {
-          actions.showToast(`Extracted ${result.extraction.nodeCount} nodes`, 'success');
+          actions.showToast(`Extracted ${result.extraction.nodeCount} layers`, 'success');
         }
         // Automatically run asset export after successful extraction
         runAssetExport(result);
@@ -400,7 +398,7 @@ export function MainView({ token }: MainViewProps) {
     pendingResultRef.current = null;
 
     if (actions) {
-      actions.showToast(`Extracted ${pending.extraction.nodeCount} nodes`, 'success');
+      actions.showToast(`Extracted ${pending.extraction.nodeCount} layers`, 'success');
     }
     // Automatically run asset export after large tree confirmation
     runAssetExport(pending);
@@ -477,7 +475,7 @@ export function MainView({ token }: MainViewProps) {
       {/* Scope Selection */}
       {parsedUrl && (
         <div className="figma-plugin-section">
-          <label className="figma-plugin-label">Extraction Scope</label>
+          <label className="figma-plugin-label">What to extract</label>
           <div className="figma-plugin-radio-group">
             <label className="figma-plugin-radio-label" style={!parsedUrl.nodeId ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
               <input
@@ -488,10 +486,10 @@ export function MainView({ token }: MainViewProps) {
                 onChange={() => setScope('node')}
                 disabled={!parsedUrl.nodeId}
               />
-              Single Node
+              This element
               {!parsedUrl.nodeId && (
                 <span className="figma-plugin-hint" style={{ marginTop: 0, marginLeft: '4px' }}>
-                  Paste a URL with a node-id to use this option
+                  Select a specific element in Figma to use this option
                 </span>
               )}
             </label>
@@ -503,7 +501,7 @@ export function MainView({ token }: MainViewProps) {
                 checked={scope === 'frame'}
                 onChange={() => setScope('frame')}
               />
-              Frame
+              This section
             </label>
             <label className="figma-plugin-radio-label">
               <input
@@ -513,7 +511,7 @@ export function MainView({ token }: MainViewProps) {
                 checked={scope === 'page'}
                 onChange={() => setScope('page')}
               />
-              Entire Page
+              Whole page
             </label>
           </div>
         </div>
@@ -533,7 +531,7 @@ export function MainView({ token }: MainViewProps) {
       {awaitingLargeTreeConfirm && largeTreeWarning && (
         <div className="figma-plugin-section">
           <div className="figma-plugin-warning">
-            <strong>{largeTreeWarning.nodeCount} nodes detected</strong>
+            <strong>{largeTreeWarning.nodeCount} layers detected</strong>
             <p>Large selections may take longer and produce verbose output. Continue?</p>
             <div className="figma-plugin-warning-actions">
               <button className="btn-primary" onClick={handleConfirmLargeTree}>
@@ -561,7 +559,7 @@ export function MainView({ token }: MainViewProps) {
 
             {/* Stats row */}
             <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
-              {extractionResult.nodeCount} nodes &middot; {extractionStats.autoLayoutFrames} auto-layout frames &middot; {extractionStats.textNodes} text layers
+              {extractionResult.nodeCount} layers &middot; {extractionStats.textNodes} text layers
             </div>
 
             {/* Components found */}
@@ -690,9 +688,7 @@ export function MainView({ token }: MainViewProps) {
 
             {/* Summary stats */}
             <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
-              {briefResult.stats.nodeCount} nodes &middot;{' '}
-              {briefResult.stats.colorCount} colors &middot;{' '}
-              {briefResult.stats.fontCount} fonts &middot;{' '}
+              {briefResult.stats.nodeCount} layers &middot;{' '}
               {briefResult.stats.assetCount} assets &middot;{' '}
               <span style={{
                 color: briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD
@@ -706,8 +702,8 @@ export function MainView({ token }: MainViewProps) {
             {/* Token warning banner */}
             {briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD && (
               <div className="figma-plugin-warning" style={{ marginTop: '8px' }}>
-                <strong>Large brief (~{Math.round(briefResult.stats.estimatedTokens / 1000)}K tokens)</strong>
-                <p>Recommended max: ~12K tokens. Consider selecting a smaller frame.</p>
+                <strong>This brief is large</strong>
+                <p>Consider extracting a smaller section for better results.</p>
               </div>
             )}
 
@@ -735,7 +731,7 @@ export function MainView({ token }: MainViewProps) {
         disabled={extractDisabled}
         style={{ width: '100%' }}
       >
-        {extracting ? 'Extracting...' : exportingAssets ? 'Exporting assets...' : generatingBrief ? 'Generating brief...' : 'Extract Design Brief'}
+        {extracting ? 'Extracting...' : exportingAssets ? 'Exporting assets...' : generatingBrief ? 'Generating brief...' : 'Get Brief'}
       </button>
     </div>
   );
