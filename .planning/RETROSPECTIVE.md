@@ -51,21 +51,70 @@
 
 ---
 
+## Milestone: v1.3 — Asset Completeness & Polish
+
+**Shipped:** 2026-03-01
+**Phases:** 3 | **Plans:** 4 | **Sessions:** 1
+
+### What Was Built
+- Instance child IMAGE fill detection — full-depth recursion into component instances with global imageRef dedup
+- Instance IMAGE fill override detection — background images on INSTANCE nodes exported as PNG
+- Smart rectangle filtering — simple solid-color RECTANGLEs silently skipped from SVG export
+- Absolute position offsets — `[absolute] top:N left:N` for absolutely-positioned elements
+- Flex-child properties — flex-grow:1 and align-self:stretch annotations in brief layout tree
+- Figma logo SVG in Ship Studio toolbar button with theme-aware `fill=currentColor`
+
+### What Worked
+- **Pre-normalization image collection:** Running `collectImageFillsFromRawTree` before normalization strips instance subtrees was the key insight — without it, deeply nested fills would be lost
+- **parentInstanceId threading:** Single field threaded through the entire pipeline (identify -> export -> download -> generate) enabled layout tree cross-referencing without restructuring the pipeline
+- **TDD continued to compound:** Failing tests first caught edge cases in rectangle filtering (invisible strokes, invisible effects) and instance dedup that would have been hard to spot in integration
+- **Minimal plan count:** 4 plans total for 7 requirements — each plan was well-scoped, no rework needed
+
+### What Was Inefficient
+- **Stale audit file:** A preliminary audit was run mid-milestone (before phases 13-14), creating a stale v1.3-MILESTONE-AUDIT.md that had to be overwritten. Running audit only at milestone completion is cleaner.
+- **Inline anonymous types in download.ts/export.ts:** These shadow the typed definitions in types.ts and would not catch a type mismatch automatically. Pre-existing pattern, but noted as a maintainability concern.
+
+### Patterns Established
+- **Pre-normalization raw tree walking:** Collect data from the raw Figma API response before normalization discards subtrees (instance children, deeply nested structures)
+- **parentInstanceId as pipeline-wide context:** Thread parent context through the full asset pipeline when child assets need to reference their container in the brief
+- **Noise reduction via default suppression:** Only emit non-default flex values (layoutGrow !== 0, layoutAlign !== 'INHERIT') to keep brief concise
+- **parentBBox threading for relative offsets:** Pass parent's absoluteBoundingBox as parameter through recursive normalization
+
+### Key Lessons
+1. **Pre-normalization data capture is critical** — any data the normalization step discards must be extracted first. This applies to instance children, hidden nodes, or any subtree that gets collapsed.
+2. **Global dedup sets prevent cross-instance duplication** — identical images shared across component instances only need exporting once. A single `Set<string>` passed through the tree walk handles this cleanly.
+3. **Small phases with focused requirements ship fast** — 4 plans in ~11 minutes with 303 tests. Each requirement mapped cleanly to one or two plans with no overlap.
+
+### Cost Observations
+- Model mix: Quality profile (Opus orchestration, Sonnet agents)
+- Sessions: 1 continuous session
+- Notable: 4 plans executed in ~11 minutes total — average 2.75min/plan. Fastest milestone yet.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
-| Milestone | Sessions | Phases | Key Change |
-|-----------|----------|--------|------------|
-| v1.0 | 1 | 5 | First milestone — established patterns for Ship Studio plugin development |
+| Milestone | Sessions | Phases | Plans | Key Change |
+|-----------|----------|--------|-------|------------|
+| v1.0 | 1 | 5 | 11 | First milestone — established patterns for Ship Studio plugin development |
+| v1.1 | 1 | 3 | 5 | Brief quality & UX — composition detection, breadcrumb mapping |
+| v1.2 | 1 | 3 | N/A | Outside GSD — illustration detection, tree quality, temp dir migration |
+| v1.3 | 1 | 3 | 4 | Asset completeness — instance recursion, spacing, icon. Fastest milestone. |
 
 ### Cumulative Quality
 
-| Milestone | Tests | Coverage | Bundle Size |
-|-----------|-------|----------|-------------|
-| v1.0 | 208 | Logic-focused | 66.54 kB |
+| Milestone | Tests | LOC | Avg min/plan |
+|-----------|-------|-----|-------------|
+| v1.0 | 208 | 6,985 | 6.3 |
+| v1.1 | 272 | ~7,500 | 8.8 |
+| v1.2 | 276 | ~8,200 | N/A |
+| v1.3 | 303 | 9,411 | 2.75 |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. Pure function extraction makes every subsequent phase faster — compound returns on testability
-2. Shell.exec + base64 encoding is the reliable universal I/O pattern for Ship Studio plugins
+1. **Pure function extraction compounds** — each milestone builds faster because pure functions compose cleanly and are independently testable (v1.0, v1.1, v1.3)
+2. **Shell.exec + base64 encoding** is the reliable universal I/O pattern for Ship Studio plugins (v1.0, confirmed in every subsequent milestone)
+3. **TDD catches edge cases early** — rectangle filtering, composition detection, instance dedup all caught bugs in the test-first phase that would have been subtle in integration (v1.1, v1.3)
+4. **Pre-normalization data capture** — any data discarded by normalization must be extracted beforehand; this pattern will recur in future milestones (v1.3)

@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Asset Completeness & Polish
-status: unknown
-last_updated: "2026-03-01T11:02:14.604Z"
+status: completed
+last_updated: "2026-03-01T12:15:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 4
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,74 +18,46 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v1.3 Asset Completeness & Polish -- COMPLETE
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 14 of 14 (Plugin Icon) -- third of 3 v1.3 phases
-Plan: 1 of 1 (COMPLETE)
-Status: Phase 14 complete -- all v1.3 plans executed. Milestone v1.3 complete.
-Last activity: 2026-03-01 -- Completed 14-01-PLAN.md (Figma logo toolbar icon)
+All milestones through v1.3 complete. No active milestone.
+Last activity: 2026-03-01 -- Completed v1.3 milestone (Asset Completeness & Polish)
 
-Progress: [██████████] 100% (v1.3 -- 4/4 plans)
+Progress: [██████████] 100% (v1.3 shipped)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19 (v1.0: 11, v1.1: 5, v1.3: 3)
-- Average duration: ~30 min (v1.0), ~9 min (v1.1)
-- Total execution time: ~6.4 hours
+- Total plans completed: 23 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4)
+- v1.3 average: ~2.75 min/plan
+- Total execution time: ~6.6 hours across 4 milestones
 
-**By Phase (v1.1):**
+**By Phase (v1.3):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 6. Brief Instructions & Terminology | 2/2 | 4min | 2min |
-| 7. Smart Asset Detection & Layout Mapping | 2/2 | 8min | 4min |
-| 8. UX Flow Simplification | 1/1 | 32min | 32min |
-
-*Updated after each plan completion*
-| Phase 12 P01 | 3min | 2 tasks | 2 files |
-| Phase 12 P02 | 4min | 2 tasks | 7 files |
-| Phase 13 P01 | 3min | 2 tasks | 5 files |
-| Phase 14 P01 | 1min | 2 tasks | 1 file |
+| 12. Instance Asset Detection | 2/2 | 7min | 3.5min |
+| 13. Spacing & Layout Accuracy | 1/1 | 3min | 3min |
+| 14. Plugin Icon | 1/1 | 1min | 1min |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- Instance children NOT shown in layout tree (existing guard at generate.ts line 163) -- only recurse for IMAGE fill detection (research finding)
-- Instance sublayer node IDs (I-prefix) return null from Figma images API -- must use imageRef hash instead (research finding)
-- Use absoluteBoundingBox (not absoluteRenderBounds) for spacing inference -- represents layout intent, not visual bounds (research finding)
-- Assets written to OS temp dir via `mktemp -d` (post-v1.2)
-- Instance own IMAGE fill (ASSET-06) takes priority over child recursion -- early return prevents both png-fill and png-render
-- imageRef dedup is global across all walkTree calls to prevent duplicate exports across instances
-- Rectangle filtering only in main tree walk, not inside instance children (ASSET-07)
-- [Phase 12]: Instance own IMAGE fill (ASSET-06) takes priority over child recursion
-- [Phase 12]: imageRef dedup is global across all walkTree calls to prevent duplicate exports
-- [Phase 12]: Rectangle filtering only in main tree walk, not inside instance children
-- [Phase 12]: collectImageFillsFromRawTree runs before normalization to capture instance children IMAGE fills
-- [Phase 12]: parentInstanceId threads through full export pipeline for layout tree cross-referencing
-- [Phase 12]: Breadcrumb fallback: direct nodeId -> parentInstanceId -> '--' for instance child images
-- [Phase 13]: Only store layoutGrow when 1, layoutAlign when STRETCH -- noise reduction for brief conciseness
-- [Phase 13]: Use absoluteBoundingBox for offset computation, round to integers
-- [Phase 13]: Thread parentBBox through recursive normalizeNode for relative offset calculation
-- [Phase 14]: Used user-provided Figma logo SVG (viewBox 0 0 15 15) instead of Simple Icons version (viewBox 0 0 24 24)
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- Instance sublayer imageRef extraction path needs validation -- Figma API returns imageRef on fills but node IDs with I-prefix fail the /v1/images endpoint
-- Bounding-box spacing inference may need tuning with real designs (edge cases with overlapping/rotated elements)
+None active. Previous concerns resolved or deferred to future milestones.
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 14-01-PLAN.md (Figma logo toolbar icon -- Phase 14 fully complete. v1.3 milestone complete).
-Next: All milestones through v1.3 complete. Plan next milestone or polish.
+Stopped at: Completed v1.3 milestone archival and tagging.
+Next: `/gsd:new-milestone` to start next milestone cycle.

@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Ship Studio plugin that extracts structured design data from Figma and formats it as a complete design brief for Claude Code. Users paste a Figma URL, and the plugin extracts layout structure, design tokens, component mapping, and image assets — then assembles everything into a structured markdown brief ready to paste into Claude Code.
+A Ship Studio plugin that extracts structured design data from Figma and formats it as a complete design brief for Claude Code. Users paste a Figma URL, and the plugin extracts layout structure (including spacing, flex properties, and absolute positioning), design tokens, component mapping, and all visible image assets — then assembles everything into a structured markdown brief ready to paste into Claude Code.
 
 ## Core Value
 
@@ -37,26 +37,23 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - ✓ Component names cleaned of generic Figma property prefixes — v1.2
 - ✓ Assets written to OS temp dir instead of project directory — post-v1.2
 
+- ✓ Instance child IMAGE fill detection — recurses into component instances at full depth — v1.3
+- ✓ Instance IMAGE fill override detection on INSTANCE nodes — v1.3
+- ✓ Smart rectangle filtering — skips simple solid-color rectangles — v1.3
+- ✓ Absolute position offsets (top/left) in brief for absolutely-positioned elements — v1.3
+- ✓ flex-grow:1 and align-self:stretch annotations in brief — v1.3
+- ✓ Figma logo SVG in Ship Studio toolbar — v1.3
+
 ### Active
 
-- [ ] Every visible asset in the Figma design is detected and exported (images inside components, background fills, logos, illustrations)
-- [ ] Spacing values in the brief accurately reflect the Figma design (padding, gaps, margins)
-- [ ] Plugin displays a Figma logo icon
-
-## Current Milestone: v1.3 Asset Completeness & Polish
-
-**Goal:** Make asset detection bulletproof — every visible asset in a Figma design gets exported — and tighten spacing accuracy so Claude Code builds match the design on first attempt.
-
-**Target features:**
-- Complete asset capture (images inside components, background fills, logos, illustrations)
-- Spacing extraction accuracy (padding, gaps, margins matching Figma)
-- Plugin icon (Figma logo SVG)
+(No active requirements — define with `/gsd:new-milestone`)
 
 ## Completed Milestones
 
 - **v1.0** (shipped 2026-02-28) — Core plugin: extraction, tokens, assets, brief
 - **v1.1** (shipped 2026-02-28) — Brief instructions, asset detection, UX simplification
 - **v1.2** (shipped 2026-03-01) — Illustration detection, layout tree quality, UI fixes
+- **v1.3** (shipped 2026-03-01) — Instance asset detection, spacing accuracy, plugin icon
 
 ## Deferred Features
 
@@ -64,7 +61,6 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - Collapsible tree preview
 - Executable verification loop/checklist
 - Text alignment in brief (textAlignHorizontal from Figma)
-- ~~Plugin icon SVG~~ → moved to v1.3
 - Advanced options behind progressive disclosure
 
 ### Out of Scope
@@ -79,13 +75,14 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 ## Context
 
 - Built on the Ship Studio plugin starter template (React/TypeScript/Vite, Tauri runtime)
-- Shipped v1.0 with 6,985 LOC TypeScript, 208 tests, 66.54 kB bundle
+- Current state: 9,411 LOC TypeScript, 303 tests, 4 milestones shipped (v1.0-v1.3)
 - Tech stack: React 18, TypeScript, Vite, Vitest, @figma/rest-api-spec
 - Plugins render in the "toolbar" slot and can open modals for richer UI
 - Plugin has shell access (`shell.exec`) for HTTP requests (curl) to Figma REST API
 - Plugin storage persists data per-project — used for Figma token storage
 - `dist/index.js` must be committed to the repo — Ship Studio clones without building
-- v1.0 user testing: ~80% accuracy on first Claude Code build. Main gap: complex illustrations (groups of nested vectors) were described textually instead of exported as images, causing Claude Code to fabricate replacements. Asset-to-layout mapping also missing — brief lists assets in flat table without showing where each belongs.
+- v1.3 improvements: instance images now fully detected at any nesting depth, spacing/flex properties in brief, Figma logo icon in toolbar
+- Known areas for improvement: text alignment not yet in brief, bounding-box spacing may need tuning with real designs
 
 ## Constraints
 
@@ -110,6 +107,12 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 | Vector-only illustration detection | GROUPs/FRAMEs with all primitive descendants exported as single PNG | ✓ Good — eliminates dozens of redundant SVGs (v1.2) |
 | Layout tree cross-referencing | INSTANCE and illustration lines show `-> filename` when asset exists | ✓ Good — ties brief sections together (v1.2) |
 | Component name cleaning | Strip "Property N=" prefixes from Figma variant names | ✓ Good — cleaner brief output (v1.2) |
+| Instance IMAGE fill priority | Instance own fill detected before child recursion — early return prevents double export | ✓ Good — clean pipeline, no duplicate assets (v1.3) |
+| Global imageRef dedup | Single seenImageRefs set across all walkTree calls | ✓ Good — identical images exported once across instances (v1.3) |
+| Pre-normalization image fill collection | collectImageFillsFromRawTree runs before normalizeTree strips instance subtrees | ✓ Good — captures deeply nested fills that normalization would discard (v1.3) |
+| absoluteBoundingBox for offsets | Use absoluteBoundingBox (not absoluteRenderBounds) for position offsets | ✓ Good — represents layout intent, not visual bounds with shadows/strokes (v1.3) |
+| Noise reduction for flex defaults | Only store layoutGrow when 1, layoutAlign when STRETCH | ✓ Good — brief stays concise (v1.3) |
+| User-provided Figma logo SVG | Used viewBox 0 0 15 15 version instead of Simple Icons 0 0 24 24 | ✓ Good — correct rendering in toolbar (v1.3) |
 
 ---
-*Last updated: 2026-03-01 after starting v1.3 milestone*
+*Last updated: 2026-03-01 after v1.3 milestone*

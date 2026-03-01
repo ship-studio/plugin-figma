@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.3 Asset Completeness & Polish (Shipped: 2026-03-01)
+
+**Phases completed:** 3 phases, 4 plans, 0 tasks
+
+**Key accomplishments:**
+- Instance child image detection — recurses into component instances at full depth to find and export all IMAGE fills (photos, avatars, hero images)
+- Instance IMAGE fill override detection — exports background image overrides on INSTANCE nodes as PNG
+- Smart rectangle filtering — skips simple solid-color rectangles to eliminate SVG noise
+- Absolute position offsets in brief (`[absolute] top:N left:N`) for CSS positioning
+- Flex-child properties (flex-grow:1, align-self:stretch) for accurate layout matching
+- Figma logo SVG toolbar icon for visual identity in Ship Studio
+- 303 tests, 9,411 LOC TypeScript — built in ~11 minutes across 30 commits
+
+---
+
 ## v1.0 Ship Studio Figma Plugin (Shipped: 2026-02-28)
 
 **Phases completed:** 5 phases, 11 plans, 0 tasks
