@@ -86,7 +86,9 @@ Plans:
   2. When two assets would produce the same filename, the second is auto-numbered (`icon.png`, `icon-2.png`)
   3. Node URLs with I-prefix instance-child IDs are detected and produce a clear warning telling the user to select the parent component instead
   4. The plugin suggests SVG format for vector-type nodes and PNG for everything else
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 16-01-PLAN.md -- ManualAsset type definition, I-prefix detection, format suggestion, filename collision resolution, deriveAssetFromNode, async resolveNode (TDD)
 
 ### Phase 17: Export Pipeline Rebuild
 **Goal**: The export pipeline accepts a list of manual assets and produces correctly downloaded files, batched by format
@@ -142,7 +144,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19
 | 13. Spacing & Layout Accuracy | v1.3 | 1/1 | Complete | 2026-03-01 |
 | 14. Plugin Icon | v1.3 | 1/1 | Complete | 2026-03-01 |
 | 15. Strip Auto-Detection | 1/1 | Complete    | 2026-03-01 | - |
-| 16. Asset Types & Node Resolution | v2.0 | 0/TBD | Not started | - |
+| 16. Asset Types & Node Resolution | v2.0 | 0/1 | Not started | - |
 | 17. Export Pipeline Rebuild | v2.0 | 0/TBD | Not started | - |
 | 18. Brief Generator Updates | v2.0 | 0/TBD | Not started | - |
 | 19. Asset List UI & Integration | v2.0 | 0/TBD | Not started | - |
