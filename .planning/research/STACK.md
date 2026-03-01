@@ -1,219 +1,260 @@
 # Technology Stack
 
-**Project:** Ship Studio Figma Plugin v2.0 -- Manual Asset Control
+**Project:** Ship Studio Figma Plugin v2.2 -- @S- Asset Detection & Results UX
 **Researched:** 2026-03-01
 
 ## Executive Summary
 
-No new npm dependencies are needed. The v2.0 manual asset control features are entirely achievable with the existing stack: React 18 (host-provided), TypeScript 5.x, Vite, Vitest, `@figma/rest-api-spec`, and `curl` via `shell.exec`.
+No new npm dependencies are needed. The v2.2 features -- `@S-` prefix layer detection and results modal redesign -- are entirely achievable with the existing stack. The `@S-` detection is a tree-walking filter over data already fetched from the Figma API. The results modal reuses the existing `Modal` component shell with new child content. Zero libraries to add, zero libraries to remove.
 
-The three capability gaps -- multi-select URL parsing, asset list management UI, and filename conflict resolution -- are all small enough to implement as plain TypeScript functions and React state. Adding a library for any of these would be over-engineering.
+What changes is **where asset discovery happens** (tree walk instead of user input) and **what the results view renders** (modal instead of inline card). Both are pure application logic changes within the existing React + TypeScript + Figma REST API stack.
 
-What changes is **how the existing tools are used**, not **which tools are available**.
-
-## Recommended Stack (No Changes from v1.3)
+## Recommended Stack (No Changes from v2.1)
 
 ### Core Framework (unchanged)
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
 | TypeScript | 5.x | Type safety | Already in use |
-| React 18 | (host-provided) | Plugin UI | Ship Studio provides React; useState + useCallback sufficient for asset list state |
+| React 18 | (host-provided) | Plugin UI | Ship Studio provides React instance |
 | Vite | 6.x | Build | Already in use |
 | Vitest | latest | Testing | Already in use |
 
 ### Figma API (unchanged)
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| `@figma/rest-api-spec` | latest | Type definitions | Already provides `GetFileNodesResponse`, `Node` types with `name` field |
-| `curl` via `shell.exec` | N/A | HTTP requests | Already the API access pattern for all Figma endpoints |
+| `@figma/rest-api-spec` | latest | Type definitions | Provides node types used by tree walker |
+| `curl` via `shell.exec` | N/A | HTTP requests | Existing Figma API access pattern |
 
 ### No New Dependencies
 
-Every v2.0 requirement maps to existing capabilities:
+Every v2.2 requirement maps to existing capabilities:
 
 | Requirement | Solved By | Why No Library Needed |
 |-------------|-----------|----------------------|
-| Multi-node URL parsing | Extend `parseFigmaUrl()` in `url-parser.ts` | Comma-split on a query parameter -- 3 lines of code |
-| Node name resolution | Existing `fetchFileNodes()` (already calls `/v1/files/:key/nodes?ids=`) | API accepts comma-separated IDs, response includes `document.name` per node |
-| Asset list state | React `useState<AssetItem[]>` + `useCallback` | List of <20 items; no virtualization or complex state management needed |
-| Filename sanitization | Existing `sanitizeFilename()` in `sanitize.ts` | Already converts Figma layer names to filesystem-safe strings |
-| Filename collision resolution | Existing `resolveCollisions()` in `sanitize.ts` | Already appends `-2`, `-3` suffixes; fully tested |
-| Asset download | Existing `downloadFile()` and `downloadAllAssets()` | No changes to download pipeline |
-| Preview PNG | Existing `fetchImages()` with format='png', scale=2 | No changes |
-| Format picker (PNG/SVG) | HTML `<select>` element | Two options, no component library needed |
+| `@S-` prefix detection in tree | Walk raw Figma nodes from `fetchFileNodes`/`fetchFullFile` response | String prefix check on `node.name` -- trivial JS |
+| Image fill detection for format | Check `node.fills` array for `paint.type === 'IMAGE'` | Already done in `tokens/collect.ts`; reuse same pattern |
+| Filename derivation | Existing `sanitizeFilename()` in `sanitize.ts` with prefix stripping | Strip `@S-` before calling sanitize |
+| Filename collision resolution | Existing `resolveFilenameCollision()` in `resolve.ts` | Already handles `-2`, `-3` suffixes |
+| Export pipeline | Existing `exportAssets()` with `ManualAsset[]` input | `@S-` detected assets produce same `ManualAsset[]` shape |
+| Results modal | Existing `Modal` component in `components/Modal.tsx` | Has overlay, header, body, escape-to-close; just new children |
+| Expandable details toggle | React `useState<boolean>` | One boolean per section; no accordion library needed |
+| Zero-asset warning UI | React conditional rendering | JSX with two buttons; no dialog library needed |
+| "Try again" re-fetch | Call existing `extractLayout()` again | Already used by the "Get New Brief" flow |
+| Copy to clipboard | Existing `copyToClipboard()` in `brief/io.ts` | No changes |
 
 ## What Changes (Code, Not Dependencies)
 
-### 1. URL Parser: Support Multiple Node IDs
+### 1. New Module: `@S-` Prefix Scanner
 
-**Current behavior:** `parseFigmaUrl()` returns a single `nodeId: string | null`.
+**Purpose:** Walk a raw Figma node tree (the JSON already fetched by `extractLayout`) and collect all nodes whose `name` starts with `@S-`.
 
-**Figma URL reality:**
-- Single selection: `?node-id=123-456`
-- Multi-selection: Not natively supported by Figma's "Copy link" feature. Figma generates one link per selected element, not a comma-separated list.
+**Location:** New file `src/assets/scan-prefixed.ts` (pure function, no side effects).
 
-**Implication for v2.0:** Users will paste one URL at a time to add assets. Each URL has one `node-id`. The parser does NOT need multi-node support in a single URL. The "multi-select" feature is the asset LIST (add multiple URLs over time), not multiple node IDs in one URL.
+**Key design decisions:**
 
-**Evidence:** Figma's "Copy link to selection" (Cmd+L) generates a link to the single focused node. Multi-Link Copy and Batch Copy Link community plugins exist precisely because Figma does NOT support multi-node URLs natively. The REST API's `/v1/files/:key/nodes?ids=` endpoint does accept comma-separated IDs, but this is for the API, not for URLs the user copies from Figma.
+- **Scan raw Figma nodes, not normalized `LayoutNode` tree.** The normalized tree collapses INSTANCE children, so scanning it would miss `@S-` layers inside component instances. The raw API response (available in `extractLayout` before `normalizeTree`) has the full tree.
+- **Recursive walk, no depth limit.** `@S-` layers may appear at any nesting depth -- inside components, inside frames, inside groups.
+- **Format detection: check fills for IMAGE type.** If any visible fill has `type === 'IMAGE'`, export as PNG. Otherwise SVG. This reuses the pattern from `tokens/collect.ts` line 147.
+- **Prefix stripping before sanitization.** `@S-hero-image` must become `hero-image.png`, not `s-hero-image.png`. Strip the `@S-` prefix BEFORE passing to `sanitizeFilename()`. Current sanitize strips `@` (non-alphanumeric) but keeps `s-`, producing wrong filenames.
+- **Output: `ManualAsset[]`.** The scan produces the same type the export pipeline already consumes. No type changes needed downstream.
 
-**No parser changes needed.** The existing single-nodeId parser is correct for user-pasted URLs.
+**Why not scan the normalized tree:**
+The normalized tree (from `normalizeTree`) treats INSTANCE nodes as leaf nodes -- it does NOT recurse into their children (see `normalize.ts` line 193-194: "Do NOT recurse into children -- instances are leaf nodes"). A designer might place `@S-` layers inside component instances. Scanning raw nodes is the only way to find them.
 
-**Confidence:** HIGH -- verified through Figma forum discussions, community plugin existence patterns, and manual URL testing knowledge.
+**Integration point:** The scanner runs AFTER `extractLayout` returns (which already fetches the raw Figma data) but BEFORE `exportAssets`. The raw nodes are available in the `ExtractLayoutResult` -- specifically, the nodes returned by `fetchFileNodes` or `fetchFullFile`. The scanner needs access to these raw nodes, which means either:
+- (a) Storing raw nodes on `ExtractLayoutResult` (preferred -- one extra field), or
+- (b) Re-fetching from the API (wasteful; avoid).
 
-### 2. Node Name Fetching
+### 2. Prefix Stripping Before Sanitization
 
-**Need:** When a user pastes a Figma URL for an asset, we need the layer name to auto-derive the filename.
+**The problem:** `sanitizeFilename('@S-hero-image')` returns `s-hero-image` because `@` is stripped by the `[^a-z0-9-]` regex but `s-` remains. The filename should be `hero-image`.
 
-**Existing capability:** `fetchFileNodes()` in `figma-api.ts` already calls `GET /v1/files/:key/nodes?ids=X` and returns `{ rootNode, components, styles }`. The `rootNode` is the full `Node` type from `@figma/rest-api-spec`, which includes a `name: string` field (part of `IsLayerTrait` inherited by all visual nodes).
+**The fix:** Strip the `@S-` prefix from `node.name` before passing to `sanitizeFilename()`. This is a one-liner in the scanner:
 
-**Integration:** Create a lightweight wrapper:
 ```typescript
-async function fetchNodeName(shell: Shell, token: string, fileKey: string, nodeId: string): Promise<string> {
-  const { rootNode } = await fetchFileNodes(shell, token, fileKey, nodeId);
-  return rootNode.name;
+const cleanName = node.name.replace(/^@S-/i, '');
+const baseName = sanitizeFilename(cleanName);
+```
+
+This belongs in the scanner, NOT in `sanitizeFilename` itself. `sanitizeFilename` is a general-purpose utility that shouldn't know about `@S-` conventions.
+
+### 3. Image Fill Detection for Format Auto-Suggestion
+
+**Current state:** `suggestFormat()` in `resolve.ts` uses node TYPE to choose format (VECTOR types -> SVG, everything else -> PNG). This is insufficient for `@S-` detection because:
+- A FRAME with an image fill should export as PNG (it's a photo/illustration)
+- A FRAME with only solid fills and vector children should export as SVG (it's an icon)
+
+**New logic:** Check `node.fills` for any visible paint with `type === 'IMAGE'`. If found, format is PNG. If not, check whether ALL descendants are vector primitives (VECTOR, LINE, STAR, ELLIPSE, REGULAR_POLYGON, BOOLEAN_OPERATION, TEXT). If yes, SVG. Otherwise PNG (safe default for mixed content).
+
+```typescript
+function hasImageFill(node: any): boolean {
+  if (Array.isArray(node.fills)) {
+    for (const paint of node.fills) {
+      if (paint.visible !== false && paint.type === 'IMAGE') return true;
+    }
+  }
+  // Check children recursively for image fills
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      if (hasImageFill(child)) return true;
+    }
+  }
+  return false;
 }
 ```
 
-This can be batched if needed -- the `/nodes` endpoint accepts comma-separated IDs: `?ids=1:2,3:4`. But since users add assets one at a time (paste URL, see name, confirm), individual fetches are fine.
+### 4. Raw Node Preservation in ExtractLayoutResult
 
-**Confidence:** HIGH -- verified from `@figma/rest-api-spec` types (local), `GetFileNodesResponse.nodes[id].document` is type `Node` which extends `IsLayerTrait` with `name: string`.
+**Current state:** `extractLayout()` fetches raw Figma nodes, normalizes them, and discards the raw data. The scanner needs the raw data.
 
-### 3. Asset List State Management
-
-**Pattern:** Simple React state array. No Redux, Zustand, or external state management.
+**Change:** Add a `rawNodes: any[]` field to `ExtractLayoutResult`. Set it to the raw Figma API response nodes before normalization. Cost: one extra reference (no deep copy needed).
 
 ```typescript
-interface ManualAsset {
-  id: string;          // Unique ID for React keys (crypto.randomUUID or counter)
-  nodeId: string;      // Figma node ID (e.g., "123:456")
-  nodeName: string;    // Layer name from Figma API (e.g., "Hero Image")
-  format: 'png' | 'svg';  // User-selected export format
-  filename: string;    // Auto-derived: sanitizeFilename(nodeName) + extension
+export interface ExtractLayoutResult {
+  extraction: ExtractionResult;
+  tokens: DesignTokens;
+  fileKey: string;
+  rawNodes: any[];  // NEW: raw Figma nodes for @S- scanning
+  largeTreeWarning?: { nodeCount: number; message: string };
 }
-
-const [assets, setAssets] = useState<ManualAsset[]>([]);
 ```
 
-**Operations (all trivial with useState):**
-- **Add:** `setAssets(prev => [...prev, newAsset])`
-- **Remove:** `setAssets(prev => prev.filter(a => a.id !== id))`
-- **Change format:** `setAssets(prev => prev.map(a => a.id === id ? { ...a, format, filename: sanitizeFilename(a.nodeName) + (format === 'svg' ? '.svg' : '.png') } : a))`
+### 5. Remove ManualAsset URL Workflow
 
-**Why not useReducer:** Three operations, all simple transforms. useState is clearer.
+**What gets removed:**
+- `AssetListPanel` component (`src/components/AssetListPanel.tsx`) -- entire file
+- `manualAssets` state and all its handlers in `MainView.tsx`
+- Asset URL input section in MainView render
+- `resolveNode()` async function in `resolve.ts` (the scan replaces it)
+- `isInstanceChildId()` and `extractParentInstanceId()` in `resolve.ts` (I-prefix validation was for manual URLs)
 
-**Why not external state lib:** The asset list is local to one view, never shared across components, and is discarded after export. External state management would add complexity for zero benefit.
+**What stays:**
+- `sanitizeFilename()` -- still needed for name cleaning
+- `resolveFilenameCollision()` -- still needed for dedup
+- `deriveAssetFromNode()` -- may be repurposed or replaced by scanner logic
+- `suggestFormat()` -- stays but image-fill-aware version replaces it for @S- assets
+- Export pipeline (`exportAssets()`) -- unchanged; still consumes `ManualAsset[]`
 
-**Confidence:** HIGH -- standard React patterns, no novel requirements.
+### 6. Results Modal Redesign
 
-### 4. Filename Derivation and Conflict Resolution
+**Current state:** Results are rendered inline in `MainView.tsx` as a `figma-plugin-file-info` div with stats, copy button, warnings, and tree preview toggle.
 
-**Existing utilities already solve this:**
+**New design:** A `Modal` (from `components/Modal.tsx`) that opens when the brief is ready. Contents:
+1. Success message: "Your brief is ready"
+2. Copy button (primary action)
+3. Instruction text: "Paste this brief into Claude Code (or your preferred AI agent)"
+4. Refinement encouragement: "The brief captures your design's structure. You may want to iterate with your agent to refine the output."
+5. Expandable "View details" toggle with:
+   - Assets list (count + filenames)
+   - Layout tree preview (existing `TreePreview` component)
+   - Token summary (color count, font count, etc.)
 
-1. `sanitizeFilename(layerName)` in `src/assets/sanitize.ts` -- converts "Icon / Arrow Right" to "icon-arrow-right"
-2. `resolveCollisions(entries)` in `src/assets/sanitize.ts` -- appends `-2`, `-3` for duplicate filenames
+**What the Modal component already provides:**
+- Overlay with backdrop blur
+- Header with Figma logo + title
+- Body with scroll
+- Escape-to-close
+- Click-outside-to-close
+- CSS injection/cleanup
 
-**Integration for v2.0:** When the user adds an asset, auto-derive the filename:
-```typescript
-const baseName = sanitizeFilename(nodeName);
-const filename = `${baseName}.${format === 'svg' ? 'svg' : 'png'}`;
+**What needs adding:** The modal body content. This is just JSX -- no new components or libraries.
+
+**CSS additions:** Minimal. A few new classes for the details toggle and success state. Added to the existing `styles.ts` string.
+
+### 7. Zero-Asset Warning Flow
+
+**When:** The `@S-` scanner finds zero matching layers in the tree.
+
+**UI:** Shown INSTEAD of proceeding to export. Two buttons:
+- "Try again" -- re-runs `extractLayout()` from scratch (new API call, so designer can fix their Figma file in between)
+- "Continue anyway" -- proceeds with zero assets (brief will have all placeholder references)
+
+**Implementation:** A new state `zeroAssetWarning: boolean` in MainView. Set to true when scanner returns empty array. Renders a warning div (using existing `.figma-plugin-warning` CSS class). Buttons reset the warning and either re-extract or proceed.
+
+## Alternatives Considered
+
+| Category | Recommended | Alternative | Why Not |
+|----------|-------------|-------------|---------|
+| Tree scanning location | Raw Figma nodes before normalization | Normalized LayoutNode tree | Normalized tree collapses INSTANCE children; would miss @S- layers inside components |
+| Format detection | Image fill check on node + descendants | Node type only (current `suggestFormat`) | Node type misses FRAMEs with image fills; a photo in a FRAME would export as SVG |
+| Prefix convention | `@S-` (case-insensitive `@S-`) | `[ship]`, `#export`, or Figma component property | `@S-` is short, distinctive, easy to type, and won't collide with design naming conventions |
+| Results view | Modal overlay | Inline card redesign | Modal creates clear separation between "working" and "done" states; matches PROJECT.md requirements |
+| Accordion library | `useState<boolean>` per section | react-collapsed, @radix-ui/accordion | Three toggles with no animation needed; a library adds bundle weight for nothing |
+| State management | React useState (existing) | useReducer, Zustand | Milestone removes state (manualAssets), net simpler; useState remains appropriate |
+
+## Existing Code Reuse Map
+
+Every existing module is either reused as-is or lightly modified:
+
+| Module | v2.2 Role | Change Level |
+|--------|-----------|-------------|
+| `figma-api.ts` | Unchanged -- all API calls already exist | None |
+| `layout/extract.ts` | Add `rawNodes` field to result type | Minimal |
+| `layout/normalize.ts` | Unchanged | None |
+| `tokens/collect.ts` | Unchanged | None |
+| `assets/sanitize.ts` | Unchanged -- `sanitizeFilename` reused | None |
+| `assets/resolve.ts` | Remove `resolveNode`, `isInstanceChildId`, `extractParentInstanceId`. Keep `resolveFilenameCollision`, `suggestFormat` | Moderate (deletion) |
+| `assets/export.ts` | Unchanged -- still consumes `ManualAsset[]` | None |
+| `assets/types.ts` | Unchanged -- `ManualAsset` type still used | None |
+| `assets/download.ts` | Unchanged | None |
+| `assets/breadcrumb.ts` | Unchanged | None |
+| `components/Modal.tsx` | Reused for results modal | None |
+| `components/AssetListPanel.tsx` | **Deleted** -- manual workflow removed | Full removal |
+| `views/MainView.tsx` | Major refactor: remove manual asset state, add scanner integration, add results modal, add zero-asset warning | Heavy |
+| `styles.ts` | Add CSS for results modal content, details toggle | Moderate (additions only) |
+| `brief/generate.ts` | Unchanged | None |
+| `brief/io.ts` | Unchanged | None |
+| `url-parser.ts` | Unchanged | None |
+
+## New Files
+
+| File | Purpose | Estimated Size |
+|------|---------|---------------|
+| `src/assets/scan-prefixed.ts` | Pure function: walk raw Figma nodes, find `@S-` layers, return `ManualAsset[]` | ~80 lines |
+| `src/assets/scan-prefixed.test.ts` | Unit tests for prefix scanner | ~150 lines |
+| `src/components/ResultsModal.tsx` | Results modal body content (success message, copy button, expandable details) | ~120 lines |
+
+## Key Integration Points
+
+### Data Flow (v2.2)
+
+```
+User pastes Figma URL
+  -> extractLayout() fetches raw nodes + normalizes
+  -> rawNodes stored on ExtractLayoutResult    [NEW]
+  -> scanPrefixedAssets(rawNodes) returns ManualAsset[]  [NEW]
+  -> if assets.length === 0: show zero-asset warning  [NEW]
+  -> exportAssets({ manualAssets: scannedAssets })  [unchanged pipeline]
+  -> generateBrief()  [unchanged]
+  -> ResultsModal opens with brief  [NEW - was inline card]
 ```
 
-Run `resolveCollisions()` at export time (not on add) to handle the case where multiple assets resolve to the same sanitized name. This matches the existing pattern in `identifyAssets()`.
+### What NOT to Add
 
-**Confidence:** HIGH -- functions exist, are tested (10 tests for sanitize, 5 for collisions), and handle all edge cases.
+| Don't Add | Why |
+|-----------|-----|
+| Component library (Radix, Headless UI) | Modal already exists; three toggles don't need an accordion |
+| State management library (Zustand, Jotai) | Removing manual asset state makes things simpler, not more complex |
+| Animation library (Framer Motion) | No animations specified in requirements |
+| Form library (React Hook Form) | No forms in the new flow (URL input is unchanged) |
+| CSS framework (Tailwind, styled-components) | Plugin uses Ship Studio's theme CSS variables; adding a framework would conflict |
+| Testing library additions | Vitest + existing patterns sufficient for new pure functions |
+| Figma Plugin API / Figma Plugin SDK | This plugin uses REST API via curl, not the Figma Plugin SDK (different architecture) |
 
-### 5. Simplified Export Pipeline
+## Installation
 
-**What changes in `export.ts`:**
+No changes to `package.json`. No `npm install` needed.
 
-The current `exportAssets()` function does:
-1. Clean/create assets directory
-2. Detect compositions via `detectCompositions()` -- **REMOVED in v2.0**
-3. Identify assets via `identifyAssets()` -- **REMOVED in v2.0**
-4. Batch API calls for render URLs (SVG, PNG, image fills)
-5. Build download list
-6. Sequential download
-
-In v2.0, steps 2-3 are replaced by the user-provided `ManualAsset[]` list. Steps 4-6 remain the same with minor adaptation:
-
-```typescript
-// v2.0: User provides the asset list directly
-// No identifyAssets(), no detectCompositions()
-// Just batch the user's assets by format and download
+```bash
+# Existing setup continues to work
+npm install          # existing deps only
+npm run build        # vite build
+npm run test         # vitest run
 ```
-
-The existing `fetchImages()` and `downloadFile()` functions are used as-is. The only difference is the source of the download list (user-curated vs auto-detected).
-
-**Confidence:** HIGH -- the download pipeline is format-agnostic; it doesn't care where the asset list came from.
-
-### 6. Layout Tree Cross-Referencing
-
-**Current:** `buildTreeLines()` in `generate.ts` checks `exportResult.assets` for matching `nodeId` to show `-> filename.png` in the layout tree.
-
-**v2.0:** Same pattern, different source. The `ManualAsset[]` list maps `nodeId -> filename`. The brief generator receives the export result with the same `{ nodeId, filename }` structure. No changes needed to the cross-referencing logic in `generate.ts`.
-
-**Confidence:** HIGH -- the brief generator already handles arbitrary `nodeId -> filename` mappings.
-
-## Figma REST API: Endpoints Used (No New Endpoints)
-
-| Endpoint | Used For | v2.0 Change |
-|----------|----------|-------------|
-| `GET /v1/files/:key?depth=1` | Validate file access, get file name | None |
-| `GET /v1/files/:key/nodes?ids=X` | Fetch node subtree (for layout extraction) | Also used to fetch node name for asset URL validation |
-| `GET /v1/files/:key` | Fetch full file (page-level extraction) | None |
-| `GET /v1/images/:key?ids=X&format=png&scale=2` | Render nodes as PNG | Same -- user-specified PNG assets |
-| `GET /v1/images/:key?ids=X&format=svg` | Export SVGs | Same -- user-specified SVG assets |
-| `GET /v1/files/:key/images` | Resolve imageRef to download URLs | May be unused if no auto-detected image fills |
-| `GET /v1/me` | Validate personal access token | None |
-
-**Note on image fills:** The `GET /v1/files/:key/images` endpoint (image fill resolution) may not be needed in v2.0. In v1.x, it resolves `imageRef` values from auto-detected IMAGE fills. In v2.0, users specify assets by node ID and format. For PNG assets, we render via `GET /v1/images/:key?ids=X&format=png` (node render, not fill resolution). The image fills endpoint is only needed if we want to support "export the original uploaded image" vs "export a rendered snapshot" -- this is a UX decision, not a stack decision.
-
-## What NOT to Add
-
-| Category | What | Why Not |
-|----------|------|---------|
-| State management | Redux, Zustand, Jotai | Overkill for a single list of <20 items in one component |
-| UI component library | Radix, shadcn, Headless UI | Plugin uses Ship Studio theme system; adding a component library creates style conflicts and increases bundle size |
-| Form library | React Hook Form, Formik | One text input and one select per asset add; no validation complexity |
-| Drag-and-drop | react-beautiful-dnd, dnd-kit | Asset order doesn't matter for export; alphabetical or insertion order is fine |
-| UUID generation | uuid package | `crypto.randomUUID()` is available in all modern JS runtimes, or use a simple counter |
-| URL validation | url-parse, valid-url | `parseFigmaUrl()` already validates Figma URLs with a regex |
-| List virtualization | react-window, react-virtuoso | Asset list will have <20 items; rendering all is fine |
-| CSS-in-JS | styled-components, emotion | Plugin uses inline styles + Ship Studio CSS variables; consistent with existing codebase |
-
-## Existing Utilities to Reuse
-
-| Utility | Location | Reuse For |
-|---------|----------|-----------|
-| `parseFigmaUrl()` | `src/url-parser.ts` | Validate pasted asset URLs, extract fileKey + nodeId |
-| `sanitizeFilename()` | `src/assets/sanitize.ts` | Convert layer names to filenames |
-| `resolveCollisions()` | `src/assets/sanitize.ts` | Handle duplicate filenames at export time |
-| `fetchFileNodes()` | `src/figma-api.ts` | Fetch node name for auto-derived filename |
-| `fetchImages()` | `src/figma-api.ts` | Render PNG/SVG for user-specified nodes |
-| `downloadFile()` | `src/assets/download.ts` | Download rendered assets to disk |
-| `downloadAllAssets()` | `src/assets/download.ts` | Sequential download with progress |
-| `prepareAssetsDir()` | `src/assets/download.ts` | Clean/create assets directory |
-| `generateBrief()` | `src/brief/generate.ts` | Assemble markdown brief (receives export result) |
-
-## Code to Remove
-
-The v2.0 milestone explicitly removes all auto-detection code. These files/functions become dead code:
-
-| File | What | Why Remove |
-|------|------|------------|
-| `src/assets/identify.ts` | Auto-detection of exportable assets | Replaced by user-curated list |
-| `src/assets/identify.test.ts` | Tests for auto-detection | Dead code |
-| `src/assets/detect-composition.ts` | Vector-only group / composition detection | Replaced by user-curated list |
-| `src/assets/detect-composition.test.ts` | Tests for composition detection | Dead code |
-| `src/assets/breadcrumb.ts` | Layout tree breadcrumb for auto-detected assets | May still be useful if kept; evaluate during implementation |
-| `src/assets/breadcrumb.test.ts` | Tests for breadcrumb | Depends on breadcrumb decision |
-
-**Net effect:** Significant codebase simplification. The `identify.ts` walkTree function (247 lines) and `detect-composition.ts` are the most complex parts of the asset pipeline. Removing them reduces maintenance burden and eliminates entire categories of bugs (false positive/negative detection, dedup edge cases, composition heuristic failures).
 
 ## Sources
 
-- [`@figma/rest-api-spec` types (local)](https://github.com/figma/rest-api-spec) -- `GetFileNodesResponse.nodes[id].document` is type `Node` extending `IsLayerTrait` with `name: string`; verified locally at `node_modules/@figma/rest-api-spec/dist/api_types.ts` (HIGH confidence)
-- [Figma REST API file endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- `/v1/files/:key/nodes` accepts comma-separated IDs in `ids` parameter (HIGH confidence)
-- [Figma forum: copy link to selection](https://forum.figma.com/suggest-a-feature-11/share-to-selection-links-should-be-consistent-34807) -- Cmd+L generates link to single focused node, not multi-node URL (MEDIUM confidence)
-- [Multi-Link Copy Figma plugin](https://www.figma.com/community/plugin/1423324569458473026/multi-link-copy) -- existence of this plugin confirms Figma lacks native multi-node URL support (MEDIUM confidence)
-- Local codebase: `src/url-parser.ts`, `src/assets/sanitize.ts`, `src/assets/export.ts`, `src/figma-api.ts`, `src/views/MainView.tsx` -- verified existing utility functions, API wrappers, and UI patterns (HIGH confidence)
+- Codebase analysis (HIGH confidence): All findings verified against actual source code in `/src/`
+- Figma REST API behavior (HIGH confidence): `fetchFileNodes` and `fetchFullFile` return raw node trees with `name` and `fills` properties -- verified in `figma-api.ts` and `@figma/rest-api-spec` types
+- `sanitizeFilename` behavior with `@S-` prefix (HIGH confidence): Tested locally -- `sanitizeFilename('@S-hero-image')` returns `s-hero-image`, confirming prefix must be stripped before sanitization
+- `normalizeTree` INSTANCE handling (HIGH confidence): Verified in `normalize.ts` line 193-194 -- INSTANCE nodes return early without recursing into children
