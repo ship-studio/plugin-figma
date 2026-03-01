@@ -82,7 +82,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 - [x] **Phase 24: Detection Foundation** - Pure function that walks the raw Figma tree to find `@S-` prefixed layers and auto-detect their export format (completed 2026-03-01)
 - [x] **Phase 25: Pipeline Integration & Zero-Asset Warning** - Wire detection output into the export pipeline and add a checkpoint warning when no assets are found (completed 2026-03-01)
 - [x] **Phase 26: MainView Rewiring & Cleanup** - Replace manual asset state with detected assets end-to-end and delete the old manual workflow code (completed 2026-03-01)
-- [ ] **Phase 27: Results Modal** - Replace inline results card with a clean modal guiding designers to paste the brief and iterate
+- [x] **Phase 27: Results Modal** - Replace inline results card with a clean modal guiding designers to paste the brief and iterate (completed 2026-03-01)
 
 ## Phase Details
 
@@ -137,7 +137,7 @@ Plans:
   3. The modal includes a message about potential mistakes and encourages the user to refine iteratively
   4. An expandable "View details" toggle reveals the asset list, layout tree, and token summary -- collapsed by default
   5. The user can dismiss the modal and start a new brief without stale state from the previous run
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 27-01-PLAN.md -- Create ResultsModal component with success message, copy button, agent guidance, refinement encouragement, and expandable details; wire into MainView as view replacement
 
@@ -174,4 +174,4 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 26. MainView Rewiring & Cleanup | 1/1 | Complete    | 2026-03-01 | - |
-| 27. Results Modal | v2.2 | 0/1 | Not started | - |
+| 27. Results Modal | 1/1 | Complete   | 2026-03-01 | - |

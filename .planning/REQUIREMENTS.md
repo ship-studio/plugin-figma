@@ -24,11 +24,11 @@ Requirements for Designer Asset Workflow & Results UX milestone. Each maps to ro
 
 ### Results
 
-- [ ] **RSLT-01**: Results view is a clean modal stating the brief is ready
-- [ ] **RSLT-02**: Results modal includes a copy-to-clipboard button
-- [ ] **RSLT-03**: Results modal tells user to paste the brief into their agent
-- [ ] **RSLT-04**: Results modal warns about potential mistakes and encourages refinement
-- [ ] **RSLT-05**: Results modal has an expandable "View details" section with assets, layout tree, and tokens
+- [x] **RSLT-01**: Results view is a clean modal stating the brief is ready
+- [x] **RSLT-02**: Results modal includes a copy-to-clipboard button
+- [x] **RSLT-03**: Results modal tells user to paste the brief into their agent
+- [x] **RSLT-04**: Results modal warns about potential mistakes and encourages refinement
+- [x] **RSLT-05**: Results modal has an expandable "View details" section with assets, layout tree, and tokens
 
 ### Cleanup
 
@@ -93,11 +93,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WARN-02 | Phase 25 | Complete |
 | WARN-03 | Phase 25 | Complete |
 | WARN-04 | Phase 25 | Complete |
-| RSLT-01 | Phase 27 | Pending |
-| RSLT-02 | Phase 27 | Pending |
-| RSLT-03 | Phase 27 | Pending |
-| RSLT-04 | Phase 27 | Pending |
-| RSLT-05 | Phase 27 | Pending |
+| RSLT-01 | Phase 27 | Complete |
+| RSLT-02 | Phase 27 | Complete |
+| RSLT-03 | Phase 27 | Complete |
+| RSLT-04 | Phase 27 | Complete |
+| RSLT-05 | Phase 27 | Complete |
 | CLNP-01 | Phase 26 | Complete |
 | CLNP-02 | Phase 26 | Complete |
 
