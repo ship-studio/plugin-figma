@@ -64,9 +64,20 @@ describe('identifyAssets', () => {
       expect(result[0].exportType).toBe('svg');
     });
 
-    it('identifies RECTANGLE without image fills as SVG', () => {
+    it('skips simple RECTANGLE with only solid fills (ASSET-07: CSS-reproducible)', () => {
       const result = identifyAssets([root([
         node({ id: '1:7', name: 'Box', type: 'RECTANGLE', fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 } }] }),
+      ])], []);
+      expect(result).toHaveLength(0);
+    });
+
+    it('exports complex RECTANGLE (with stroke) as SVG', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '1:7b', name: 'Complex Box', type: 'RECTANGLE',
+          fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 } }],
+          strokes: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 } }],
+        }),
       ])], []);
       expect(result).toHaveLength(1);
       expect(result[0].exportType).toBe('svg');
