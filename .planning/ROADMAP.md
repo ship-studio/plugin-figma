@@ -110,7 +110,9 @@ Plans:
   3. "Try again" re-fetches from the Figma API (not re-scanning in-memory data), so the designer can fix their file and retry
   4. "Continue anyway" proceeds to generate a brief with zero assets (preview-only brief)
   5. `DetectedAsset[]` flows into the existing `exportAssets()` pipeline without type errors or node ID corruption
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 25-01-PLAN.md -- Expose rawRootNodes, create DetectedAsset-to-ManualAsset adapter, wire detection into MainView pipeline, add zero-asset warning card
 
 ### Phase 26: MainView Rewiring & Cleanup
 **Goal**: The plugin works end-to-end with `@S-` detection as the sole asset workflow, with all manual URL code removed
@@ -165,7 +167,7 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 21. Mode-Specific Brief Instructions | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 22. Asset Clarity in Brief | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
-| 24. Detection Foundation | 1/1 | Complete    | 2026-03-01 | - |
-| 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 0/? | Not started | - |
+| 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
+| 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 0/1 | Not started | - |
 | 26. MainView Rewiring & Cleanup | v2.2 | 0/? | Not started | - |
 | 27. Results Modal | v2.2 | 0/? | Not started | - |
