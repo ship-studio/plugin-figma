@@ -106,20 +106,20 @@ export const PLUGIN_CSS = `
 .figma-plugin-mode-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .figma-plugin-mode-card {
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
   background: var(--bg-secondary);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: border-color 0.15s ease;
 }
 
 .figma-plugin-mode-card:hover {
-  border-color: var(--accent, #0d99ff);
+  border-color: var(--text-muted);
 }
 
 .figma-plugin-mode-card.selected {
@@ -127,17 +127,16 @@ export const PLUGIN_CSS = `
 }
 
 .figma-plugin-mode-card-name {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .figma-plugin-mode-card-desc {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   line-height: 1.3;
-  margin-top: 2px;
 }
 
 .figma-plugin-radio-group {
@@ -347,15 +346,16 @@ export const PLUGIN_CSS = `
 
 /* Add button */
 .figma-plugin-asset-add-btn {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-radius: 6px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   flex-shrink: 0;
   font-weight: 500;
+  box-sizing: border-box;
 }
 
 .figma-plugin-asset-add-btn:hover {
