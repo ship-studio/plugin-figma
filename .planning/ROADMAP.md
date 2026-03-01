@@ -122,7 +122,10 @@ Plans:
   3. User can edit the auto-derived filename for any asset before exporting
   4. Pasting a URL whose node ID is already in the list shows an error instead of creating a duplicate
   5. Clicking "Get Brief" with the asset list triggers export, brief generation, and copy-to-clipboard -- producing a complete brief with all listed assets mapped into the layout tree
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 19-01-PLAN.md -- Build AssetListPanel component with CSS classes, URL validation, inline editing, format toggle
+- [ ] 19-02-PLAN.md -- Wire AssetListPanel into MainView with state management, export pipeline integration, human verification
 
 ## Progress
 
@@ -149,4 +152,4 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19
 | 16. Asset Types & Node Resolution | 1/1 | Complete    | 2026-03-01 | - |
 | 17. Export Pipeline Rebuild | 1/1 | Complete    | 2026-03-01 | - |
 | 18. Brief Generator Updates | 1/1 | Complete    | 2026-03-01 | - |
-| 19. Asset List UI & Integration | v2.0 | 0/TBD | Not started | - |
+| 19. Asset List UI & Integration | v2.0 | 0/2 | Not started | - |
