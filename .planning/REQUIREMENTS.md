@@ -17,10 +17,10 @@ Requirements for Designer Asset Workflow & Results UX milestone. Each maps to ro
 
 ### Warning
 
-- [ ] **WARN-01**: Plugin shows a warning when no `@S-` layers are found
-- [ ] **WARN-02**: Warning explains the `@S-` naming convention for designers
-- [ ] **WARN-03**: User can "Continue anyway" to proceed without assets
-- [ ] **WARN-04**: User can "Try again" which re-fetches from the Figma API
+- [x] **WARN-01**: Plugin shows a warning when no `@S-` layers are found
+- [x] **WARN-02**: Warning explains the `@S-` naming convention for designers
+- [x] **WARN-03**: User can "Continue anyway" to proceed without assets
+- [x] **WARN-04**: User can "Try again" which re-fetches from the Figma API
 
 ### Results
 
@@ -89,10 +89,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DETECT-03 | Phase 24 | Complete |
 | DETECT-04 | Phase 24 | Complete |
 | DETECT-05 | Phase 24 | Complete |
-| WARN-01 | Phase 25 | Pending |
-| WARN-02 | Phase 25 | Pending |
-| WARN-03 | Phase 25 | Pending |
-| WARN-04 | Phase 25 | Pending |
+| WARN-01 | Phase 25 | Complete |
+| WARN-02 | Phase 25 | Complete |
+| WARN-03 | Phase 25 | Complete |
+| WARN-04 | Phase 25 | Complete |
 | RSLT-01 | Phase 27 | Pending |
 | RSLT-02 | Phase 27 | Pending |
 | RSLT-03 | Phase 27 | Pending |

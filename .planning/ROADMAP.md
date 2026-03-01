@@ -80,7 +80,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 **Milestone Goal:** Replace the manual asset URL workflow with convention-based `@S-` prefix detection, and transform the results screen into a clean "brief is done" experience that guides designers on next steps.
 
 - [x] **Phase 24: Detection Foundation** - Pure function that walks the raw Figma tree to find `@S-` prefixed layers and auto-detect their export format (completed 2026-03-01)
-- [ ] **Phase 25: Pipeline Integration & Zero-Asset Warning** - Wire detection output into the export pipeline and add a checkpoint warning when no assets are found
+- [x] **Phase 25: Pipeline Integration & Zero-Asset Warning** - Wire detection output into the export pipeline and add a checkpoint warning when no assets are found (completed 2026-03-01)
 - [ ] **Phase 26: MainView Rewiring & Cleanup** - Replace manual asset state with detected assets end-to-end and delete the old manual workflow code
 - [ ] **Phase 27: Results Modal** - Replace inline results card with a clean modal guiding designers to paste the brief and iterate
 
@@ -110,7 +110,7 @@ Plans:
   3. "Try again" re-fetches from the Figma API (not re-scanning in-memory data), so the designer can fix their file and retry
   4. "Continue anyway" proceeds to generate a brief with zero assets (preview-only brief)
   5. `DetectedAsset[]` flows into the existing `exportAssets()` pipeline without type errors or node ID corruption
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 25-01-PLAN.md -- Expose rawRootNodes, create DetectedAsset-to-ManualAsset adapter, wire detection into MainView pipeline, add zero-asset warning card
 
@@ -168,6 +168,6 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 22. Asset Clarity in Brief | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
-| 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 0/1 | Not started | - |
+| 25. Pipeline Integration & Zero-Asset Warning | 1/1 | Complete   | 2026-03-01 | - |
 | 26. MainView Rewiring & Cleanup | v2.2 | 0/? | Not started | - |
 | 27. Results Modal | v2.2 | 0/? | Not started | - |
