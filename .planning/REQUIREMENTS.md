@@ -32,8 +32,8 @@ Requirements for Designer Asset Workflow & Results UX milestone. Each maps to ro
 
 ### Cleanup
 
-- [ ] **CLNP-01**: Manual asset URL workflow removed (AssetListPanel, manual asset state)
-- [ ] **CLNP-02**: Resolve helpers for manual asset URLs removed
+- [x] **CLNP-01**: Manual asset URL workflow removed (AssetListPanel, manual asset state)
+- [x] **CLNP-02**: Resolve helpers for manual asset URLs removed
 
 ## Previous Milestone Requirements (v2.1 -- Complete)
 
@@ -98,8 +98,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RSLT-03 | Phase 27 | Pending |
 | RSLT-04 | Phase 27 | Pending |
 | RSLT-05 | Phase 27 | Pending |
-| CLNP-01 | Phase 26 | Pending |
-| CLNP-02 | Phase 26 | Pending |
+| CLNP-01 | Phase 26 | Complete |
+| CLNP-02 | Phase 26 | Complete |
 
 **Coverage:**
 - v2.2 requirements: 16 total

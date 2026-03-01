@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Designer Asset Workflow & Results UX
 status: unknown
-last_updated: "2026-03-01T21:48:59.243Z"
+last_updated: "2026-03-01T22:17:13.000Z"
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -18,22 +18,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** Phase 25 -- Pipeline Integration & Zero-Asset Warning
+**Current focus:** Phase 26 -- MainView Rewiring & Cleanup
 
 ## Current Position
 
-Phase: 25 of 27 (Pipeline Integration) -- second phase of v2.2
+Phase: 26 of 27 (MainView Rewiring & Cleanup) -- third phase of v2.2
 Plan: 1 of 1 (complete)
-Status: Phase 25 complete
-Last activity: 2026-03-01 -- Completed 25-01 (pipeline integration + zero-asset warning)
+Status: Phase 26 complete
+Last activity: 2026-03-01 -- Completed 26-01 (manual asset workflow removal)
 
-Progress: [############################.] 89% (24/27 phases overall, 0.5/4 in v2.2)
+Progress: [#############################] 93% (25/27 phases overall, 1.5/4 in v2.2)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 34 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 8, v2.1: 4, v2.2: 2)
-- Total execution time: ~6.75 hours across 7 milestones
+- Total plans completed: 35 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 8, v2.1: 4, v2.2: 3)
+- Total execution time: ~6.8 hours across 7 milestones
 
 ## Accumulated Context
 
@@ -51,6 +51,8 @@ Recent decisions affecting current work:
 - v2.2: Position metadata: depth (int) + parentPath (string[]) for layout tree mapping
 - v2.2: Synthetic root wrapper for multi-root detection (single root passthrough, multi wraps in __root__)
 - v2.2: retryCount accumulates across retries for progressive hint messaging
+- v2.2: Kept ManualAsset type and adapt.ts as bridge between detection and export pipeline
+- v2.2: Kept manualAssets parameter name in export.ts (renaming would cascade across test fixtures)
 
 ### Pending Todos
 
@@ -63,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 25-01-PLAN.md (Pipeline Integration + Zero-Asset Warning)
-Next: Phase 26 (Results UX Refresh) or remaining phases in v2.2
+Stopped at: Completed 26-01-PLAN.md (MainView Rewiring & Cleanup)
+Next: Phase 27 (Brief Text Cleanup) -- last phase in v2.2

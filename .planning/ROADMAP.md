@@ -81,7 +81,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 
 - [x] **Phase 24: Detection Foundation** - Pure function that walks the raw Figma tree to find `@S-` prefixed layers and auto-detect their export format (completed 2026-03-01)
 - [x] **Phase 25: Pipeline Integration & Zero-Asset Warning** - Wire detection output into the export pipeline and add a checkpoint warning when no assets are found (completed 2026-03-01)
-- [ ] **Phase 26: MainView Rewiring & Cleanup** - Replace manual asset state with detected assets end-to-end and delete the old manual workflow code
+- [x] **Phase 26: MainView Rewiring & Cleanup** - Replace manual asset state with detected assets end-to-end and delete the old manual workflow code (completed 2026-03-01)
 - [ ] **Phase 27: Results Modal** - Replace inline results card with a clean modal guiding designers to paste the brief and iterate
 
 ## Phase Details
@@ -123,7 +123,7 @@ Plans:
   2. The resolve helpers (resolve.ts, resolve.test.ts) are deleted and no imports reference them
   3. The plugin generates a correct brief with detected `@S-` assets end-to-end: extraction, detection, export, brief generation, clipboard copy all work in sequence
   4. The existing test suite passes after cleanup (no broken imports, no orphaned types)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 26-01-PLAN.md -- Relocate resolveFilenameCollision to sanitize.ts, delete resolve.ts/resolve.test.ts/AssetListPanel.tsx, strip all manual asset plumbing from MainView, clean orphaned CSS
 
@@ -171,5 +171,5 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 1/1 | Complete | 2026-03-01 |
-| 26. MainView Rewiring & Cleanup | v2.2 | 0/1 | Not started | - |
+| 26. MainView Rewiring & Cleanup | 1/1 | Complete   | 2026-03-01 | - |
 | 27. Results Modal | v2.2 | 0/? | Not started | - |
