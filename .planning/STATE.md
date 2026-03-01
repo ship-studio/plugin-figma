@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Manual Asset Control
-status: unknown
-last_updated: "2026-03-01T14:03:48.580Z"
+status: in-progress
+last_updated: "2026-03-01T14:23:56Z"
 progress:
   total_phases: 5
   completed_phases: 5
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,22 +18,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v2.0 Manual Asset Control -- Phase 16: Asset Types & Node Resolution
+**Current focus:** v2.0 Manual Asset Control -- Phase 17: Export Pipeline Rebuild
 
 ## Current Position
 
-Phase: 16 of 19 (Asset Types & Node Resolution) -- second of 5 v2.0 phases
+Phase: 17 of 19 (Export Pipeline Rebuild) -- third of 5 v2.0 phases
 Plan: 1 of 1 COMPLETE
-Status: Phase 16 complete
-Last activity: 2026-03-01 -- Executed 16-01 (ManualAsset type and node resolution)
+Status: Phase 17 complete
+Last activity: 2026-03-01 -- Executed 17-01 (Export pipeline with ManualAsset format-aware batching)
 
-Progress: [####......] 40% (2/5 phases)
+Progress: [######....] 60% (3/5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 2)
-- v2.0 average: ~3.3 min/plan
+- Total plans completed: 26 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 3)
+- v2.0 average: ~2.9 min/plan
 - Total execution time: ~6.7 hours across 5 milestones
 
 ## Accumulated Context
@@ -53,6 +53,9 @@ Key v2.0 decisions:
 - Removed instancesWithText from ExtractLayoutResult (only consumer was deleted identifyAssets)
 - Kept breadcrumb.ts and AssetEntry type for downstream Phases 16-18
 - resolveNode returns error ManualAsset rather than throwing (graceful degradation)
+- lookupUrl tries raw, encoded, and decoded nodeId variants for Figma API response map lookup
+- Format batching: one fetchImages call per non-empty partition (PNG at 2x, SVG without scale)
+- Per-asset failures produce warnings without throwing, allowing other assets to succeed
 
 ### Pending Todos
 
@@ -65,5 +68,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 16-01-PLAN.md (ManualAsset type and node resolution)
-Next: `/gsd:plan-phase 17` (Export Pipeline)
+Stopped at: Completed 17-01-PLAN.md (Export pipeline with ManualAsset format-aware batching)
+Next: `/gsd:plan-phase 18` (Brief Generator)
