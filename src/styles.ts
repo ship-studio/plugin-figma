@@ -90,6 +90,56 @@ export const PLUGIN_CSS = `
   margin-bottom: 16px;
 }
 
+/* Brief mode selector */
+.figma-plugin-mode-section {
+  margin-bottom: 16px;
+}
+
+.figma-plugin-mode-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.figma-plugin-mode-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.figma-plugin-mode-card {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.figma-plugin-mode-card:hover {
+  border-color: var(--accent, #0d99ff);
+}
+
+.figma-plugin-mode-card.selected {
+  border-color: var(--accent, #0d99ff);
+}
+
+.figma-plugin-mode-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.figma-plugin-mode-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
 .figma-plugin-radio-group {
   display: flex;
   flex-direction: column;
