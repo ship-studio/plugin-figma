@@ -107,7 +107,10 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
   // 4. Build download list: map each asset to its resolved URL
   // Track which png-render entries are composition vs component
   const compositionNodeIdSet = new Set(compositionNodeIds);
-  const downloadList: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }> = [];
+  // Note: Instance child entries always have exportType 'png-fill' and route through
+  // fillEntries (resolved via imageRef). Their I-prefix node IDs (e.g., I5912:74596;5912:74456)
+  // must NEVER be sent to fetchImages (/v1/images render endpoint) -- they return null.
+  const downloadList: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component'; parentInstanceId?: string }> = [];
 
   for (const entry of svgEntries) {
     const url = svgUrls[entry.nodeId];
@@ -120,7 +123,9 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
 
   for (const entry of fillEntries) {
     if (entry.imageRef && fillUrls[entry.imageRef]) {
-      downloadList.push({ filename: entry.filename, url: fillUrls[entry.imageRef], nodeId: entry.nodeId, assetType: 'image' });
+      const item: (typeof downloadList)[number] = { filename: entry.filename, url: fillUrls[entry.imageRef], nodeId: entry.nodeId, assetType: 'image' };
+      if (entry.parentInstanceId) item.parentInstanceId = entry.parentInstanceId;
+      downloadList.push(item);
     } else {
       warnings.push(`No download URL for image fill ${entry.filename} (ref: ${entry.imageRef})`);
     }

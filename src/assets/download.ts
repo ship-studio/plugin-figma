@@ -54,14 +54,14 @@ export async function downloadFile(
 export async function downloadAllAssets(
   shell: Shell,
   assetsDir: string,
-  assets: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }>,
+  assets: Array<{ filename: string; url: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component'; parentInstanceId?: string }>,
   onProgress?: (progress: AssetExportProgress) => void,
-): Promise<{ downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }[]; warnings: string[] }> {
-  const downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' }[] = [];
+): Promise<{ downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component'; parentInstanceId?: string }[]; warnings: string[] }> {
+  const downloaded: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component'; parentInstanceId?: string }[] = [];
   const warnings: string[] = [];
 
   for (let i = 0; i < assets.length; i++) {
-    const { filename, url, nodeId, assetType } = assets[i];
+    const { filename, url, nodeId, assetType, parentInstanceId } = assets[i];
     const outputPath = `${assetsDir}/${filename}`;
 
     if (onProgress) {
@@ -75,9 +75,10 @@ export async function downloadAllAssets(
 
     const result = await downloadFile(shell, url, outputPath);
     if (result.success) {
-      const item: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component' } = { filename, path: outputPath };
+      const item: { filename: string; path: string; nodeId?: string; assetType?: 'icon' | 'image' | 'composition' | 'component'; parentInstanceId?: string } = { filename, path: outputPath };
       if (nodeId !== undefined) item.nodeId = nodeId;
       if (assetType !== undefined) item.assetType = assetType;
+      if (parentInstanceId !== undefined) item.parentInstanceId = parentInstanceId;
       downloaded.push(item);
     } else {
       warnings.push(`Failed to download ${filename}: ${result.error}`);
