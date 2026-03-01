@@ -14,6 +14,26 @@ import { generateBrief, TOKEN_WARNING_THRESHOLD } from '../brief/generate';
 import type { BriefResult } from '../brief/types';
 import { saveBrief, copyToClipboard } from '../brief/io';
 
+type BriefMode = 'best' | 'pixel' | 'inspiration';
+
+const BRIEF_MODES: { id: BriefMode; name: string; description: string }[] = [
+  {
+    id: 'best',
+    name: 'Copy (Best results)',
+    description: 'Faithfully reproduce the design with clean, responsive code',
+  },
+  {
+    id: 'pixel',
+    name: 'Copy (Pixel for pixel)',
+    description: 'Match the design exactly — fixed sizes, no responsive abstractions',
+  },
+  {
+    id: 'inspiration',
+    name: 'Use as inspiration',
+    description: 'Adapt the design patterns and style to fit your existing site',
+  },
+];
+
 interface ExtractionStats {
   frames: number;
   components: { name: string; count: number }[];
@@ -125,6 +145,9 @@ export function MainView({ token }: MainViewProps) {
 
   // Manual asset list state
   const [manualAssets, setManualAssets] = useState<ManualAsset[]>([]);
+
+  // Brief mode selection (persists across URL changes within session)
+  const [briefMode, setBriefMode] = useState<BriefMode>('best');
 
   const handleAddAsset = useCallback((asset: ManualAsset) => {
     setManualAssets(prev => [...prev, asset]);
@@ -514,6 +537,34 @@ export function MainView({ token }: MainViewProps) {
             {parsedUrl.nodeId
               ? 'Will extract the selected element'
               : 'Will extract the whole page — select a specific element in Figma to narrow scope'}
+          </div>
+        </div>
+      )}
+
+      {/* Brief Mode Selector -- visible after URL validation, hidden during results */}
+      {parsedUrl && fileInfo && !validating && !briefResult && (
+        <div className="figma-plugin-mode-section">
+          <span className="figma-plugin-mode-label">Brief mode</span>
+          <div className="figma-plugin-mode-group">
+            {BRIEF_MODES.map((mode) => (
+              <div
+                key={mode.id}
+                className={`figma-plugin-mode-card${briefMode === mode.id ? ' selected' : ''}`}
+                onClick={() => setBriefMode(mode.id)}
+                role="radio"
+                aria-checked={briefMode === mode.id}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setBriefMode(mode.id);
+                  }
+                }}
+              >
+                <div className="figma-plugin-mode-card-name">{mode.name}</div>
+                <div className="figma-plugin-mode-card-desc">{mode.description}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
