@@ -141,7 +141,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19
 | 12. Instance Asset Detection | v1.3 | 2/2 | Complete | 2026-03-01 |
 | 13. Spacing & Layout Accuracy | v1.3 | 1/1 | Complete | 2026-03-01 |
 | 14. Plugin Icon | v1.3 | 1/1 | Complete | 2026-03-01 |
-| 15. Strip Auto-Detection | 1/1 | Complete   | 2026-03-01 | - |
+| 15. Strip Auto-Detection | 1/1 | Complete    | 2026-03-01 | - |
 | 16. Asset Types & Node Resolution | v2.0 | 0/TBD | Not started | - |
 | 17. Export Pipeline Rebuild | v2.0 | 0/TBD | Not started | - |
 | 18. Brief Generator Updates | v2.0 | 0/TBD | Not started | - |
