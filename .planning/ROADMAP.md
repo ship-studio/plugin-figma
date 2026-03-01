@@ -152,4 +152,4 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19
 | 16. Asset Types & Node Resolution | 1/1 | Complete    | 2026-03-01 | - |
 | 17. Export Pipeline Rebuild | 1/1 | Complete    | 2026-03-01 | - |
 | 18. Brief Generator Updates | 1/1 | Complete    | 2026-03-01 | - |
-| 19. Asset List UI & Integration | v2.0 | 0/2 | Not started | - |
+| 19. Asset List UI & Integration | 1/2 | In Progress|  | - |

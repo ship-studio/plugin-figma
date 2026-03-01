@@ -9,20 +9,20 @@ Requirements for Manual Asset Control milestone. Each maps to roadmap phases.
 
 ### Asset Input
 
-- [ ] **AINP-01**: User can add an asset by pasting a Figma URL that contains a node ID
-- [ ] **AINP-02**: User can select PNG or SVG format for each asset
-- [ ] **AINP-03**: Plugin validates that the asset URL belongs to the same Figma file as the main design URL
-- [ ] **AINP-04**: Plugin validates that the pasted URL contains a node ID (rejects file/page-level URLs)
+- [x] **AINP-01**: User can add an asset by pasting a Figma URL that contains a node ID
+- [x] **AINP-02**: User can select PNG or SVG format for each asset
+- [x] **AINP-03**: Plugin validates that the asset URL belongs to the same Figma file as the main design URL
+- [x] **AINP-04**: Plugin validates that the pasted URL contains a node ID (rejects file/page-level URLs)
 - [x] **AINP-05**: Plugin detects I-prefix instance-child node IDs and warns the user to select the parent component instead
 - [x] **AINP-06**: Plugin auto-suggests format based on node type (SVG for vector nodes, PNG for everything else)
 
 ### Asset List Management
 
-- [ ] **LIST-01**: User can see all queued assets with derived filename and format
-- [ ] **LIST-02**: User can remove individual assets from the list
-- [ ] **LIST-03**: User can clear all assets from the list
-- [ ] **LIST-04**: Plugin prevents adding the same node ID twice
-- [ ] **LIST-05**: User can edit the auto-derived filename before export
+- [x] **LIST-01**: User can see all queued assets with derived filename and format
+- [x] **LIST-02**: User can remove individual assets from the list
+- [x] **LIST-03**: User can clear all assets from the list
+- [x] **LIST-04**: Plugin prevents adding the same node ID twice
+- [x] **LIST-05**: User can edit the auto-derived filename before export
 
 ### Asset Naming
 
@@ -85,15 +85,15 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | AINP-06 | Phase 16 | Complete |
 | EXPT-01 | Phase 17 | Complete |
 | EXPT-02 | Phase 18 | Complete |
-| AINP-01 | Phase 19 | Pending |
-| AINP-02 | Phase 19 | Pending |
-| AINP-03 | Phase 19 | Pending |
-| AINP-04 | Phase 19 | Pending |
-| LIST-01 | Phase 19 | Pending |
-| LIST-02 | Phase 19 | Pending |
-| LIST-03 | Phase 19 | Pending |
-| LIST-04 | Phase 19 | Pending |
-| LIST-05 | Phase 19 | Pending |
+| AINP-01 | Phase 19 | Complete |
+| AINP-02 | Phase 19 | Complete |
+| AINP-03 | Phase 19 | Complete |
+| AINP-04 | Phase 19 | Complete |
+| LIST-01 | Phase 19 | Complete |
+| LIST-02 | Phase 19 | Complete |
+| LIST-03 | Phase 19 | Complete |
+| LIST-04 | Phase 19 | Complete |
+| LIST-05 | Phase 19 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 20 total
