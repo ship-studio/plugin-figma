@@ -145,7 +145,7 @@ describe('generateBrief', () => {
   // ── Full brief structure ────────────────────────────────────────
 
   describe('full brief structure', () => {
-    it('produces markdown with all 7 sections in locked order', () => {
+    it('produces markdown with all 8 sections in locked order', () => {
       const result = generateBrief(makeInput());
 
       // All sections present
@@ -156,8 +156,9 @@ describe('generateBrief', () => {
       expect(result.markdown).toContain('## Design Tokens');
       expect(result.markdown).toContain('## Components');
       expect(result.markdown).toContain('## Assets');
+      expect(result.markdown).toContain('## Placeholders');
 
-      // Order is locked: metadata before instructions before preview before layout tree before tokens before components before assets
+      // Order is locked: metadata > instructions > preview > layout tree > tokens > components > assets > placeholders
       const metadataIdx = result.markdown.indexOf('# Design Brief');
       const instructionsIdx = result.markdown.indexOf('## How to Use This Brief');
       const previewIdx = result.markdown.indexOf('## Preview');
@@ -165,6 +166,7 @@ describe('generateBrief', () => {
       const tokensIdx = result.markdown.indexOf('## Design Tokens');
       const componentsIdx = result.markdown.indexOf('## Components');
       const assetsIdx = result.markdown.indexOf('## Assets');
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
 
       expect(metadataIdx).toBeLessThan(instructionsIdx);
       expect(instructionsIdx).toBeLessThan(previewIdx);
@@ -172,6 +174,7 @@ describe('generateBrief', () => {
       expect(layoutIdx).toBeLessThan(tokensIdx);
       expect(tokensIdx).toBeLessThan(componentsIdx);
       expect(componentsIdx).toBeLessThan(assetsIdx);
+      expect(assetsIdx).toBeLessThan(placeholdersIdx);
     });
 
     it('returns correct stats', () => {
@@ -216,15 +219,15 @@ describe('generateBrief', () => {
       expect(result.markdown).toMatch(/Before building.*before writing any code/i);
     });
 
-    it('"During building" stage references the Assets section as complete manifest with CSS/HTML directive', () => {
+    it('"During building" stage references the Assets section as complete manifest with CSS/HTML directive and placeholder system', () => {
       const result = generateBrief(makeInput());
       expect(result.markdown).toMatch(/During building.*Assets section/);
       expect(result.markdown).toMatch(/complete manifest of provided files/i);
       expect(result.markdown).toMatch(/built with CSS or HTML/i);
-      // Must warn against substituting/fabricating (negative instruction)
+      // Must reference placeholder system for missing assets
       const duringLine = result.markdown.split('\n').find(l => l.includes('During building'));
       expect(duringLine).toBeDefined();
-      expect(duringLine).toMatch(/rather than substituting or fabricating/i);
+      expect(duringLine).toMatch(/placeholder/i);
     });
 
     it('"After building" stage references the preview image and verifying tokens', () => {
@@ -1192,6 +1195,100 @@ describe('generateBrief', () => {
       });
       const result = generateBrief(input);
       expect(result.markdown).toContain('| mystery.svg | Icon | Icon |');
+    });
+  });
+
+  // ── Placeholders section ─────────────────────────────────────────
+
+  describe('placeholders section', () => {
+    it('generates a section starting with "## Placeholders"', () => {
+      const result = generateBrief(makeInput());
+      expect(result.markdown).toContain('## Placeholders');
+    });
+
+    it('includes detection criteria telling Claude Code to compare preview vs Assets list', () => {
+      const result = generateBrief(makeInput());
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
+      const section = result.markdown.slice(placeholdersIdx);
+      expect(section).toMatch(/photograph|logo|icon|illustration/i);
+      expect(section).toMatch(/Assets/);
+      expect(section).toMatch(/preview/i);
+    });
+
+    it('includes dashed-border box styling instructions with contextually appropriate color', () => {
+      const result = generateBrief(makeInput());
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
+      const section = result.markdown.slice(placeholdersIdx);
+      expect(section).toMatch(/dashed/i);
+      expect(section).toMatch(/border/i);
+      expect(section).toMatch(/color/i);
+    });
+
+    it('includes bracketed reference naming convention with dimensions', () => {
+      const result = generateBrief(makeInput());
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
+      const section = result.markdown.slice(placeholdersIdx);
+      expect(section).toContain('[hero-bg]');
+      expect(section).toMatch(/\d+x\d+/);
+    });
+
+    it('includes a table format with Reference | Description | Expected Size columns', () => {
+      const result = generateBrief(makeInput());
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
+      const section = result.markdown.slice(placeholdersIdx);
+      expect(section).toContain('| Reference | Description | Expected Size |');
+    });
+
+    it('includes follow-up workflow examples for replacing placeholders', () => {
+      const result = generateBrief(makeInput());
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
+      const section = result.markdown.slice(placeholdersIdx);
+      expect(section).toMatch(/Replace \[hero-bg\]/i);
+      expect(section).toMatch(/Replace \[.*\]/i);
+    });
+
+    it('includes auto-numbering guidance for duplicate element types', () => {
+      const result = generateBrief(makeInput());
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
+      const section = result.markdown.slice(placeholdersIdx);
+      expect(section).toMatch(/team-photo-1/);
+      expect(section).toMatch(/team-photo-2/);
+    });
+
+    it('appears after the Assets section in brief output', () => {
+      const result = generateBrief(makeInput());
+      const assetsIdx = result.markdown.indexOf('## Assets');
+      const placeholdersIdx = result.markdown.indexOf('## Placeholders');
+      expect(assetsIdx).toBeGreaterThan(-1);
+      expect(placeholdersIdx).toBeGreaterThan(assetsIdx);
+    });
+  });
+
+  // ── Updated instructions (placeholder system) ───────────────────
+
+  describe('updated instructions for placeholder system', () => {
+    it('sharedDuring no longer contains "ask the user" text', () => {
+      const result = generateBrief(makeInput());
+      const duringLine = result.markdown.split('\n').find(l => l.includes('During building'));
+      expect(duringLine).toBeDefined();
+      expect(duringLine).not.toMatch(/ask the user/i);
+    });
+
+    it('sharedDuring references the placeholder system', () => {
+      const result = generateBrief(makeInput());
+      const duringLine = result.markdown.split('\n').find(l => l.includes('During building'));
+      expect(duringLine).toBeDefined();
+      expect(duringLine).toMatch(/placeholder/i);
+    });
+
+    it('placeholder reference appears in all three modes', () => {
+      const modes: Array<'best' | 'pixel' | 'inspiration'> = ['best', 'pixel', 'inspiration'];
+      for (const mode of modes) {
+        const result = generateBrief(makeInput({ mode }));
+        const duringLine = result.markdown.split('\n').find(l => l.includes('During building'));
+        expect(duringLine).toBeDefined();
+        expect(duringLine).toMatch(/placeholder/i);
+      }
     });
   });
 });
