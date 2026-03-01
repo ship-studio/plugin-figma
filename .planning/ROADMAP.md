@@ -171,5 +171,5 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 1/1 | Complete | 2026-03-01 |
-| 26. MainView Rewiring & Cleanup | 1/1 | Complete   | 2026-03-01 | - |
+| 26. MainView Rewiring & Cleanup | 1/1 | Complete    | 2026-03-01 | - |
 | 27. Results Modal | v2.2 | 0/? | Not started | - |
