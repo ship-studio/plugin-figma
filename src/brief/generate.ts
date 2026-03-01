@@ -267,7 +267,11 @@ function renderNodeLine(node: LayoutNode, depth: number, assetNodeMap?: Map<stri
 
   // Positioning
   if (node.positioning === 'ABSOLUTE') {
-    parts.push('[absolute]');
+    if (node.absoluteOffset) {
+      parts.push(`[absolute] top:${node.absoluteOffset.top} left:${node.absoluteOffset.left}`);
+    } else {
+      parts.push('[absolute]');
+    }
   }
 
   // Inline visual styles — bg, text color, border-radius, opacity
@@ -339,6 +343,14 @@ function buildInlineStyles(node: LayoutNode): string | null {
     if (strokeColor) {
       props.push(`border:${node.strokeWeight}px ${strokeColor}`);
     }
+  }
+
+  // Flex-child properties (SPACE-01, SPACE-02)
+  if (node.layoutGrow === 1) {
+    props.push('flex-grow:1');
+  }
+  if (node.layoutAlign === 'STRETCH') {
+    props.push('align-self:stretch');
   }
 
   // Opacity (only when < 1)

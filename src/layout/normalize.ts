@@ -69,6 +69,7 @@ export function normalizeNode(
   figmaNode: any,
   components: Record<string, any>,
   depth: number,
+  parentBBox?: { x: number; y: number } | null,
 ): LayoutNode | null {
   const node = figmaNode;
 
@@ -104,6 +105,26 @@ export function normalizeNode(
   // Absolute positioning flag (LYOT-05)
   if ('layoutPositioning' in node && node.layoutPositioning != null) {
     result.positioning = node.layoutPositioning;
+  }
+
+  // Flex-child properties (SPACE-01, SPACE-02)
+  if ('layoutGrow' in node && node.layoutGrow === 1) {
+    result.layoutGrow = 1;
+  }
+  if ('layoutAlign' in node && node.layoutAlign === 'STRETCH') {
+    result.layoutAlign = 'STRETCH';
+  }
+
+  // Absolute offset relative to parent bbox (SPACE-03)
+  if (
+    result.positioning === 'ABSOLUTE' &&
+    parentBBox != null &&
+    node.absoluteBoundingBox != null
+  ) {
+    result.absoluteOffset = {
+      top: Math.round(node.absoluteBoundingBox.y - parentBBox.y),
+      left: Math.round(node.absoluteBoundingBox.x - parentBBox.x),
+    };
   }
 
   // Auto-layout properties from HasFramePropertiesTrait
@@ -179,8 +200,11 @@ export function normalizeNode(
 
   // Recurse into children for FRAME, GROUP, COMPONENT, SECTION, etc.
   if ('children' in node && Array.isArray(node.children)) {
+    const myBBox = node.absoluteBoundingBox != null
+      ? { x: node.absoluteBoundingBox.x, y: node.absoluteBoundingBox.y }
+      : null;
     const normalizedChildren = node.children
-      .map((child: any) => normalizeNode(child, components, depth + 1))
+      .map((child: any) => normalizeNode(child, components, depth + 1, myBBox))
       .filter((n: LayoutNode | null): n is LayoutNode => n !== null);
 
     result.children = deduplicateChildren(normalizedChildren);
@@ -291,9 +315,9 @@ export function normalizeTree(
     nodeCount += countNodes(root);
   }
 
-  // Normalize each root
+  // Normalize each root (no parent bbox for root nodes)
   const normalized = rootNodes
-    .map((root) => normalizeNode(root, components, 0))
+    .map((root) => normalizeNode(root, components, 0, null))
     .filter((n): n is LayoutNode => n !== null);
 
   return {

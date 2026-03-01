@@ -39,6 +39,13 @@ export interface LayoutNode {
   /** Positioning within auto-layout parent (LYOT-05) */
   positioning?: 'AUTO' | 'ABSOLUTE';
 
+  /** Flex-child: grow factor (SPACE-01). Only stored when 1; 0 is default noise. */
+  layoutGrow?: 0 | 1;
+  /** Flex-child: cross-axis alignment (SPACE-02). Only stored when STRETCH. */
+  layoutAlign?: 'INHERIT' | 'STRETCH';
+  /** Absolute offset relative to parent bbox (SPACE-03). Integer pixels. */
+  absoluteOffset?: { top: number; left: number };
+
   /** Text content (user decision: include actual text) */
   textContent?: string;
 
