@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Brief Modes & Placeholders
-status: in-progress
-last_updated: "2026-03-01T17:09:36Z"
+status: unknown
+last_updated: "2026-03-01T17:15:33.826Z"
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 7
+  total_plans: 8
   completed_plans: 7
 ---
 
