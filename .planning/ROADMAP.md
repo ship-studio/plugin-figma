@@ -153,10 +153,10 @@ Plans:
   1. When an element in Figma is absolutely positioned (not in an auto-layout frame), the brief includes its top/left offset relative to its parent
   2. When a flex child in Figma has `layoutGrow: 1`, the brief includes `flex-grow: 1` for that element
   3. When a flex child in Figma has `layoutAlign: STRETCH`, the brief includes `align-self: stretch` for that element
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01-PLAN.md -- TDD: Add layoutGrow, layoutAlign, absoluteOffset to normalize pipeline and render in brief layout tree
 
 ### Phase 14: Plugin Icon
 **Goal**: The plugin has proper visual identity in the Ship Studio toolbar
@@ -188,6 +188,6 @@ Phases execute in numeric order: 12 -> 12.x -> 13 -> 13.x -> 14
 | 9. Smart Illustration Detection | v1.2 | N/A | Complete | 2026-03-01 |
 | 10. Layout Tree Quality | v1.2 | N/A | Complete | 2026-03-01 |
 | 11. UI Fixes | v1.2 | N/A | Complete | 2026-03-01 |
-| 12. Instance Asset Detection | 2/2 | Complete    | 2026-03-01 | - |
-| 13. Spacing & Layout Accuracy | v1.3 | 0/TBD | Not started | - |
+| 12. Instance Asset Detection | v1.3 | 2/2 | Complete | 2026-03-01 |
+| 13. Spacing & Layout Accuracy | v1.3 | 0/1 | Not started | - |
 | 14. Plugin Icon | v1.3 | 0/TBD | Not started | - |
