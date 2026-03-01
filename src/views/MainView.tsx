@@ -498,6 +498,12 @@ export function MainView({ token }: MainViewProps) {
 
   return (
     <div>
+      {/* Asset naming hint */}
+      <div className="figma-plugin-section" style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.5 }}>
+        Prefix layer names with <code style={{ background: 'var(--bg-tertiary)', padding: '1px 4px', borderRadius: '3px' }}>@S-</code> to export them as assets.
+        {' '}Example: <code style={{ background: 'var(--bg-tertiary)', padding: '1px 4px', borderRadius: '3px' }}>@S-hero-image</code>
+      </div>
+
       {/* URL Input Section */}
       <div className="figma-plugin-section">
         <label className="figma-plugin-label">Figma URL</label>
