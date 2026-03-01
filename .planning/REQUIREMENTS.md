@@ -3,48 +3,38 @@
 **Defined:** 2026-03-01
 **Core Value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
 
-## v2.0 Requirements
+## v2.1 Requirements
 
-Requirements for Manual Asset Control milestone. Each maps to roadmap phases.
+Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phases.
 
-### Asset Input
+### Brief Modes
 
-- [x] **AINP-01**: User can add an asset by pasting a Figma URL that contains a node ID
-- [x] **AINP-02**: User can select PNG or SVG format for each asset
-- [x] **AINP-03**: Plugin validates that the asset URL belongs to the same Figma file as the main design URL
-- [x] **AINP-04**: Plugin validates that the pasted URL contains a node ID (rejects file/page-level URLs)
-- [x] **AINP-05**: Plugin detects I-prefix instance-child node IDs and warns the user to select the parent component instead
-- [x] **AINP-06**: Plugin auto-suggests format based on node type (SVG for vector nodes, PNG for everything else)
+- [ ] **MODE-01**: User can choose between three brief modes: "Copy (Best results)", "Copy (Pixel for pixel)", "Use as inspiration"
+- [ ] **MODE-02**: Each mode has clear explanatory text in the UI describing its behavior
+- [ ] **MODE-03**: "Copy (Best results)" mode instructs Claude Code to faithfully reproduce the design with clean, responsive development practices
+- [ ] **MODE-04**: "Copy (Pixel for pixel)" mode instructs Claude Code to match the Figma design as exactly as possible
+- [ ] **MODE-05**: "Use as inspiration" mode shows a text area for the user to describe what to take from the design
+- [ ] **MODE-06**: "Use as inspiration" mode instructs Claude Code to adapt design patterns to the user's site, incorporating their custom context
 
-### Asset List Management
+### Placeholders
 
-- [x] **LIST-01**: User can see all queued assets with derived filename and format
-- [x] **LIST-02**: User can remove individual assets from the list
-- [x] **LIST-03**: User can clear all assets from the list
-- [x] **LIST-04**: Plugin prevents adding the same node ID twice
-- [x] **LIST-05**: User can edit the auto-derived filename before export
+- [ ] **PLCH-01**: Brief instructs Claude Code to compare the preview against provided assets and identify visual elements that need assets but don't have them
+- [ ] **PLCH-02**: Brief instructs Claude Code to create visible placeholder boxes for missing assets
+- [ ] **PLCH-03**: Each placeholder has a unique reference name (e.g. `[asset-ref-1]`)
+- [ ] **PLCH-04**: Users can reference placeholders in follow-up prompts (e.g. "Replace asset-ref-1 with this file")
 
-### Asset Naming
+### Asset Clarity
 
-- [x] **NAME-01**: Plugin auto-derives filenames from Figma layer names via API
-- [x] **NAME-02**: Duplicate filenames are auto-numbered (icon.png, icon-2.png)
+- [ ] **ASTC-01**: Brief clearly distinguishes provided assets from non-asset elements
+- [ ] **ASTC-02**: Brief explicitly lists all provided assets with their intended usage context
 
-### Export Pipeline
+## Previous Milestone Requirements (v2.0 — Complete)
 
-- [x] **EXPT-01**: Plugin exports all listed assets in a single batch (one fetchImages call per format)
-- [x] **EXPT-02**: Plugin maps each exported asset to its position in the layout tree by node ID
-- [x] **EXPT-03**: Plugin generates a brief with zero assets if the list is empty (layout + tokens + preview only)
-- [x] **EXPT-04**: Full-page preview PNG remains auto-generated
-
-### Code Cleanup
-
-- [x] **CLEAN-01**: All automatic asset detection code is removed (identify.ts, detect-composition.ts)
-- [x] **CLEAN-02**: All tests for removed auto-detection code are removed or replaced
-- [x] **CLEAN-03**: Brief generator is updated to remove composition/illustration-specific logic
+All 20 v2.0 requirements completed. See `.planning/milestones/` for details.
 
 ## Future Requirements
 
-Deferred to v2.1+. Tracked but not in current roadmap.
+Deferred to future milestones. Tracked but not in current roadmap.
 
 ### Asset Input Enhancements
 
@@ -62,44 +52,34 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Auto-detection fallback | The entire point of v2.0 is replacing unreliable auto-detection. A toggle would keep old complexity alive. |
-| Drag-and-drop from Figma | Requires Figma plugin architecture, not REST API. No browser-to-plugin channel. |
-| Asset grouping/folders | Claude Code reads a flat directory. Layout tree provides structural context. |
-| Asset preview thumbnails | Extra API calls per asset for marginal value. Filename + format is enough context. |
-| Drag-to-reorder | Order in the brief is cosmetic, not worth the complexity. |
-| Image fill extraction via imageRef | Manual control means users point at the node they want. fetchImages render is simpler and more predictable. |
-| SVG optimization/minification | Adds build dependency, can break SVGs. Figma's export is clean enough. |
+| Plugin-side placeholder detection | Claude Code can see the preview + assets; no need to rebuild auto-detection for flagging |
+| Auto-detection fallback | Replaced by manual control in v2.0; not bringing it back |
+| Mode-specific extraction | All three modes use the same extracted data; only the brief instructions change |
 
 ## Traceability
 
+Which phases cover which requirements. Updated during roadmap creation.
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLEAN-01 | Phase 15 | Complete |
-| CLEAN-02 | Phase 15 | Complete |
-| CLEAN-03 | Phase 15 | Complete |
-| EXPT-03 | Phase 15 | Complete |
-| EXPT-04 | Phase 15 | Complete |
-| NAME-01 | Phase 16 | Complete |
-| NAME-02 | Phase 16 | Complete |
-| AINP-05 | Phase 16 | Complete |
-| AINP-06 | Phase 16 | Complete |
-| EXPT-01 | Phase 17 | Complete |
-| EXPT-02 | Phase 18 | Complete |
-| AINP-01 | Phase 19 | Complete |
-| AINP-02 | Phase 19 | Complete |
-| AINP-03 | Phase 19 | Complete |
-| AINP-04 | Phase 19 | Complete |
-| LIST-01 | Phase 19 | Complete |
-| LIST-02 | Phase 19 | Complete |
-| LIST-03 | Phase 19 | Complete |
-| LIST-04 | Phase 19 | Complete |
-| LIST-05 | Phase 19 | Complete |
+| MODE-01 | — | Pending |
+| MODE-02 | — | Pending |
+| MODE-03 | — | Pending |
+| MODE-04 | — | Pending |
+| MODE-05 | — | Pending |
+| MODE-06 | — | Pending |
+| PLCH-01 | — | Pending |
+| PLCH-02 | — | Pending |
+| PLCH-03 | — | Pending |
+| PLCH-04 | — | Pending |
+| ASTC-01 | — | Pending |
+| ASTC-02 | — | Pending |
 
 **Coverage:**
-- v2.0 requirements: 20 total
-- Mapped to phases: 20
-- Unmapped: 0
+- v2.1 requirements: 12 total
+- Mapped to phases: 0
+- Unmapped: 12 ⚠️
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after roadmap creation*
+*Last updated: 2026-03-01 after initial definition*
