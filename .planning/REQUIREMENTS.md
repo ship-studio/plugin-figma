@@ -9,8 +9,8 @@ Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phas
 
 ### Brief Modes
 
-- [ ] **MODE-01**: User can choose between three brief modes: "Copy (Best results)", "Copy (Pixel for pixel)", "Use as inspiration"
-- [ ] **MODE-02**: Each mode has clear explanatory text in the UI describing its behavior
+- [x] **MODE-01**: User can choose between three brief modes: "Copy (Best results)", "Copy (Pixel for pixel)", "Use as inspiration"
+- [x] **MODE-02**: Each mode has clear explanatory text in the UI describing its behavior
 - [ ] **MODE-03**: "Copy (Best results)" mode instructs Claude Code to faithfully reproduce the design with clean, responsive development practices
 - [ ] **MODE-04**: "Copy (Pixel for pixel)" mode instructs Claude Code to match the Figma design as exactly as possible
 - [ ] **MODE-05**: "Use as inspiration" mode shows a text area for the user to describe what to take from the design
@@ -62,8 +62,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MODE-01 | Phase 20 | Pending |
-| MODE-02 | Phase 20 | Pending |
+| MODE-01 | Phase 20 | Complete |
+| MODE-02 | Phase 20 | Complete |
 | MODE-03 | Phase 21 | Pending |
 | MODE-04 | Phase 21 | Pending |
 | MODE-05 | Phase 21 | Pending |

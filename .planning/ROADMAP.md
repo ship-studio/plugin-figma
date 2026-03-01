@@ -68,7 +68,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 
 **Milestone Goal:** Give users control over how Claude Code interprets the design brief -- from pixel-perfect reproduction to loose inspiration -- and ensure every missing asset gets a named placeholder for easy follow-up.
 
-- [ ] **Phase 20: Mode Selector UI** - Add brief mode picker with three options and explanatory text
+- [x] **Phase 20: Mode Selector UI** - Add brief mode picker with three options and explanatory text (completed 2026-03-01)
 - [ ] **Phase 21: Mode-Specific Brief Instructions** - Generate different Claude Code instructions per mode, including inspiration text area
 - [ ] **Phase 22: Asset Clarity in Brief** - Clearly distinguish provided assets from non-asset elements with explicit usage context
 - [ ] **Phase 23: Placeholder System** - Brief instructs Claude Code to identify missing assets and create named placeholder boxes
@@ -145,7 +145,7 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23
 | 17. Export Pipeline Rebuild | v2.0 | 1/1 | Complete | 2026-03-01 |
 | 18. Brief Generator Updates | v2.0 | 1/1 | Complete | 2026-03-01 |
 | 19. Asset List UI & Integration | v2.0 | 2/2 | Complete | 2026-03-01 |
-| 20. Mode Selector UI | v2.1 | 0/? | Not started | - |
+| 20. Mode Selector UI | 1/1 | Complete   | 2026-03-01 | - |
 | 21. Mode-Specific Brief Instructions | v2.1 | 0/? | Not started | - |
 | 22. Asset Clarity in Brief | v2.1 | 0/? | Not started | - |
 | 23. Placeholder System | v2.1 | 0/? | Not started | - |
