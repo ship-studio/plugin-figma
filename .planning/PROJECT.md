@@ -53,16 +53,27 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - ✓ All automatic asset detection code is removed — v2.0
 - ✓ Full-page preview PNG remains auto-generated — v2.0
 
+- ✓ User can choose between three brief modes: "Copy (Best results)", "Copy (Pixel for pixel)", "Use as inspiration" — v2.1
+- ✓ Each mode has clear explanatory text in the UI describing what it does — v2.1
+- ✓ "Use as inspiration" mode shows a text area for the user to describe what to take from the design — v2.1
+- ✓ Brief instructions change based on the selected mode — v2.1
+- ✓ Brief clearly distinguishes provided assets from non-asset elements — v2.1
+- ✓ Brief instructs Claude Code to create placeholder boxes with reference names for missing assets — v2.1
+- ✓ Users can reference placeholders later (e.g. "Replace asset-ref-1 with this file") — v2.1
+
 ### Active
 
-<!-- v2.1 Brief Modes & Placeholders -->
-- [ ] User can choose between three brief modes: "Copy (Best results)", "Copy (Pixel for pixel)", "Use as inspiration"
-- [ ] Each mode has clear explanatory text in the UI describing what it does
-- [ ] "Use as inspiration" mode shows a text area for the user to describe what to take from the design
-- [ ] Brief instructions change based on the selected mode
-- [ ] Brief clearly distinguishes provided assets from non-asset elements
-- [ ] Brief instructs Claude Code to create placeholder boxes with reference names for missing assets
-- [ ] Users can reference placeholders later (e.g. "Replace asset-ref-1 with this file")
+<!-- v2.2 Designer Asset Workflow & Results UX -->
+- [ ] Plugin auto-detects layers prefixed with `@S-` as assets to export
+- [ ] Export format auto-detected: PNG if any image fills, SVG otherwise
+- [ ] `@S-` prefix stripped from filenames (e.g. `@S-hero` → `hero.png`)
+- [ ] Manual asset URL workflow removed entirely
+- [ ] Zero-asset warning shown if no `@S-` layers found, with "Continue anyway" and "Try again" options
+- [ ] "Try again" re-fetches from Figma API so designer can fix their file
+- [ ] Results view replaced with clean "brief is done" modal
+- [ ] Results modal tells user to paste brief into their agent
+- [ ] Results modal warns about potential mistakes and encourages refinement
+- [ ] "View details" expandable toggle for assets, layout tree, tokens
 
 ## Completed Milestones
 
@@ -71,18 +82,18 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - **v1.2** (shipped 2026-03-01) — Illustration detection, layout tree quality, UI fixes
 - **v1.3** (shipped 2026-03-01) — Instance asset detection, spacing accuracy, plugin icon
 - **v2.0** (shipped 2026-03-01) — Manual asset control, auto-detection removal
+- **v2.1** (shipped 2026-03-01) — Brief modes, inspiration text, placeholder system
 
-## Current Milestone: v2.1 Brief Modes & Placeholders
+## Current Milestone: v2.2 Designer Asset Workflow & Results UX
 
-**Goal:** Give users control over how Claude Code interprets the design brief — from pixel-perfect reproduction to loose inspiration — and ensure every missing asset gets a named placeholder for easy follow-up.
+**Goal:** Replace the manual asset URL workflow with convention-based `@S-` prefix detection, and transform the results screen into a clear "brief is done" experience that guides designers on next steps.
 
 **Target features:**
-- Three brief modes: "Copy (Best results)", "Copy (Pixel for pixel)", "Use as inspiration"
-- Clear UI explanations for each mode
-- Text area for inspiration mode details
-- Mode-specific brief instructions for Claude Code
-- Placeholder system for missing assets with reference names
-- Clearer asset/non-asset distinction in brief output
+- Auto-detect `@S-` prefixed layers as assets (PNG for image fills, SVG for vectors/text)
+- Zero-asset warning with "Try again" (re-fetch) and "Continue anyway"
+- Remove manual asset URL workflow entirely
+- Clean results modal: brief is done, paste instructions, refinement encouragement
+- Expandable details toggle for assets/tree/tokens
 
 ## Deferred Features
 
@@ -113,7 +124,8 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - v1.3 improvements: instance images now fully detected at any nesting depth, spacing/flex properties in brief, Figma logo icon in toolbar
 - Known areas for improvement: text alignment not yet in brief, bounding-box spacing may need tuning with real designs
 - v2.0 shipped: auto-detection replaced with manual asset control (users paste Figma URLs, choose format)
-- v2.1 direction: brief modes let users control how Claude Code interprets the design; placeholder system handles missing assets
+- v2.1 shipped: brief modes (best results, pixel-perfect, inspiration), placeholder system for missing assets
+- v2.2 direction: convention-based `@S-` prefix replaces manual asset URLs; results screen redesigned for designer experience
 
 ## Constraints
 
@@ -146,8 +158,10 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 | User-provided Figma logo SVG | Used viewBox 0 0 15 15 version instead of Simple Icons 0 0 24 24 | ✓ Good — correct rendering in toolbar (v1.3) |
 | Manual asset control over auto-detection | Auto-detection was unreliable in both directions; users prefer perfect results over speed | ✓ Good — precise control, no false positives/negatives (v2.0) |
 | Remove all auto-detection code | Dead code after manual control; clean slate reduces maintenance burden | ✓ Good — cleaner codebase (v2.0) |
-| Brief-driven placeholder detection | Plugin doesn't detect missing assets; brief instructs Claude Code to compare preview against provided assets and create placeholders | — Pending (v2.1) |
-| Three brief modes | Different users want different fidelity levels; modes let Claude Code adapt its approach | — Pending (v2.1) |
+| Brief-driven placeholder detection | Plugin doesn't detect missing assets; brief instructs Claude Code to compare preview against provided assets and create placeholders | ✓ Good (v2.1) |
+| Three brief modes | Different users want different fidelity levels; modes let Claude Code adapt its approach | ✓ Good (v2.1) |
+| @S- prefix convention for assets | Designers mark assets in Figma with naming convention; plugin detects automatically — no manual URL workflow | — Pending (v2.2) |
+| Clean results modal | Designers need clear next steps, not raw data; expandable details for power users | — Pending (v2.2) |
 
 ---
-*Last updated: 2026-03-01 after v2.1 milestone started*
+*Last updated: 2026-03-01 after v2.2 milestone started*
