@@ -40,7 +40,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 </details>
 
-### 🚧 v1.3 Asset Completeness & Polish (In Progress)
+### v1.3 Asset Completeness & Polish (In Progress)
 
 **Milestone Goal:** Make asset detection bulletproof -- every visible asset in a Figma design gets exported -- and tighten spacing accuracy so Claude Code builds match the design on first attempt.
 
@@ -142,8 +142,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 12-01-PLAN.md -- TDD: Instance asset detection and rectangle filtering in identifyAssets (isSimpleRectangle, findImageFillsInChildren, instance IMAGE fill override)
-- [ ] 12-02-PLAN.md -- Pipeline integration: raw tree image fill collection, layout tree cross-referencing, export pipeline threading
+- [x] 12-01-PLAN.md -- TDD: Instance asset detection and rectangle filtering in identifyAssets (isSimpleRectangle, findImageFillsInChildren, instance IMAGE fill override)
+- [x] 12-02-PLAN.md -- Pipeline integration: raw tree image fill collection, layout tree cross-referencing, export pipeline threading
 
 ### Phase 13: Spacing & Layout Accuracy
 **Goal**: The design brief provides Claude Code with accurate spacing, positioning, and flex properties so builds match the Figma design without manual CSS tweaking
@@ -156,7 +156,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 13-01-PLAN.md -- TDD: Add layoutGrow, layoutAlign, absoluteOffset to normalize pipeline and render in brief layout tree
+- [x] 13-01-PLAN.md -- TDD: Add layoutGrow, layoutAlign, absoluteOffset to normalize pipeline and render in brief layout tree
 
 ### Phase 14: Plugin Icon
 **Goal**: The plugin has proper visual identity in the Ship Studio toolbar
@@ -165,10 +165,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The Ship Studio toolbar displays the Figma logo SVG icon next to the plugin name
   2. The icon renders correctly at the toolbar's standard icon size
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md -- Replace generic grid icon with Figma logo SVG in toolbar button
 
 ## Progress
 
@@ -189,5 +189,5 @@ Phases execute in numeric order: 12 -> 12.x -> 13 -> 13.x -> 14
 | 10. Layout Tree Quality | v1.2 | N/A | Complete | 2026-03-01 |
 | 11. UI Fixes | v1.2 | N/A | Complete | 2026-03-01 |
 | 12. Instance Asset Detection | v1.3 | 2/2 | Complete | 2026-03-01 |
-| 13. Spacing & Layout Accuracy | 1/1 | Complete    | 2026-03-01 | - |
-| 14. Plugin Icon | v1.3 | 0/TBD | Not started | - |
+| 13. Spacing & Layout Accuracy | v1.3 | 1/1 | Complete | 2026-03-01 |
+| 14. Plugin Icon | v1.3 | 0/1 | Not started | - |
