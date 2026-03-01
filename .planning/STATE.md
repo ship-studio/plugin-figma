@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Brief Quality Overhaul
-status: complete
+milestone: v1.3
+milestone_name: Asset Completeness & Polish
+status: active
 last_updated: "2026-03-01"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 5
-  completed_plans: 5
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,15 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v1.2 milestone complete. All milestones shipped. No active work.
+**Current focus:** v1.3 Asset Completeness & Polish — bulletproof asset detection, spacing accuracy, plugin icon.
 
 ## Current Position
 
-Phase: 11 of 11 -- COMPLETE (all milestones shipped)
-Status: v1.0, v1.1, v1.2 all complete. Post-milestone temp dir migration applied.
-Last activity: 2026-03-01 -- v1.2 phases 9-11 + temp directory migration documented in GSD
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-01 — Milestone v1.3 started
 
-Progress: [██████████] 100% (v1.2)
+Progress: [░░░░░░░░░░] 0% (v1.3)
 
 ## Performance Metrics
 
@@ -96,5 +97,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: All milestones complete (v1.0, v1.1, v1.2). GSD docs updated to reflect v1.2 phases 9-11 and temp dir migration.
-Next: End-to-end testing, or start planning next milestone/features.
+Stopped at: Started v1.3 milestone — defining requirements.
+Next: Research → requirements → roadmap for v1.3.

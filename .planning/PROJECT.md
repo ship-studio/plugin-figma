@@ -39,7 +39,18 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 
 ### Active
 
-None — all current requirements validated. See deferred features below.
+- [ ] Every visible asset in the Figma design is detected and exported (images inside components, background fills, logos, illustrations)
+- [ ] Spacing values in the brief accurately reflect the Figma design (padding, gaps, margins)
+- [ ] Plugin displays a Figma logo icon
+
+## Current Milestone: v1.3 Asset Completeness & Polish
+
+**Goal:** Make asset detection bulletproof — every visible asset in a Figma design gets exported — and tighten spacing accuracy so Claude Code builds match the design on first attempt.
+
+**Target features:**
+- Complete asset capture (images inside components, background fills, logos, illustrations)
+- Spacing extraction accuracy (padding, gaps, margins matching Figma)
+- Plugin icon (Figma logo SVG)
 
 ## Completed Milestones
 
@@ -53,7 +64,7 @@ None — all current requirements validated. See deferred features below.
 - Collapsible tree preview
 - Executable verification loop/checklist
 - Text alignment in brief (textAlignHorizontal from Figma)
-- Plugin icon SVG
+- ~~Plugin icon SVG~~ → moved to v1.3
 - Advanced options behind progressive disclosure
 
 ### Out of Scope
@@ -101,4 +112,4 @@ None — all current requirements validated. See deferred features below.
 | Component name cleaning | Strip "Property N=" prefixes from Figma variant names | ✓ Good — cleaner brief output (v1.2) |
 
 ---
-*Last updated: 2026-03-01 after v1.2 + temp directory migration*
+*Last updated: 2026-03-01 after starting v1.3 milestone*
