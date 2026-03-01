@@ -10,16 +10,21 @@ import type { Shell } from '../types';
 import type { AssetExportProgress } from './types';
 
 /**
- * Create a fresh temp directory for assets.
- * Each run gets its own isolated directory via mktemp -d,
- * avoiding any risk of clobbering user files.
+ * Create a fresh .shipstudio/assets directory inside the project.
+ * Removes any previous assets and recreates the directory so agents
+ * can find assets relative to the project root.
  */
-export async function prepareAssetsDir(shell: Shell): Promise<string> {
-  const result = await shell.exec('mktemp', ['-d', '-t', 'shipstudio-assets']);
-  if (result.exit_code !== 0) {
-    throw new Error(`Failed to create temp directory: ${result.stderr}`);
+export async function prepareAssetsDir(shell: Shell, projectPath: string): Promise<string> {
+  const assetsDir = `${projectPath}/.shipstudio/assets`;
+  const rmResult = await shell.exec('rm', ['-rf', assetsDir]);
+  if (rmResult.exit_code !== 0) {
+    throw new Error(`Failed to clean assets directory: ${rmResult.stderr}`);
   }
-  return result.stdout.trim();
+  const mkdirResult = await shell.exec('mkdir', ['-p', assetsDir]);
+  if (mkdirResult.exit_code !== 0) {
+    throw new Error(`Failed to create assets directory: ${mkdirResult.stderr}`);
+  }
+  return assetsDir;
 }
 
 /**

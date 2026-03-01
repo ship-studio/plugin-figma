@@ -27,17 +27,19 @@ export interface ExportAssetsOptions {
   fileKey: string;
   /** The node ID for preview rendering */
   selectedNodeId: string;
+  /** Project root path — assets are saved to ${projectPath}/.shipstudio/assets/ */
+  projectPath: string;
   rootNodes: LayoutNode[];
   imageFills: ImageFillRef[];
   onProgress?: (progress: AssetExportProgress) => void;
 }
 
 export async function exportAssets(options: ExportAssetsOptions): Promise<ExportResult> {
-  const { shell, token, fileKey, selectedNodeId, rootNodes, imageFills, onProgress } = options;
+  const { shell, token, fileKey, selectedNodeId, projectPath, rootNodes, imageFills, onProgress } = options;
   const warnings: string[] = [];
 
-  // 1. Create fresh temp directory for assets
-  const assetsDir = await prepareAssetsDir(shell);
+  // 1. Create fresh assets directory inside the project
+  const assetsDir = await prepareAssetsDir(shell, projectPath);
 
   // 2. Detect compositions and identify exportable assets
   const { compositionNodeIds, warnings: compositionWarnings } = detectCompositions(rootNodes);

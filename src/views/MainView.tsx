@@ -153,6 +153,7 @@ export function MainView({ token }: MainViewProps) {
         token,
         fileKey: result.fileKey,
         selectedNodeId: parsedUrl.nodeId || result.extraction.rootNodes[0]?.id || '0:0',
+        projectPath: ctx?.project?.path ?? '.',
         rootNodes: result.extraction.rootNodes,
         imageFills: result.tokens.imageFills,
         onProgress: setAssetProgress,
@@ -177,7 +178,7 @@ export function MainView({ token }: MainViewProps) {
           const brief = generateBrief({
             extraction: result,
             exportResult: exportRes,
-            projectPath: exportRes.assetsDir,
+            projectPath: ctx?.project?.path ?? '.',
             fileName: fileInfo?.name ?? 'Untitled',
             figmaUrl: urlInput,
             rootNodes: result.extraction.rootNodes,
@@ -624,7 +625,7 @@ export function MainView({ token }: MainViewProps) {
 
             {/* File save note */}
             <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
-              Also saved to {exportResult.assetsDir}/brief.md
+              Also saved to .shipstudio/assets/brief.md
             </div>
           </div>
         </div>
