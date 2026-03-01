@@ -96,7 +96,9 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
   3. Detected asset filenames have the `@S-` prefix stripped and are sanitized (e.g. `@S-hero-image` becomes `hero-image.png`), with duplicates auto-numbered (`icon.svg`, `icon-2.svg`)
   4. Each detected asset carries its Figma node ID, enabling downstream mapping to the layout tree position
   5. Hidden layers (visible=false) and layers inside an `@S-` subtree are not double-detected
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 24-01-PLAN.md -- TDD: DetectedAsset type + detectAssets pure function with @S- prefix scanning, format auto-detection, and filename handling
 
 ### Phase 25: Pipeline Integration & Zero-Asset Warning
 **Goal**: Detection output flows through the existing export pipeline and the user sees a clear warning when no `@S-` assets exist in their design
@@ -163,7 +165,7 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 21. Mode-Specific Brief Instructions | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 22. Asset Clarity in Brief | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
-| 24. Detection Foundation | v2.2 | 0/? | Not started | - |
+| 24. Detection Foundation | v2.2 | 0/1 | Planned | - |
 | 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 0/? | Not started | - |
 | 26. MainView Rewiring & Cleanup | v2.2 | 0/? | Not started | - |
 | 27. Results Modal | v2.2 | 0/? | Not started | - |
