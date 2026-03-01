@@ -6,7 +6,8 @@
 - ✅ **v1.1 Brief Quality & UX** -- Phases 6-8 (shipped 2026-02-28)
 - ✅ **v1.2 Brief Quality Overhaul** -- Phases 9-11 (shipped 2026-03-01, outside GSD workflow)
 - ✅ **v1.3 Asset Completeness & Polish** -- Phases 12-14 (shipped 2026-03-01)
-- **v2.0 Manual Asset Control** -- Phases 15-19 (in progress)
+- ✅ **v2.0 Manual Asset Control** -- Phases 15-19 (shipped 2026-03-01)
+- **v2.1 Brief Modes & Placeholders** -- Phases 20-23 (in progress)
 
 ## Phases
 
@@ -52,85 +53,74 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 
 </details>
 
-### v2.0 Manual Asset Control
+<details>
+<summary>v2.0 Manual Asset Control (Phases 15-19) -- SHIPPED 2026-03-01</summary>
 
-**Milestone Goal:** Replace unreliable automatic asset detection with explicit user-driven asset selection -- users specify exactly which Figma elements to export and in what format, producing a perfect brief every time.
+- [x] Phase 15: Strip Auto-Detection (1/1 plans) -- completed 2026-03-01
+- [x] Phase 16: Asset Types & Node Resolution (1/1 plans) -- completed 2026-03-01
+- [x] Phase 17: Export Pipeline Rebuild (1/1 plans) -- completed 2026-03-01
+- [x] Phase 18: Brief Generator Updates (1/1 plans) -- completed 2026-03-01
+- [x] Phase 19: Asset List UI & Integration (2/2 plans) -- completed 2026-03-01
 
-- [x] **Phase 15: Strip Auto-Detection** - Remove all automatic asset detection code, tests, and brief logic to create a clean base (completed 2026-03-01)
-- [x] **Phase 16: Asset Types & Node Resolution** - Define ManualAsset types, resolve node names via API, auto-derive filenames (completed 2026-03-01)
-- [x] **Phase 17: Export Pipeline Rebuild** - Rewrite export to accept ManualAsset[] with format-aware batching (completed 2026-03-01)
-- [x] **Phase 18: Brief Generator Updates** - Rewire asset-to-layout cross-referencing for manual assets, simplify type labels (completed 2026-03-01)
-- [ ] **Phase 19: Asset List UI & Integration** - Build the user-facing asset management workflow and wire everything together
+</details>
+
+### v2.1 Brief Modes & Placeholders
+
+**Milestone Goal:** Give users control over how Claude Code interprets the design brief -- from pixel-perfect reproduction to loose inspiration -- and ensure every missing asset gets a named placeholder for easy follow-up.
+
+- [ ] **Phase 20: Mode Selector UI** - Add brief mode picker with three options and explanatory text
+- [ ] **Phase 21: Mode-Specific Brief Instructions** - Generate different Claude Code instructions per mode, including inspiration text area
+- [ ] **Phase 22: Asset Clarity in Brief** - Clearly distinguish provided assets from non-asset elements with explicit usage context
+- [ ] **Phase 23: Placeholder System** - Brief instructs Claude Code to identify missing assets and create named placeholder boxes
 
 ## Phase Details
 
-### Phase 15: Strip Auto-Detection
-**Goal**: The codebase compiles and all tests pass with zero auto-detection code remaining -- preview-only export and empty-asset briefs work correctly
-**Depends on**: Phase 14
-**Requirements**: CLEAN-01, CLEAN-02, CLEAN-03, EXPT-03, EXPT-04
+### Phase 20: Mode Selector UI
+**Goal**: Users can see and choose between three brief modes, each with clear explanatory text describing what it does
+**Depends on**: Phase 19
+**Requirements**: MODE-01, MODE-02
 **Success Criteria** (what must be TRUE):
-  1. `identify.ts` and `detect-composition.ts` no longer exist in the codebase
-  2. All tests pass -- no references to deleted modules or removed types (`'composition'`, `'component'` asset types)
-  3. Running the plugin with a Figma URL produces a brief containing layout tree, design tokens, and preview PNG but zero auto-detected assets
-  4. The brief generator produces valid output when given an empty asset list
-**Plans**: 1 plan
-Plans:
-- [ ] 15-01-PLAN.md -- Delete auto-detection modules, hollow out asset pipeline, strip brief generator composition logic, update MainView
+  1. User sees three brief mode options in the plugin UI: "Copy (Best results)", "Copy (Pixel for pixel)", and "Use as inspiration"
+  2. Each mode displays explanatory text that describes its behavior in plain language (e.g., what Claude Code will do differently)
+  3. The selected mode persists during the current session -- user does not need to re-select after navigating back from results
+  4. The default mode is "Copy (Best results)" when no prior selection exists
+**Plans**: TBD
 
-### Phase 16: Asset Types & Node Resolution
-**Goal**: A user can resolve any Figma node URL to a validated asset entry with auto-derived filename and suggested format
-**Depends on**: Phase 15
-**Requirements**: NAME-01, NAME-02, AINP-05, AINP-06
+### Phase 21: Mode-Specific Brief Instructions
+**Goal**: The generated brief contains different Claude Code instructions depending on the selected mode, and the "Use as inspiration" mode captures custom user context
+**Depends on**: Phase 20
+**Requirements**: MODE-03, MODE-04, MODE-05, MODE-06
 **Success Criteria** (what must be TRUE):
-  1. Given a Figma node URL, the plugin resolves the node name via API and derives a sanitized filename (e.g., "Hero Image" becomes `hero-image.png`)
-  2. When two assets would produce the same filename, the second is auto-numbered (`icon.png`, `icon-2.png`)
-  3. Node URLs with I-prefix instance-child IDs are detected and produce a clear warning telling the user to select the parent component instead
-  4. The plugin suggests SVG format for vector-type nodes and PNG for everything else
-**Plans**: 1 plan
-Plans:
-- [ ] 16-01-PLAN.md -- ManualAsset type definition, I-prefix detection, format suggestion, filename collision resolution, deriveAssetFromNode, async resolveNode (TDD)
+  1. Selecting "Copy (Best results)" produces a brief that instructs Claude Code to faithfully reproduce the design with clean, responsive development practices
+  2. Selecting "Copy (Pixel for pixel)" produces a brief that instructs Claude Code to match the Figma design as exactly as possible (exact pixel values, no responsive abstractions)
+  3. Selecting "Use as inspiration" shows a text area where the user describes what to take from the design -- and the brief incorporates that custom context into instructions telling Claude Code to adapt the design patterns rather than copy them
+  4. The mode-specific instructions replace the existing static "How to Use This Brief" section -- there is only one set of instructions, not two
+**Plans**: TBD
 
-### Phase 17: Export Pipeline Rebuild
-**Goal**: The export pipeline accepts a list of manual assets and produces correctly downloaded files, batched by format
-**Depends on**: Phase 16
-**Requirements**: EXPT-01
+### Phase 22: Asset Clarity in Brief
+**Goal**: The brief output makes it immediately obvious which elements have provided assets and which do not, with explicit usage context for every asset
+**Depends on**: Phase 21
+**Requirements**: ASTC-01, ASTC-02
 **Success Criteria** (what must be TRUE):
-  1. Given a `ManualAsset[]` list, the plugin makes one `fetchImages` call per format (one for all PNGs, one for all SVGs) and downloads every asset to disk
-  2. Preview PNG is still auto-generated alongside the manual assets
-  3. Assets that fail to render (Figma returns null URL) produce per-asset warnings without blocking the rest of the export
-**Plans**: 1 plan
+  1. The brief clearly distinguishes provided assets from non-asset elements -- a reader can tell at a glance which visual elements in the design have real files and which do not
+  2. The brief includes an explicit asset manifest listing every provided asset with its filename, format, and intended usage context (e.g., "hero-image.png -- background image for the hero section")
+**Plans**: TBD
 
-### Phase 18: Brief Generator Updates
-**Goal**: The generated brief correctly maps every manually-added asset to its position in the layout tree
-**Depends on**: Phase 17
-**Requirements**: EXPT-02
+### Phase 23: Placeholder System
+**Goal**: The brief instructs Claude Code to create visible, named placeholder boxes for any visual element that needs an asset but does not have one -- users can reference these placeholders in follow-up prompts
+**Depends on**: Phase 22
+**Requirements**: PLCH-01, PLCH-02, PLCH-03, PLCH-04
 **Success Criteria** (what must be TRUE):
-  1. Each asset in the brief's Assets table shows its location in the layout tree (derived from the asset's node ID matching a tree node)
-  2. Asset type labels are simplified to "Icon" (SVG) and "Image" (PNG) with no composition/illustration terminology
-  3. Instance-child node IDs that cannot be located in the tree show a dash for location (graceful degradation)
-**Plans**: 1 plan
-Plans:
-- [ ] 18-01-PLAN.md -- Add manual asset cross-referencing tests and verify clean type labels
-
-### Phase 19: Asset List UI & Integration
-**Goal**: Users can build, review, edit, and export an asset list through a complete end-to-end workflow
-**Depends on**: Phase 18
-**Requirements**: AINP-01, AINP-02, AINP-03, AINP-04, LIST-01, LIST-02, LIST-03, LIST-04, LIST-05
-**Success Criteria** (what must be TRUE):
-  1. User can paste a Figma URL into an input field, choose PNG or SVG format, and add it to the asset list -- the plugin validates the URL contains a node ID and belongs to the same Figma file as the design URL
-  2. User can see all queued assets showing derived filename, format, and status (resolving/valid/error) -- and can remove individual assets or clear the entire list
-  3. User can edit the auto-derived filename for any asset before exporting
-  4. Pasting a URL whose node ID is already in the list shows an error instead of creating a duplicate
-  5. Clicking "Get Brief" with the asset list triggers export, brief generation, and copy-to-clipboard -- producing a complete brief with all listed assets mapped into the layout tree
-**Plans**: 2 plans
-Plans:
-- [ ] 19-01-PLAN.md -- Build AssetListPanel component with CSS classes, URL validation, inline editing, format toggle
-- [ ] 19-02-PLAN.md -- Wire AssetListPanel into MainView with state management, export pipeline integration, human verification
+  1. The brief instructs Claude Code to compare the preview image against the provided asset list and identify visual elements (images, icons, illustrations) that need assets but were not provided
+  2. The brief instructs Claude Code to create visible colored placeholder boxes (not invisible divs) for each missing asset, sized to match the design
+  3. Each placeholder has a unique, human-readable reference name (e.g., `[asset-ref-1: hero background]`) that appears both in the placeholder box and in the brief's placeholder summary
+  4. Users can reference placeholders in follow-up prompts (e.g., "Replace asset-ref-1 with this file") and Claude Code knows exactly which element to update
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19
+Phases execute in numeric order: 20 -> 21 -> 22 -> 23
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -148,8 +138,12 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19
 | 12. Instance Asset Detection | v1.3 | 2/2 | Complete | 2026-03-01 |
 | 13. Spacing & Layout Accuracy | v1.3 | 1/1 | Complete | 2026-03-01 |
 | 14. Plugin Icon | v1.3 | 1/1 | Complete | 2026-03-01 |
-| 15. Strip Auto-Detection | 1/1 | Complete    | 2026-03-01 | - |
-| 16. Asset Types & Node Resolution | 1/1 | Complete    | 2026-03-01 | - |
-| 17. Export Pipeline Rebuild | 1/1 | Complete    | 2026-03-01 | - |
-| 18. Brief Generator Updates | 1/1 | Complete    | 2026-03-01 | - |
-| 19. Asset List UI & Integration | 1/2 | In Progress|  | - |
+| 15. Strip Auto-Detection | v2.0 | 1/1 | Complete | 2026-03-01 |
+| 16. Asset Types & Node Resolution | v2.0 | 1/1 | Complete | 2026-03-01 |
+| 17. Export Pipeline Rebuild | v2.0 | 1/1 | Complete | 2026-03-01 |
+| 18. Brief Generator Updates | v2.0 | 1/1 | Complete | 2026-03-01 |
+| 19. Asset List UI & Integration | v2.0 | 2/2 | Complete | 2026-03-01 |
+| 20. Mode Selector UI | v2.1 | 0/? | Not started | - |
+| 21. Mode-Specific Brief Instructions | v2.1 | 0/? | Not started | - |
+| 22. Asset Clarity in Brief | v2.1 | 0/? | Not started | - |
+| 23. Placeholder System | v2.1 | 0/? | Not started | - |

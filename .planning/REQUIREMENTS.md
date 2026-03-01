@@ -28,7 +28,7 @@ Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phas
 - [ ] **ASTC-01**: Brief clearly distinguishes provided assets from non-asset elements
 - [ ] **ASTC-02**: Brief explicitly lists all provided assets with their intended usage context
 
-## Previous Milestone Requirements (v2.0 — Complete)
+## Previous Milestone Requirements (v2.0 -- Complete)
 
 All 20 v2.0 requirements completed. See `.planning/milestones/` for details.
 
@@ -62,24 +62,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MODE-01 | — | Pending |
-| MODE-02 | — | Pending |
-| MODE-03 | — | Pending |
-| MODE-04 | — | Pending |
-| MODE-05 | — | Pending |
-| MODE-06 | — | Pending |
-| PLCH-01 | — | Pending |
-| PLCH-02 | — | Pending |
-| PLCH-03 | — | Pending |
-| PLCH-04 | — | Pending |
-| ASTC-01 | — | Pending |
-| ASTC-02 | — | Pending |
+| MODE-01 | Phase 20 | Pending |
+| MODE-02 | Phase 20 | Pending |
+| MODE-03 | Phase 21 | Pending |
+| MODE-04 | Phase 21 | Pending |
+| MODE-05 | Phase 21 | Pending |
+| MODE-06 | Phase 21 | Pending |
+| PLCH-01 | Phase 23 | Pending |
+| PLCH-02 | Phase 23 | Pending |
+| PLCH-03 | Phase 23 | Pending |
+| PLCH-04 | Phase 23 | Pending |
+| ASTC-01 | Phase 22 | Pending |
+| ASTC-02 | Phase 22 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 ⚠️
+- Mapped to phases: 12
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after initial definition*
+*Last updated: 2026-03-01 after roadmap creation*

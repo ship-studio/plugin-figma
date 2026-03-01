@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Brief Modes & Placeholders
-status: defining_requirements
-last_updated: "2026-03-01T16:00:00Z"
+status: ready_to_plan
+last_updated: "2026-03-01T17:00:00Z"
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,14 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v2.1 Brief Modes & Placeholders — Defining requirements
+**Current focus:** v2.1 Brief Modes & Placeholders -- Phase 20 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-01 — Milestone v2.1 started
+Phase: 20 of 23 (Mode Selector UI)
+Plan: --
+Status: Ready to plan
+Last activity: 2026-03-01 -- Roadmap created for v2.1 (phases 20-23)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -54,5 +56,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Defining v2.1 requirements
-Next: Complete requirements → roadmap → plan phases
+Stopped at: Roadmap created for v2.1 milestone
+Next: Plan phase 20 (Mode Selector UI)
