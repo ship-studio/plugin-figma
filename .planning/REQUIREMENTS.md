@@ -13,8 +13,8 @@ Requirements for Manual Asset Control milestone. Each maps to roadmap phases.
 - [ ] **AINP-02**: User can select PNG or SVG format for each asset
 - [ ] **AINP-03**: Plugin validates that the asset URL belongs to the same Figma file as the main design URL
 - [ ] **AINP-04**: Plugin validates that the pasted URL contains a node ID (rejects file/page-level URLs)
-- [ ] **AINP-05**: Plugin detects I-prefix instance-child node IDs and warns the user to select the parent component instead
-- [ ] **AINP-06**: Plugin auto-suggests format based on node type (SVG for vector nodes, PNG for everything else)
+- [x] **AINP-05**: Plugin detects I-prefix instance-child node IDs and warns the user to select the parent component instead
+- [x] **AINP-06**: Plugin auto-suggests format based on node type (SVG for vector nodes, PNG for everything else)
 
 ### Asset List Management
 
@@ -26,8 +26,8 @@ Requirements for Manual Asset Control milestone. Each maps to roadmap phases.
 
 ### Asset Naming
 
-- [ ] **NAME-01**: Plugin auto-derives filenames from Figma layer names via API
-- [ ] **NAME-02**: Duplicate filenames are auto-numbered (icon.png, icon-2.png)
+- [x] **NAME-01**: Plugin auto-derives filenames from Figma layer names via API
+- [x] **NAME-02**: Duplicate filenames are auto-numbered (icon.png, icon-2.png)
 
 ### Export Pipeline
 
@@ -79,10 +79,10 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | CLEAN-03 | Phase 15 | Complete |
 | EXPT-03 | Phase 15 | Complete |
 | EXPT-04 | Phase 15 | Complete |
-| NAME-01 | Phase 16 | Pending |
-| NAME-02 | Phase 16 | Pending |
-| AINP-05 | Phase 16 | Pending |
-| AINP-06 | Phase 16 | Pending |
+| NAME-01 | Phase 16 | Complete |
+| NAME-02 | Phase 16 | Complete |
+| AINP-05 | Phase 16 | Complete |
+| AINP-06 | Phase 16 | Complete |
 | EXPT-01 | Phase 17 | Pending |
 | EXPT-02 | Phase 18 | Pending |
 | AINP-01 | Phase 19 | Pending |

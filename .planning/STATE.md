@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Manual Asset Control
-status: unknown
-last_updated: "2026-03-01T13:17:11.819Z"
+status: in-progress
+last_updated: "2026-03-01T13:59:30Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 7
+  completed_plans: 7
 ---
 
 # Project State
@@ -18,22 +18,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v2.0 Manual Asset Control -- Phase 15: Strip Auto-Detection
+**Current focus:** v2.0 Manual Asset Control -- Phase 16: Asset Types & Node Resolution
 
 ## Current Position
 
-Phase: 15 of 19 (Strip Auto-Detection) -- first of 5 v2.0 phases
+Phase: 16 of 19 (Asset Types & Node Resolution) -- second of 5 v2.0 phases
 Plan: 1 of 1 COMPLETE
-Status: Phase 15 complete
-Last activity: 2026-03-01 -- Executed 15-01 (strip auto-detection)
+Status: Phase 16 complete
+Last activity: 2026-03-01 -- Executed 16-01 (ManualAsset type and node resolution)
 
-Progress: [##........] 20% (1/5 phases)
+Progress: [####......] 40% (2/5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 1)
-- v2.0 average: ~4.5 min/plan
+- Total plans completed: 25 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 2)
+- v2.0 average: ~3.3 min/plan
 - Total execution time: ~6.7 hours across 5 milestones
 
 ## Accumulated Context
@@ -52,6 +52,7 @@ Key v2.0 decisions:
 - Node validation at add-time, not export-time
 - Removed instancesWithText from ExtractLayoutResult (only consumer was deleted identifyAssets)
 - Kept breadcrumb.ts and AssetEntry type for downstream Phases 16-18
+- resolveNode returns error ManualAsset rather than throwing (graceful degradation)
 
 ### Pending Todos
 
@@ -64,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 15-01-PLAN.md (strip auto-detection)
-Next: `/gsd:plan-phase 16` (Manual Asset Types)
+Stopped at: Completed 16-01-PLAN.md (ManualAsset type and node resolution)
+Next: `/gsd:plan-phase 17` (Export Pipeline)

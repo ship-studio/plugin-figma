@@ -57,7 +57,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 **Milestone Goal:** Replace unreliable automatic asset detection with explicit user-driven asset selection -- users specify exactly which Figma elements to export and in what format, producing a perfect brief every time.
 
 - [x] **Phase 15: Strip Auto-Detection** - Remove all automatic asset detection code, tests, and brief logic to create a clean base (completed 2026-03-01)
-- [ ] **Phase 16: Asset Types & Node Resolution** - Define ManualAsset types, resolve node names via API, auto-derive filenames
+- [x] **Phase 16: Asset Types & Node Resolution** - Define ManualAsset types, resolve node names via API, auto-derive filenames (completed 2026-03-01)
 - [ ] **Phase 17: Export Pipeline Rebuild** - Rewrite export to accept ManualAsset[] with format-aware batching
 - [ ] **Phase 18: Brief Generator Updates** - Rewire asset-to-layout cross-referencing for manual assets, simplify type labels
 - [ ] **Phase 19: Asset List UI & Integration** - Build the user-facing asset management workflow and wire everything together
@@ -144,7 +144,7 @@ Phases execute in numeric order: 15 -> 16 -> 17 -> 18 -> 19
 | 13. Spacing & Layout Accuracy | v1.3 | 1/1 | Complete | 2026-03-01 |
 | 14. Plugin Icon | v1.3 | 1/1 | Complete | 2026-03-01 |
 | 15. Strip Auto-Detection | 1/1 | Complete    | 2026-03-01 | - |
-| 16. Asset Types & Node Resolution | v2.0 | 0/1 | Not started | - |
+| 16. Asset Types & Node Resolution | 1/1 | Complete   | 2026-03-01 | - |
 | 17. Export Pipeline Rebuild | v2.0 | 0/TBD | Not started | - |
 | 18. Brief Generator Updates | v2.0 | 0/TBD | Not started | - |
 | 19. Asset List UI & Integration | v2.0 | 0/TBD | Not started | - |
