@@ -62,7 +62,7 @@ export function generateBrief(input: BriefInput): BriefResult {
 
   const sections = [
     buildMetadataSection(input),
-    buildInstructionsSection(),
+    buildInstructionsSection(input.mode, input.inspirationText),
     buildPreviewSection(exportResult.previewPath, projectPath),
     buildLayoutTreeSection(extraction.extraction.rootNodes, assetNodeMap),
     buildDesignTokensSection(tokens),
@@ -97,24 +97,59 @@ function buildMetadataSection(input: BriefInput): string {
   const frameName = extraction.extraction.rootNodes[0]?.name ?? 'Untitled';
   const date = input.date ?? new Date().toISOString().slice(0, 10);
 
+  const modeLabels: Record<string, string> = {
+    best: 'Copy (Best results)',
+    pixel: 'Copy (Pixel for pixel)',
+    inspiration: 'Use as inspiration',
+  };
+  const modeName = modeLabels[input.mode ?? 'best'] ?? 'Copy (Best results)';
+
   return [
     '# Design Brief',
     '',
     `**File:** ${fileName}`,
     `**Frame:** ${frameName}`,
     `**Extracted:** ${date}`,
+    `**Mode:** ${modeName}`,
     `**Figma URL:** ${figmaUrl}`,
   ].join('\n');
 }
 
-function buildInstructionsSection(): string {
-  return [
-    '## How to Use This Brief',
-    '',
-    '**Before building:** Read this brief fully. Plan your approach and ask clarifying questions before writing any code.',
-    '**During building:** Use only the assets listed in the Assets section below -- if an asset is missing, ask the user rather than substituting or fabricating a replacement.',
-    '**After building:** Compare your result against the Preview image above and verify that all design tokens and assets are correctly applied.',
-  ].join('\n');
+function buildInstructionsSection(mode?: 'best' | 'pixel' | 'inspiration', inspirationText?: string): string {
+  const effectiveMode = mode ?? 'best';
+  const lines: string[] = ['## How to Use This Brief', ''];
+
+  // Shared base rules (all modes)
+  const sharedBefore = 'Read this brief fully. Study the preview image, layout tree, and design tokens before writing any code.';
+  const sharedDuring = 'Use only the assets listed in the Assets section below. If an asset is missing, ask the user rather than substituting or fabricating a replacement.';
+  const sharedAfter = 'Compare your result against the preview image and verify that layout, spacing, colors, and typography match the design tokens.';
+
+  if (effectiveMode === 'best') {
+    lines.push(
+      `**Before building:** ${sharedBefore}`,
+      `**During building:** Reproduce the design faithfully using clean, production-ready code. Use semantic HTML, CSS flexbox/grid for layout, and relative units (rem, %, vh) where appropriate. Follow the spacing and color tokens exactly, but use responsive patterns so the result works across screen sizes. ${sharedDuring}`,
+      `**After building:** ${sharedAfter}`,
+    );
+  } else if (effectiveMode === 'pixel') {
+    lines.push(
+      `**Before building:** ${sharedBefore}`,
+      `**During building:** Match the Figma design as exactly as possible. Use the exact pixel values from the design tokens for font sizes, spacing, widths, and heights. Use fixed dimensions rather than responsive units. Prioritize visual accuracy over code flexibility. ${sharedDuring}`,
+      `**After building:** ${sharedAfter} Pay special attention to exact pixel dimensions, spacing values, and font sizes.`,
+    );
+  } else if (effectiveMode === 'inspiration') {
+    lines.push(
+      `**Before building:** ${sharedBefore} Use this design as a reference for visual patterns, not a spec to copy exactly.`,
+      `**During building:** Adapt the design's style and layout patterns to fit the user's existing site and codebase. Use the color palette, typography choices, and layout structure as guidance, but adjust proportions, spacing, and components to work within the target context. ${sharedDuring}`,
+      `**After building:** Verify that your result captures the spirit of the design -- the visual hierarchy, color usage, and layout patterns -- while fitting naturally into the target codebase.`,
+    );
+
+    // Include user's inspiration context if provided
+    if (inspirationText && inspirationText.trim()) {
+      lines.push('', '**What to take from this design:**', '', `> ${inspirationText.trim().split('\n').join('\n> ')}`);
+    }
+  }
+
+  return lines.join('\n');
 }
 
 function buildPreviewSection(previewPath: string, projectPath: string): string {
