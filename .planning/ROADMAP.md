@@ -84,7 +84,9 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
   2. Each mode displays explanatory text that describes its behavior in plain language (e.g., what Claude Code will do differently)
   3. The selected mode persists during the current session -- user does not need to re-select after navigating back from results
   4. The default mode is "Copy (Best results)" when no prior selection exists
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 20-01-PLAN.md — Add mode selector CSS and UI (mode cards with state, rendering, persistence)
 
 ### Phase 21: Mode-Specific Brief Instructions
 **Goal**: The generated brief contains different Claude Code instructions depending on the selected mode, and the "Use as inspiration" mode captures custom user context
