@@ -339,4 +339,423 @@ describe('identifyAssets', () => {
       expect(result[0].exportType).toBe('svg');
     });
   });
+
+  describe('ASSET-07: simple rectangle filtering', () => {
+    it('silently skips a simple solid-color rectangle (no strokes, no gradients, no effects)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:1', name: 'Background', type: 'RECTANGLE',
+          fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 } }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(0);
+    });
+
+    it('silently skips a rectangle with no fills at all', () => {
+      const result = identifyAssets([root([
+        node({ id: '11:2', name: 'Empty Box', type: 'RECTANGLE', fills: [] }),
+      ])], []);
+      expect(result).toHaveLength(0);
+    });
+
+    it('silently skips a rectangle with undefined fills', () => {
+      const result = identifyAssets([root([
+        node({ id: '11:3', name: 'No Fills', type: 'RECTANGLE' }),
+      ])], []);
+      expect(result).toHaveLength(0);
+    });
+
+    it('exports rectangle with visible stroke as SVG', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:4', name: 'Bordered Box', type: 'RECTANGLE',
+          fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 } }],
+          strokes: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('svg');
+    });
+
+    it('exports rectangle with gradient fill as SVG', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:5', name: 'Gradient Box', type: 'RECTANGLE',
+          fills: [{ type: 'GRADIENT_LINEAR', visible: true }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('svg');
+    });
+
+    it('exports rectangle with visible effects (shadow) as SVG', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:6', name: 'Shadow Box', type: 'RECTANGLE',
+          fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 } }],
+          effects: [{ type: 'DROP_SHADOW', visible: true }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('svg');
+    });
+
+    it('skips rectangle with stroke that has visible: false (invisible stroke)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:7', name: 'Hidden Stroke Box', type: 'RECTANGLE',
+          fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 } }],
+          strokes: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: false }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(0);
+    });
+
+    it('skips rectangle with effect that has visible: false (invisible effect)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:8', name: 'Hidden Effect Box', type: 'RECTANGLE',
+          fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 } }],
+          effects: [{ type: 'DROP_SHADOW', visible: false }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(0);
+    });
+
+    it('still exports rectangle with IMAGE fill as png-fill (not filtered)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:9', name: 'Image Rect', type: 'RECTANGLE',
+          fills: [{ type: 'IMAGE', imageRef: 'img-ref', scaleMode: 'FILL' }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('png-fill');
+    });
+
+    it('exports rectangle with GRADIENT_RADIAL fill as SVG', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:10', name: 'Radial Box', type: 'RECTANGLE',
+          fills: [{ type: 'GRADIENT_RADIAL', visible: true }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('svg');
+    });
+
+    it('skips rectangle where fill has visible: false gradient (hidden gradient is simple)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '11:11', name: 'Hidden Gradient', type: 'RECTANGLE',
+          fills: [{ type: 'GRADIENT_LINEAR', visible: false }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('ASSET-06: instance IMAGE fill override', () => {
+    it('exports instance with IMAGE fill as png-fill using instance name', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '12:1', name: 'Hero Banner', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-card', componentName: 'Card',
+            isRemote: false, source: 'local',
+          },
+          fills: [{ type: 'IMAGE', imageRef: 'hero-ref', scaleMode: 'FILL' }],
+        }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('png-fill');
+      expect(result[0].filename).toBe('hero-banner.png');
+      expect(result[0].nodeName).toBe('Hero Banner');
+      expect(result[0].imageRef).toBe('hero-ref');
+    });
+
+    it('does NOT also export as png-render when instance has IMAGE fill', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '12:2', name: 'Avatar Override', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-avatar', componentName: 'Avatar',
+            isRemote: false, source: 'local',
+          },
+          fills: [{ type: 'IMAGE', imageRef: 'avatar-ref', scaleMode: 'FILL' }],
+        }),
+      ])], []);
+      // Only png-fill, no png-render
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('png-fill');
+      const pngRender = result.find(e => e.exportType === 'png-render');
+      expect(pngRender).toBeUndefined();
+    });
+
+    it('uses imageRef from imageFillMap when available', () => {
+      const imageFills: ImageFillRef[] = [
+        { imageRef: 'map-ref', scaleMode: 'FILL', nodeId: '12:3', nodeName: 'Card Image' },
+      ];
+      const result = identifyAssets([root([
+        node({
+          id: '12:3', name: 'Card Image', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-card-img', componentName: 'CardImage',
+            isRemote: false, source: 'local',
+          },
+          fills: [{ type: 'IMAGE', imageRef: 'fill-ref', scaleMode: 'FILL' }],
+        }),
+      ])], imageFills);
+      expect(result).toHaveLength(1);
+      expect(result[0].imageRef).toBe('map-ref');
+    });
+
+    it('deduplicates instance IMAGE fill by imageRef (same imageRef exported once)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '12:4', name: 'Card A', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-card', componentName: 'Card',
+            isRemote: false, source: 'local',
+          },
+          fills: [{ type: 'IMAGE', imageRef: 'shared-ref', scaleMode: 'FILL' }],
+        }),
+        node({
+          id: '12:5', name: 'Card B', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-card', componentName: 'Card',
+            isRemote: false, source: 'local',
+          },
+          fills: [{ type: 'IMAGE', imageRef: 'shared-ref', scaleMode: 'FILL' }],
+        }),
+      ])], []);
+      // Same imageRef -- only first exported
+      expect(result).toHaveLength(1);
+      expect(result[0].nodeId).toBe('12:4');
+    });
+  });
+
+  describe('ASSET-05: instance child IMAGE fill detection', () => {
+    it('finds IMAGE fills in instance children and exports as png-fill', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:1', name: 'Card Instance', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-card', componentName: 'Card',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({
+              id: 'I13:1;13:2', name: 'Hero Image', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'hero-child-ref', scaleMode: 'FILL' }],
+            }),
+            node({ id: 'I13:1;13:3', name: 'Title', type: 'TEXT' }),
+          ],
+        }),
+      ])], []);
+      // Should find the child image, not export instance as png-render
+      const pngFill = result.find(e => e.exportType === 'png-fill');
+      expect(pngFill).toBeDefined();
+      expect(pngFill!.nodeName).toBe('Hero Image');
+      expect(pngFill!.imageRef).toBe('hero-child-ref');
+      expect(pngFill!.filename).toBe('hero-image.png');
+    });
+
+    it('does NOT export instance as png-render when child images are found', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:4', name: 'Card', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-card2', componentName: 'ProductCard',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({
+              id: 'I13:4;13:5', name: 'Product Photo', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'product-ref', scaleMode: 'FILL' }],
+            }),
+          ],
+        }),
+      ])], []);
+      const pngRender = result.find(e => e.exportType === 'png-render');
+      expect(pngRender).toBeUndefined();
+    });
+
+    it('exports instance as png-render when no child images found (existing behavior)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:6', name: 'Button', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-btn', componentName: 'Button',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({ id: 'I13:6;13:7', name: 'Label', type: 'TEXT' }),
+            node({ id: 'I13:6;13:8', name: 'Icon', type: 'VECTOR' }),
+          ],
+        }),
+      ])], []);
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('png-render');
+      expect(result[0].filename).toBe('button.png');
+    });
+
+    it('recurses full depth into instance children to find IMAGE fills', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:9', name: 'Deep Card', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-deep', componentName: 'DeepCard',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({
+              id: 'I13:9;13:10', name: 'Content Area', type: 'FRAME',
+              children: [
+                node({
+                  id: 'I13:9;13:11', name: 'Image Container', type: 'FRAME',
+                  children: [
+                    node({
+                      id: 'I13:9;13:12', name: 'Deep Nested Image', type: 'RECTANGLE',
+                      fills: [{ type: 'IMAGE', imageRef: 'deep-ref', scaleMode: 'FILL' }],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        }),
+      ])], []);
+      const pngFill = result.find(e => e.exportType === 'png-fill');
+      expect(pngFill).toBeDefined();
+      expect(pngFill!.nodeName).toBe('Deep Nested Image');
+      expect(pngFill!.imageRef).toBe('deep-ref');
+    });
+
+    it('deduplicates child images by imageRef across instances', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:13', name: 'Card 1', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-c', componentName: 'Card',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({
+              id: 'I13:13;13:14', name: 'Hero', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'same-hero-ref', scaleMode: 'FILL' }],
+            }),
+          ],
+        }),
+        node({
+          id: '13:15', name: 'Card 2', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-c', componentName: 'Card',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({
+              id: 'I13:15;13:16', name: 'Hero', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'same-hero-ref', scaleMode: 'FILL' }],
+            }),
+          ],
+        }),
+      ])], []);
+      // Same imageRef across two instances -- only one exported
+      const pngFills = result.filter(e => e.exportType === 'png-fill');
+      expect(pngFills).toHaveLength(1);
+      expect(pngFills[0].imageRef).toBe('same-hero-ref');
+    });
+
+    it('does NOT export SVGs or other types from instance children', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:17', name: 'Widget', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-w', componentName: 'Widget',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({ id: 'I13:17;13:18', name: 'Icon', type: 'VECTOR' }),
+            node({ id: 'I13:17;13:19', name: 'Shape', type: 'ELLIPSE' }),
+            node({
+              id: 'I13:17;13:20', name: 'Photo', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'widget-photo', scaleMode: 'FILL' }],
+            }),
+          ],
+        }),
+      ])], []);
+      // Only the image -- no SVGs from instance children
+      const svgs = result.filter(e => e.exportType === 'svg');
+      expect(svgs).toHaveLength(0);
+      const pngFills = result.filter(e => e.exportType === 'png-fill');
+      expect(pngFills).toHaveLength(1);
+      expect(pngFills[0].nodeName).toBe('Photo');
+    });
+
+    it('still scans deduplicated instance children for images (imageRef dedup handles file dedup)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:21', name: 'Card A', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-dup', componentName: 'DupCard',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({
+              id: 'I13:21;13:22', name: 'Image A', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'unique-ref-a', scaleMode: 'FILL' }],
+            }),
+          ],
+        }),
+        node({
+          id: '13:23', name: 'Card B', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-dup', componentName: 'DupCard',
+            isRemote: false, source: 'local',
+          },
+          children: [
+            node({
+              id: 'I13:23;13:24', name: 'Image B', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'unique-ref-b', scaleMode: 'FILL' }],
+            }),
+          ],
+        }),
+      ])], []);
+      // First instance: new, has child image -> no png-render, child image exported
+      // Second instance: deduplicated by component, but child images still scanned
+      // unique-ref-a and unique-ref-b are different imageRefs -- both exported
+      const pngFills = result.filter(e => e.exportType === 'png-fill');
+      expect(pngFills).toHaveLength(2);
+      expect(pngFills.map(e => e.imageRef)).toContain('unique-ref-a');
+      expect(pngFills.map(e => e.imageRef)).toContain('unique-ref-b');
+      // No png-render for either instance
+      const pngRenders = result.filter(e => e.exportType === 'png-render');
+      expect(pngRenders).toHaveLength(0);
+    });
+
+    it('handles instance with both own IMAGE fill and child IMAGE fills (own fill takes priority)', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:25', name: 'Bg Instance', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-bg', componentName: 'BgCard',
+            isRemote: false, source: 'local',
+          },
+          fills: [{ type: 'IMAGE', imageRef: 'bg-ref', scaleMode: 'FILL' }],
+          children: [
+            node({
+              id: 'I13:25;13:26', name: 'Inner Photo', type: 'RECTANGLE',
+              fills: [{ type: 'IMAGE', imageRef: 'inner-ref', scaleMode: 'FILL' }],
+            }),
+          ],
+        }),
+      ])], []);
+      // Instance's own IMAGE fill takes priority, no child recursion
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('png-fill');
+      expect(result[0].imageRef).toBe('bg-ref');
+      expect(result[0].nodeName).toBe('Bg Instance');
+    });
+  });
 });
