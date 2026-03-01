@@ -117,6 +117,16 @@ export function AssetListPanel({
     try {
       const resolved = await resolveNode(shell, token, designFileKey, nodeId, assets);
       onResolved(nodeId, resolved);
+    } catch (err) {
+      // If resolveNode itself throws (shouldn't, but safety net)
+      onResolved(nodeId, {
+        nodeId,
+        nodeName: '',
+        filename: nodeId.replace(/:/g, '-') + '.png',
+        format: 'png',
+        status: 'error',
+        error: err instanceof Error ? err.message : 'Failed to resolve node',
+      });
     } finally {
       inflightRef.current.delete(nodeId);
     }
@@ -265,16 +275,15 @@ export function AssetListPanel({
                 </span>
               )}
 
-              {/* Format badge (clickable toggle) */}
-              {asset.status === 'valid' && (
-                <span
-                  className="figma-plugin-format-badge"
-                  onClick={() => !disabled && handleFormatToggle(asset)}
-                  title="Click to toggle PNG/SVG"
-                >
-                  {asset.format}
-                </span>
-              )}
+              {/* Format badge (clickable toggle) — always visible */}
+              <span
+                className="figma-plugin-format-badge"
+                onClick={() => !disabled && asset.status === 'valid' && handleFormatToggle(asset)}
+                title={asset.status === 'valid' ? 'Click to toggle PNG/SVG' : asset.format.toUpperCase()}
+                style={{ opacity: asset.status === 'valid' ? 1 : 0.5 }}
+              >
+                {asset.format}
+              </span>
 
               {/* Filename (click-to-edit for valid assets) */}
               {editingNodeId === asset.nodeId ? (
@@ -294,15 +303,15 @@ export function AssetListPanel({
                   }
                   title={
                     asset.status === 'valid'
-                      ? 'Click to rename'
+                      ? `Click to rename (${asset.nodeName})`
                       : asset.error || 'Resolving...'
                   }
                 >
                   {asset.status === 'resolving'
-                    ? 'Resolving...'
+                    ? `Resolving ${asset.nodeId}...`
                     : asset.status === 'error'
                       ? asset.error || 'Failed to resolve'
-                      : asset.filename}
+                      : asset.filename || asset.nodeId}
                 </span>
               )}
 
