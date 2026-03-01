@@ -37,6 +37,7 @@ export function estimateTokens(markdown: string): number {
  * 5. Design Tokens (grouped tables)
  * 6. Components (inventory table)
  * 7. Assets (file reference table)
+ * 8. Placeholders (instructions for missing asset handling)
  *
  * Empty sections are omitted entirely.
  */
