@@ -8,7 +8,9 @@ import type { ExtractLayoutResult } from '../layout/extract';
 import type { ExtractionResult, LayoutNode } from '../layout/types';
 import type { FigmaUrlParts, ExtractionScope, FigmaFileInfo } from '../types';
 import { exportAssets } from '../assets/export';
-import type { ExportResult, AssetExportProgress, ManualAsset } from '../assets/types';
+import type { ExportResult, AssetExportProgress, ManualAsset, DetectionResult } from '../assets/types';
+import { detectAssets } from '../assets/detect';
+import { detectedToManual } from '../assets/adapt';
 import { AssetListPanel } from '../components/AssetListPanel';
 import { generateBrief, TOKEN_WARNING_THRESHOLD } from '../brief/generate';
 import type { BriefResult } from '../brief/types';
@@ -146,6 +148,10 @@ export function MainView({ token }: MainViewProps) {
   // Manual asset list state
   const [manualAssets, setManualAssets] = useState<ManualAsset[]>([]);
 
+  // Zero-asset warning state (mirrors large-tree warning pattern)
+  const [zeroAssetWarning, setZeroAssetWarning] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
   // Brief mode selection (persists across URL changes within session)
   const [briefMode, setBriefMode] = useState<BriefMode>('best');
   const [inspirationText, setInspirationText] = useState('');
@@ -188,6 +194,9 @@ export function MainView({ token }: MainViewProps) {
   // Store pending extraction result while awaiting large tree confirmation
   const pendingResultRef = useRef(null as ExtractLayoutResult | null);
 
+  // Store detection result for passing through to export
+  const detectionResultRef = useRef<DetectionResult | null>(null);
+
   // Stable ref for shell so the validation effect doesn't re-fire on context re-renders
   const shellRef = useRef(shell);
   shellRef.current = shell;
@@ -198,12 +207,16 @@ export function MainView({ token }: MainViewProps) {
   // Counter to discard stale extraction responses
   const extractRequestIdRef = useRef(0);
 
-  const runAssetExport = useCallback(async (result: ExtractLayoutResult) => {
+  const runAssetExport = useCallback(async (result: ExtractLayoutResult, detection?: DetectionResult) => {
     if (!shellRef.current || !parsedUrl) return;
 
     setExportingAssets(true);
     setAssetProgress(null);
     setExportResult(null);
+
+    // Merge detected @S- assets with manually-added assets
+    const detectedAsManual = detection ? detectedToManual(detection.assets) : [];
+    const allAssets = [...detectedAsManual, ...manualAssets];
 
     try {
       const exportRes = await exportAssets({
@@ -212,9 +225,14 @@ export function MainView({ token }: MainViewProps) {
         fileKey: result.fileKey,
         selectedNodeId: parsedUrl.nodeId || result.extraction.rootNodes[0]?.id || '0:0',
         projectPath: ctx?.project?.path ?? '.',
-        manualAssets,
+        manualAssets: allAssets,
         onProgress: setAssetProgress,
       });
+
+      // Merge detection warnings into export result
+      if (detection?.warnings.length) {
+        exportRes.warnings.push(...detection.warnings);
+      }
 
       setExportResult(exportRes);
       if (actions) {
@@ -275,6 +293,30 @@ export function MainView({ token }: MainViewProps) {
     }
   }, [token, parsedUrl, ctx, actions, fileInfo, urlInput, manualAssets, briefMode, inspirationText]);
 
+  const runDetectionAndExport = useCallback(async (result: ExtractLayoutResult) => {
+    // Wrap multiple roots in synthetic parent for detection
+    const syntheticRoot = result.rawRootNodes.length === 1
+      ? result.rawRootNodes[0]
+      : { name: '__root__', children: result.rawRootNodes, visible: true };
+    const detection = detectAssets(syntheticRoot);
+    detectionResultRef.current = detection;
+
+    if (detection.assets.length === 0) {
+      // Zero assets -- show blocking warning
+      pendingResultRef.current = result;
+      setZeroAssetWarning(true);
+      setExtracting(false);
+      return;
+    }
+
+    // Assets found -- silently continue to export
+    setExtractionResult(result.extraction);
+    if (actions) {
+      actions.showToast(`Extracted ${result.extraction.nodeCount} layers`, 'success');
+    }
+    runAssetExport(result, detection);
+  }, [actions, runAssetExport]);
+
   const handleUrlChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -301,6 +343,10 @@ export function MainView({ token }: MainViewProps) {
         setBriefError(null);
         // Clear manual asset list
         setManualAssets([]);
+        // Clear detection state
+        setZeroAssetWarning(false);
+        setRetryCount(0);
+        detectionResultRef.current = null;
         return;
       }
 
@@ -332,6 +378,10 @@ export function MainView({ token }: MainViewProps) {
       setBriefError(null);
       // Clear manual asset list
       setManualAssets([]);
+      // Clear detection state
+      setZeroAssetWarning(false);
+      setRetryCount(0);
+      detectionResultRef.current = null;
 
     },
     []
@@ -394,6 +444,9 @@ export function MainView({ token }: MainViewProps) {
     setBriefResult(null);
     setGeneratingBrief(false);
     setBriefError(null);
+    // Clear detection state (do NOT reset retryCount -- it accumulates across retries)
+    setZeroAssetWarning(false);
+    detectionResultRef.current = null;
 
     (async () => {
       try {
@@ -417,13 +470,8 @@ export function MainView({ token }: MainViewProps) {
           return;
         }
 
-        // No warning -- set result directly
-        setExtractionResult(result.extraction);
-        if (actions) {
-          actions.showToast(`Extracted ${result.extraction.nodeCount} layers`, 'success');
-        }
-        // Automatically run asset export after successful extraction
-        runAssetExport(result);
+        // No warning -- run detection then export
+        runDetectionAndExport(result);
       } catch (err: any) {
         if (extractRequestIdRef.current !== currentExtractId) return;
 
@@ -445,7 +493,7 @@ export function MainView({ token }: MainViewProps) {
         }
       }
     })();
-  }, [parsedUrl, token, scope, actions, runAssetExport]);
+  }, [parsedUrl, token, scope, actions, runDetectionAndExport]);
 
   const handleConfirmLargeTree = useCallback(() => {
     const pending = pendingResultRef.current;
@@ -454,21 +502,38 @@ export function MainView({ token }: MainViewProps) {
     // Use the already-fetched and normalized result -- no second API call needed
     setAwaitingLargeTreeConfirm(false);
     setLargeTreeWarning(null);
-    setExtractionResult(pending.extraction);
-    pendingResultRef.current = null;
-
-    if (actions) {
-      actions.showToast(`Extracted ${pending.extraction.nodeCount} layers`, 'success');
-    }
-    // Automatically run asset export after large tree confirmation
-    runAssetExport(pending);
-  }, [actions, runAssetExport]);
+    // Don't clear pendingResultRef yet -- runDetectionAndExport may need it for zero-asset path
+    runDetectionAndExport(pending);
+  }, [runDetectionAndExport]);
 
   const handleCancelLargeTree = useCallback(() => {
     setAwaitingLargeTreeConfirm(false);
     setLargeTreeWarning(null);
     pendingResultRef.current = null;
   }, []);
+
+  const handleRetryDetection = useCallback(() => {
+    setZeroAssetWarning(false);
+    setRetryCount(prev => prev + 1);
+    pendingResultRef.current = null;
+    detectionResultRef.current = null;
+    // Re-trigger full extraction pipeline (re-fetches from Figma API)
+    handleExtract();
+  }, [handleExtract]);
+
+  const handleContinueWithoutAssets = useCallback(() => {
+    const pending = pendingResultRef.current;
+    if (!pending) return;
+
+    setZeroAssetWarning(false);
+    pendingResultRef.current = null;
+    setExtractionResult(pending.extraction);
+    if (actions) {
+      actions.showToast(`Extracted ${pending.extraction.nodeCount} layers`, 'success');
+    }
+    // Proceed with empty detection (no @S- assets, manual assets still flow through)
+    runAssetExport(pending, detectionResultRef.current ?? undefined);
+  }, [actions, runAssetExport]);
 
   const handleCopyBrief = useCallback(async () => {
     if (!briefResult || !shellRef.current) return;
@@ -485,7 +550,7 @@ export function MainView({ token }: MainViewProps) {
   }, [briefResult, actions]);
 
   const hasResolvingAssets = manualAssets.some(a => a.status === 'resolving');
-  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets || generatingBrief || hasResolvingAssets;
+  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets || generatingBrief || hasResolvingAssets || zeroAssetWarning;
 
   return (
     <div>
@@ -616,6 +681,33 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
+      {/* Zero-Asset Warning */}
+      {zeroAssetWarning && (
+        <div className="figma-plugin-section">
+          <div className="figma-plugin-warning">
+            <strong>No @S- asset layers found</strong>
+            <p>
+              Prefix layer names with <code>@S-</code> to mark them for export.{' '}
+              Example: <code>@S-hero-image</code> becomes <code>hero-image.png</code>.{' '}
+              PNG or SVG format is auto-detected from layer content.
+            </p>
+            {retryCount > 0 && (
+              <p style={{ fontStyle: 'italic', marginTop: '4px' }}>
+                Still no @S- layers found. Check your layer names in Figma.
+              </p>
+            )}
+            <div className="figma-plugin-warning-actions">
+              <button className="btn-primary" onClick={handleRetryDetection}>
+                Try again
+              </button>
+              <button className="btn-secondary" onClick={handleContinueWithoutAssets}>
+                Continue anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Brief Error */}
       {briefError && (
         <div className="figma-plugin-section">
@@ -657,6 +749,13 @@ export function MainView({ token }: MainViewProps) {
                 ~{Math.round(briefResult.stats.estimatedTokens / 1000)}K tokens
               </span>
             </div>
+
+            {/* Zero-asset info line */}
+            {briefResult.stats.assetCount === 0 && (
+              <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px' }}>
+                No assets exported -- Claude Code will create placeholders for visual elements
+              </div>
+            )}
 
             {/* Token warning banner */}
             {briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD && (
