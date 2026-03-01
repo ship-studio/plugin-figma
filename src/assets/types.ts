@@ -72,3 +72,28 @@ export interface ManualAsset {
   /** Warning message (e.g., "Auto-named: frame-427.png -- consider renaming") */
   warning?: string;
 }
+
+/**
+ * An asset detected by scanning the Figma tree for @S- prefixed layers.
+ * Pure detection result -- no API calls, no export state.
+ */
+export interface DetectedAsset {
+  /** Figma node ID (e.g., "12:34") for downstream API calls */
+  nodeId: string;
+  /** Original Figma layer name including @S- prefix */
+  nodeName: string;
+  /** Sanitized filename WITH extension (e.g., "hero.png") */
+  filename: string;
+  /** Auto-determined export format */
+  format: 'png' | 'svg';
+  /** Tree depth where the asset was found (0 = root) */
+  depth: number;
+  /** Ancestor layer names for layout tree position context */
+  parentPath: string[];
+}
+
+/** Result of the @S- prefix detection scan. */
+export interface DetectionResult {
+  assets: DetectedAsset[];
+  warnings: string[];
+}
