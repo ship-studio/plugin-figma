@@ -1,11 +1,11 @@
-import { jsx as l, jsxs as f, Fragment as he } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;function j(t,p,k){if(k!==undefined&&p){p=Object.assign({},p);p.key=k}return R.createElement(t,p)}export const jsx=j;export const jsxs=j;export const Fragment=R.Fragment;";
-import { useEffect as se, useCallback as R, useState as $, useMemo as Ge, useRef as Q } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
-const Ce = window;
-function oe() {
-  const e = Ce.__SHIPSTUDIO_REACT__, t = Ce.__SHIPSTUDIO_PLUGIN_CONTEXT_REF__;
+import { jsx as a, jsxs as f, Fragment as he } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;function j(t,p,k){if(k!==undefined&&p){p=Object.assign({},p);p.key=k}return R.createElement(t,p)}export const jsx=j;export const jsxs=j;export const Fragment=R.Fragment;";
+import { useEffect as oe, useCallback as I, useState as C, useMemo as Xe, useRef as Q } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
+const $e = window;
+function se() {
+  const e = $e.__SHIPSTUDIO_REACT__, t = $e.__SHIPSTUDIO_PLUGIN_CONTEXT_REF__;
   return t && (e != null && e.useContext) ? e.useContext(t) : null;
 }
-const de = "figma-plugin-styles", Ve = `
+const de = "figma-plugin-styles", Ze = `
 .figma-plugin-overlay {
   position: fixed;
   inset: 0;
@@ -302,37 +302,37 @@ const de = "figma-plugin-styles", Ve = `
   text-align: center;
 }
 `;
-function Ke({ open: e, onClose: t, title: i, headerRight: s, children: n }) {
-  se(() => {
+function qe({ open: e, onClose: t, title: i, headerRight: o, children: n }) {
+  oe(() => {
     if (!e) return;
     let r = document.getElementById(de);
-    return r || (r = document.createElement("style"), r.id = de, r.textContent = Ve, document.head.appendChild(r)), () => {
+    return r || (r = document.createElement("style"), r.id = de, r.textContent = Ze, document.head.appendChild(r)), () => {
       const c = document.getElementById(de);
       c && c.remove();
     };
-  }, [e]), se(() => {
+  }, [e]), oe(() => {
     if (!e) return;
     const r = (c) => {
       c.key === "Escape" && t();
     };
     return document.addEventListener("keydown", r), () => document.removeEventListener("keydown", r);
   }, [e, t]);
-  const o = R(
+  const s = I(
     (r) => {
       r.target === r.currentTarget && t();
     },
     [t]
   );
-  return e ? /* @__PURE__ */ l("div", { className: "figma-plugin-overlay", onClick: o, children: /* @__PURE__ */ f("div", { className: "figma-plugin-modal", children: [
+  return e ? /* @__PURE__ */ a("div", { className: "figma-plugin-overlay", onClick: s, children: /* @__PURE__ */ f("div", { className: "figma-plugin-modal", children: [
     /* @__PURE__ */ f("div", { className: "figma-plugin-modal-header", children: [
-      /* @__PURE__ */ l(
+      /* @__PURE__ */ a(
         "svg",
         {
           width: "16",
           height: "16",
           viewBox: "0 0 15 15",
           fill: "currentColor",
-          children: /* @__PURE__ */ l(
+          children: /* @__PURE__ */ a(
             "path",
             {
               fillRule: "evenodd",
@@ -342,23 +342,23 @@ function Ke({ open: e, onClose: t, title: i, headerRight: s, children: n }) {
           )
         }
       ),
-      /* @__PURE__ */ l("span", { className: "figma-plugin-modal-title", children: i }),
-      s && /* @__PURE__ */ l("div", { style: { marginLeft: "auto", display: "flex", alignItems: "center" }, children: s })
+      /* @__PURE__ */ a("span", { className: "figma-plugin-modal-title", children: i }),
+      o && /* @__PURE__ */ a("div", { style: { marginLeft: "auto", display: "flex", alignItems: "center" }, children: o })
     ] }),
-    /* @__PURE__ */ l("div", { className: "figma-plugin-modal-body", children: n })
+    /* @__PURE__ */ a("div", { className: "figma-plugin-modal-body", children: n })
   ] }) }) : null;
 }
-const Xe = "https://api.figma.com/v1";
-async function ee(e, t, i, s) {
-  const n = `${Xe}${t}`, o = Math.ceil(((s == null ? void 0 : s.timeout) ?? 3e4) / 1e3), r = [
+const Je = "https://api.figma.com/v1";
+async function ee(e, t, i, o) {
+  const n = `${Je}${t}`, s = Math.ceil(((o == null ? void 0 : o.timeout) ?? 3e4) / 1e3), r = [
     "-sS",
     "--max-time",
-    String(o),
+    String(s),
     "-H",
     `X-Figma-Token: ${i}`,
     n
   ], c = await e.exec("curl", r, {
-    timeout: (s == null ? void 0 : s.timeout) ?? 12e4
+    timeout: (o == null ? void 0 : o.timeout) ?? 12e4
   });
   if (c.exit_code !== 0)
     throw new Error(`Figma API request failed: ${c.stderr || `exit code ${c.exit_code}`}`);
@@ -374,26 +374,26 @@ async function ee(e, t, i, s) {
     throw u.status === 429 ? new Error("Rate limited by Figma API. Try again in a moment.") : u.status === 403 ? new Error("Invalid or expired token. Please update your Figma token.") : u.status === 404 ? new Error("File not found. Check that the URL is correct and you have access.") : new Error(`Figma API error: ${u.err}`);
   return u;
 }
-async function Ne(e, t) {
+async function Se(e, t) {
   return ee(e, "/me", t);
 }
-async function Ze(e, t, i) {
-  const s = await ee(e, `/files/${i}?depth=1`, t);
+async function Ye(e, t, i) {
+  const o = await ee(e, `/files/${i}?depth=1`, t);
   return {
-    name: s.name,
-    pages: s.document.children.filter((n) => n.type === "CANVAS").map((n) => ({ id: n.id, name: n.name }))
+    name: o.name,
+    pages: o.document.children.filter((n) => n.type === "CANVAS").map((n) => ({ id: n.id, name: n.name }))
   };
 }
-async function qe(e, t, i, s) {
+async function Qe(e, t, i, o) {
   const n = await ee(
     e,
-    `/files/${i}/nodes?ids=${encodeURIComponent(s)}`,
+    `/files/${i}/nodes?ids=${encodeURIComponent(o)}`,
     t,
     { timeout: 12e4 }
-  ), o = n.nodes[s];
-  if (!o) {
+  ), s = n.nodes[o];
+  if (!s) {
     const r = Object.keys(n.nodes), c = r.find(
-      (u) => u.replace(/%3A/g, ":") === s || u === s.replace(/:/g, "%3A")
+      (u) => u.replace(/%3A/g, ":") === o || u === o.replace(/:/g, "%3A")
     );
     if (c)
       return {
@@ -402,54 +402,54 @@ async function qe(e, t, i, s) {
         styles: n.nodes[c].styles ?? {}
       };
     throw new Error(
-      `Node "${s}" not found in API response. Available nodes: ${r.join(", ")}`
+      `Node "${o}" not found in API response. Available nodes: ${r.join(", ")}`
     );
   }
   return {
-    rootNode: o.document,
-    components: o.components,
-    styles: o.styles ?? {}
+    rootNode: s.document,
+    components: s.components,
+    styles: s.styles ?? {}
   };
 }
-async function Je(e, t, i) {
-  const s = await ee(
+async function et(e, t, i) {
+  const o = await ee(
     e,
     `/files/${i}`,
     t,
     { timeout: 12e4 }
   );
   return {
-    rootNodes: s.document.children,
-    components: s.components,
-    styles: s.styles ?? {}
+    rootNodes: o.document.children,
+    components: o.components,
+    styles: o.styles ?? {}
   };
 }
-async function fe(e, t, i, s, n = "png", o) {
-  const r = s.map((d) => encodeURIComponent(d)).join(",");
+async function fe(e, t, i, o, n = "png", s) {
+  const r = o.map((d) => encodeURIComponent(d)).join(",");
   let c = `/images/${i}?ids=${r}&format=${n}`;
-  return o != null && (c += `&scale=${o}`), n === "svg" && (c += "&svg_outline_text=true&svg_include_id=true&svg_simplify_stroke=true"), (await ee(
+  return s != null && (c += `&scale=${s}`), n === "svg" && (c += "&svg_outline_text=true&svg_include_id=true&svg_simplify_stroke=true"), (await ee(
     e,
     c,
     t,
     { timeout: 12e4 }
   )).images;
 }
-function Ye({ onTokenSaved: e }) {
-  const t = oe(), i = (t == null ? void 0 : t.shell) ?? null, [s, n] = $(""), [o, r] = $(!1), [c, u] = $(null), d = R(async () => {
+function tt({ onTokenSaved: e }) {
+  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, [o, n] = C(""), [s, r] = C(!1), [c, u] = C(null), d = I(async () => {
     if (!i) return;
-    const y = s.trim();
-    if (!(!y || o)) {
+    const y = o.trim();
+    if (!(!y || s)) {
       r(!0), u(null);
       try {
-        const v = await Ne(i, y);
-        e(y, v);
-      } catch (v) {
-        u((v == null ? void 0 : v.message) || "Failed to validate token. Please check and try again.");
+        const b = await Se(i, y);
+        e(y, b);
+      } catch (b) {
+        u((b == null ? void 0 : b.message) || "Failed to validate token. Please check and try again.");
       } finally {
         r(!1);
       }
     }
-  }, [s, o, i, e]), x = R(
+  }, [o, s, i, e]), x = I(
     (y) => {
       y.key === "Enter" && d();
     },
@@ -457,11 +457,11 @@ function Ye({ onTokenSaved: e }) {
   );
   return /* @__PURE__ */ f("div", { children: [
     /* @__PURE__ */ f("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ l("h3", { style: { fontSize: "14px", fontWeight: 600, margin: "0 0 8px 0" }, children: "Connect to Figma" }),
+      /* @__PURE__ */ a("h3", { style: { fontSize: "14px", fontWeight: 600, margin: "0 0 8px 0" }, children: "Connect to Figma" }),
       /* @__PURE__ */ f("p", { style: { fontSize: "12px", color: "var(--text-secondary)", margin: "0 0 16px 0", lineHeight: 1.5 }, children: [
         "To get started, you need a Figma Personal Access Token.",
         " ",
-        /* @__PURE__ */ l(
+        /* @__PURE__ */ a(
           "a",
           {
             href: "https://www.figma.com/developers/api#access-tokens",
@@ -475,63 +475,63 @@ function Ye({ onTokenSaved: e }) {
       ] })
     ] }),
     /* @__PURE__ */ f("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ l("label", { className: "figma-plugin-label", children: "Personal Access Token" }),
-      /* @__PURE__ */ l(
+      /* @__PURE__ */ a("label", { className: "figma-plugin-label", children: "Personal Access Token" }),
+      /* @__PURE__ */ a(
         "input",
         {
           className: "figma-plugin-input",
           type: "password",
           placeholder: "figd_xxxxxxxxxxxxxxxx",
-          value: s,
+          value: o,
           onChange: (y) => n(y.target.value),
           onKeyDown: x,
-          disabled: o
+          disabled: s
         }
       ),
-      c && /* @__PURE__ */ l("div", { className: "figma-plugin-error", children: c }),
-      /* @__PURE__ */ l("div", { className: "figma-plugin-hint", children: "Token is stored locally in this project only." })
+      c && /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: c }),
+      /* @__PURE__ */ a("div", { className: "figma-plugin-hint", children: "Token is stored locally in this project only." })
     ] }),
-    /* @__PURE__ */ l(
+    /* @__PURE__ */ a(
       "button",
       {
         className: "btn-primary",
         onClick: d,
-        disabled: !s.trim() || o,
+        disabled: !o.trim() || s,
         style: { width: "100%", marginTop: "4px" },
-        children: o ? /* @__PURE__ */ f(he, { children: [
-          /* @__PURE__ */ l("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
+        children: s ? /* @__PURE__ */ f(he, { children: [
+          /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
           "Connecting..."
         ] }) : "Connect"
       }
     )
   ] });
 }
-function Qe({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: s }) {
-  const n = oe(), o = (n == null ? void 0 : n.shell) ?? null, [r, c] = $(""), [u, d] = $(!1), [x, y] = $(null), v = R(async () => {
-    if (!o) return;
-    const b = r.trim();
-    if (!(!b || u)) {
+function nt({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: o }) {
+  const n = se(), s = (n == null ? void 0 : n.shell) ?? null, [r, c] = C(""), [u, d] = C(!1), [x, y] = C(null), b = I(async () => {
+    if (!s) return;
+    const v = r.trim();
+    if (!(!v || u)) {
       d(!0), y(null);
       try {
-        const E = await Ne(o, b);
-        t(b, E);
+        const E = await Se(s, v);
+        t(v, E);
       } catch (E) {
         y((E == null ? void 0 : E.message) || "Failed to validate token. Please check and try again.");
       } finally {
         d(!1);
       }
     }
-  }, [r, u, o, t]), C = R(
-    (b) => {
-      b.key === "Enter" && v();
+  }, [r, u, s, t]), $ = I(
+    (v) => {
+      v.key === "Enter" && b();
     },
-    [v]
+    [b]
   );
   return /* @__PURE__ */ f("div", { children: [
     /* @__PURE__ */ f(
       "button",
       {
-        onClick: s,
+        onClick: o,
         style: {
           background: "none",
           border: "none",
@@ -545,46 +545,46 @@ function Qe({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: s })
           gap: "4px"
         },
         children: [
-          /* @__PURE__ */ l("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ l("polyline", { points: "15 18 9 12 15 6" }) }),
+          /* @__PURE__ */ a("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ a("polyline", { points: "15 18 9 12 15 6" }) }),
           "Back"
         ]
       }
     ),
-    /* @__PURE__ */ l("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-success", style: { display: "flex", alignItems: "center", gap: "6px", marginTop: "0" }, children: [
-      /* @__PURE__ */ l("span", { style: { fontSize: "10px" }, children: "●" }),
+    /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-success", style: { display: "flex", alignItems: "center", gap: "6px", marginTop: "0" }, children: [
+      /* @__PURE__ */ a("span", { style: { fontSize: "10px" }, children: "●" }),
       "Connected as ",
       e.handle
     ] }) }),
     /* @__PURE__ */ f("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ l("label", { className: "figma-plugin-label", children: "Update Token" }),
-      /* @__PURE__ */ l(
+      /* @__PURE__ */ a("label", { className: "figma-plugin-label", children: "Update Token" }),
+      /* @__PURE__ */ a(
         "input",
         {
           className: "figma-plugin-input",
           type: "password",
           placeholder: "figd_xxxxxxxxxxxxxxxx",
           value: r,
-          onChange: (b) => c(b.target.value),
-          onKeyDown: C,
+          onChange: (v) => c(v.target.value),
+          onKeyDown: $,
           disabled: u
         }
       ),
-      x && /* @__PURE__ */ l("div", { className: "figma-plugin-error", children: x }),
-      /* @__PURE__ */ l(
+      x && /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: x }),
+      /* @__PURE__ */ a(
         "button",
         {
           className: "btn-primary",
-          onClick: v,
+          onClick: b,
           disabled: !r.trim() || u,
           style: { width: "100%", marginTop: "8px" },
           children: u ? /* @__PURE__ */ f(he, { children: [
-            /* @__PURE__ */ l("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
+            /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
             "Validating..."
           ] }) : "Update"
         }
       )
     ] }),
-    /* @__PURE__ */ l("div", { className: "figma-plugin-section", style: { borderTop: "1px solid var(--border)", paddingTop: "16px" }, children: /* @__PURE__ */ l(
+    /* @__PURE__ */ a("div", { className: "figma-plugin-section", style: { borderTop: "1px solid var(--border)", paddingTop: "16px" }, children: /* @__PURE__ */ a(
       "button",
       {
         className: "btn-secondary",
@@ -595,17 +595,17 @@ function Qe({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: s })
     ) })
   ] });
 }
-function et(e) {
+function it(e) {
   const t = e.match(
     /figma\.com\/(file|design|proto|board)\/([A-Za-z0-9]+)/
   );
   if (!t) return null;
-  const i = t[1], s = t[2];
+  const i = t[1], o = t[2];
   let n = null;
-  const o = e.match(/[?&]node-id=([^&]+)/);
-  return o && (n = decodeURIComponent(o[1]).replace(/-/g, ":")), { fileKey: s, nodeId: n, fileType: i };
+  const s = e.match(/[?&]node-id=([^&]+)/);
+  return s && (n = decodeURIComponent(s[1]).replace(/-/g, ":")), { fileKey: o, nodeId: n, fileType: i };
 }
-function tt(e) {
+function ot(e) {
   switch (e) {
     case "MIN":
       return "flex-start";
@@ -619,7 +619,7 @@ function tt(e) {
       return "flex-start";
   }
 }
-function nt(e) {
+function st(e) {
   switch (e) {
     case "MIN":
       return "flex-start";
@@ -633,11 +633,11 @@ function nt(e) {
       return "flex-start";
   }
 }
-function it(e) {
+function rt(e) {
   const t = {
     flexDirection: e.layoutMode === "HORIZONTAL" ? "row" : "column",
-    justifyContent: tt(e.primaryAxisAlignItems),
-    alignItems: nt(e.counterAxisAlignItems),
+    justifyContent: ot(e.primaryAxisAlignItems),
+    alignItems: st(e.counterAxisAlignItems),
     gap: e.itemSpacing ?? 0,
     padding: {
       top: e.paddingTop ?? 0,
@@ -649,14 +649,14 @@ function it(e) {
   };
   return e.layoutWrap === "WRAP" && (t.rowGap = e.counterAxisSpacing ?? 0), t;
 }
-function st(e, t) {
+function at(e, t) {
   const i = t[e.componentId];
-  let s;
+  let o;
   if (e.componentProperties) {
-    const o = {};
+    const s = {};
     for (const [r, c] of Object.entries(e.componentProperties))
-      (c.type === "VARIANT" || c.type === "BOOLEAN" || c.type === "TEXT") && (o[r] = c.value);
-    Object.keys(o).length > 0 && (s = o);
+      (c.type === "VARIANT" || c.type === "BOOLEAN" || c.type === "TEXT") && (s[r] = c.value);
+    Object.keys(s).length > 0 && (o = s);
   }
   const n = {
     componentId: e.componentId,
@@ -664,35 +664,35 @@ function st(e, t) {
     isRemote: (i == null ? void 0 : i.remote) ?? !1,
     source: i != null && i.remote ? "library" : "local"
   };
-  return i != null && i.description && (n.description = i.description), s && (n.variantProperties = s), e.overrides && (n.overrides = e.overrides), n;
+  return i != null && i.description && (n.description = i.description), o && (n.variantProperties = o), e.overrides && (n.overrides = e.overrides), n;
 }
-function Te(e, t, i, s) {
+function Ae(e, t, i, o) {
   const n = e;
   if (n.type === "SLICE") return null;
-  const o = {
+  const s = {
     id: n.id,
     name: n.name,
     type: n.type,
     visible: n.visible !== !1
     // defaults to true when undefined
   };
-  switch (n.absoluteBoundingBox != null ? (o.width = n.absoluteBoundingBox.width, o.height = n.absoluteBoundingBox.height) : n.size != null && (o.width = n.size.x, o.height = n.size.y), "layoutSizingHorizontal" in n && (o.widthMode = n.layoutSizingHorizontal), "layoutSizingVertical" in n && (o.heightMode = n.layoutSizingVertical), "layoutPositioning" in n && n.layoutPositioning != null && (o.positioning = n.layoutPositioning), "layoutGrow" in n && n.layoutGrow === 1 && (o.layoutGrow = 1), "layoutAlign" in n && n.layoutAlign === "STRETCH" && (o.layoutAlign = "STRETCH"), o.positioning === "ABSOLUTE" && s != null && n.absoluteBoundingBox != null && (o.absoluteOffset = {
-    top: Math.round(n.absoluteBoundingBox.y - s.y),
-    left: Math.round(n.absoluteBoundingBox.x - s.x)
-  }), "layoutMode" in n && n.layoutMode && n.layoutMode !== "NONE" && (o.autoLayout = it(n)), "constraints" in n && n.constraints != null && (o.constraints = n.constraints), "minWidth" in n && n.minWidth != null && (o.minWidth = n.minWidth), "maxWidth" in n && n.maxWidth != null && (o.maxWidth = n.maxWidth), "minHeight" in n && n.minHeight != null && (o.minHeight = n.minHeight), "maxHeight" in n && n.maxHeight != null && (o.maxHeight = n.maxHeight), "preserveRatio" in n && n.preserveRatio != null && (o.preserveRatio = n.preserveRatio), "fills" in n && Array.isArray(n.fills) && (o.fills = n.fills), "strokes" in n && Array.isArray(n.strokes) && (o.strokes = n.strokes), "strokeWeight" in n && n.strokeWeight != null && (o.strokeWeight = n.strokeWeight), "effects" in n && Array.isArray(n.effects) && (o.effects = n.effects), "cornerRadius" in n && n.cornerRadius != null && (o.cornerRadius = n.cornerRadius), "rectangleCornerRadii" in n && Array.isArray(n.rectangleCornerRadii) && (o.rectangleCornerRadii = n.rectangleCornerRadii), "opacity" in n && n.opacity != null && n.opacity !== 1 && (o.opacity = n.opacity), "blendMode" in n && n.blendMode && n.blendMode !== "PASS_THROUGH" && n.blendMode !== "NORMAL" && (o.blendMode = n.blendMode), "isMask" in n && n.isMask === !0 && (o.isMask = !0), "styles" in n && n.styles && (o.styleRefs = n.styles), n.type) {
+  switch (n.absoluteBoundingBox != null ? (s.width = n.absoluteBoundingBox.width, s.height = n.absoluteBoundingBox.height) : n.size != null && (s.width = n.size.x, s.height = n.size.y), "layoutSizingHorizontal" in n && (s.widthMode = n.layoutSizingHorizontal), "layoutSizingVertical" in n && (s.heightMode = n.layoutSizingVertical), "layoutPositioning" in n && n.layoutPositioning != null && (s.positioning = n.layoutPositioning), "layoutGrow" in n && n.layoutGrow === 1 && (s.layoutGrow = 1), "layoutAlign" in n && n.layoutAlign === "STRETCH" && (s.layoutAlign = "STRETCH"), s.positioning === "ABSOLUTE" && o != null && n.absoluteBoundingBox != null && (s.absoluteOffset = {
+    top: Math.round(n.absoluteBoundingBox.y - o.y),
+    left: Math.round(n.absoluteBoundingBox.x - o.x)
+  }), "layoutMode" in n && n.layoutMode && n.layoutMode !== "NONE" && (s.autoLayout = rt(n)), "constraints" in n && n.constraints != null && (s.constraints = n.constraints), "minWidth" in n && n.minWidth != null && (s.minWidth = n.minWidth), "maxWidth" in n && n.maxWidth != null && (s.maxWidth = n.maxWidth), "minHeight" in n && n.minHeight != null && (s.minHeight = n.minHeight), "maxHeight" in n && n.maxHeight != null && (s.maxHeight = n.maxHeight), "preserveRatio" in n && n.preserveRatio != null && (s.preserveRatio = n.preserveRatio), "fills" in n && Array.isArray(n.fills) && (s.fills = n.fills), "strokes" in n && Array.isArray(n.strokes) && (s.strokes = n.strokes), "strokeWeight" in n && n.strokeWeight != null && (s.strokeWeight = n.strokeWeight), "effects" in n && Array.isArray(n.effects) && (s.effects = n.effects), "cornerRadius" in n && n.cornerRadius != null && (s.cornerRadius = n.cornerRadius), "rectangleCornerRadii" in n && Array.isArray(n.rectangleCornerRadii) && (s.rectangleCornerRadii = n.rectangleCornerRadii), "opacity" in n && n.opacity != null && n.opacity !== 1 && (s.opacity = n.opacity), "blendMode" in n && n.blendMode && n.blendMode !== "PASS_THROUGH" && n.blendMode !== "NORMAL" && (s.blendMode = n.blendMode), "isMask" in n && n.isMask === !0 && (s.isMask = !0), "styles" in n && n.styles && (s.styleRefs = n.styles), n.type) {
     case "TEXT":
-      o.textContent = n.characters, n.style && (o.textStyle = n.style), n.styleOverrideTable && Object.keys(n.styleOverrideTable).length > 0 && (o.textStyleOverrides = n.styleOverrideTable);
+      s.textContent = n.characters, n.style && (s.textStyle = n.style), n.styleOverrideTable && Object.keys(n.styleOverrideTable).length > 0 && (s.textStyleOverrides = n.styleOverrideTable);
       break;
     case "INSTANCE":
-      return o.componentRef = st(n, t), o;
+      return s.componentRef = at(n, t), s;
     case "BOOLEAN_OPERATION":
-      return o;
+      return s;
   }
   if ("children" in n && Array.isArray(n.children)) {
-    const r = n.absoluteBoundingBox != null ? { x: n.absoluteBoundingBox.x, y: n.absoluteBoundingBox.y } : null, c = n.children.map((u) => Te(u, t, i + 1, r)).filter((u) => u !== null);
-    o.children = rt(c);
+    const r = n.absoluteBoundingBox != null ? { x: n.absoluteBoundingBox.x, y: n.absoluteBoundingBox.y } : null, c = n.children.map((u) => Ae(u, t, i + 1, r)).filter((u) => u !== null);
+    s.children = ct(c);
   }
-  return o;
+  return s;
 }
 function ye(e) {
   let t = 1;
@@ -701,54 +701,54 @@ function ye(e) {
       t += ye(i);
   return t;
 }
-function ot(e) {
+function lt(e) {
   const t = e.componentRef, i = t.variantProperties ? JSON.stringify(t.variantProperties, Object.keys(t.variantProperties).sort()) : "";
   return `${t.componentId}::${i}`;
 }
-function rt(e) {
+function ct(e) {
   if (e.length === 0) return [];
   const t = /* @__PURE__ */ new Map();
   for (let n = 0; n < e.length; n++) {
-    const o = e[n];
-    if (o.componentRef) {
-      const r = ot(o), c = t.get(r);
-      c ? (c.count++, c.indices.push(n)) : t.set(r, { node: o, count: 1, indices: [n] });
+    const s = e[n];
+    if (s.componentRef) {
+      const r = lt(s), c = t.get(r);
+      c ? (c.count++, c.indices.push(n)) : t.set(r, { node: s, count: 1, indices: [n] });
     }
   }
   const i = /* @__PURE__ */ new Set();
   for (const n of t.values())
     if (n.count >= 3) {
       n.node.repeatCount = n.count;
-      for (let o = 1; o < n.indices.length; o++)
-        i.add(n.indices[o]);
+      for (let s = 1; s < n.indices.length; s++)
+        i.add(n.indices[s]);
     }
-  const s = [];
+  const o = [];
   for (let n = 0; n < e.length; n++)
-    i.has(n) || s.push(e[n]);
-  return s;
+    i.has(n) || o.push(e[n]);
+  return o;
 }
-function at(e, t) {
+function ut(e, t) {
   let i = 0;
   for (const n of e)
     i += ye(n);
   return {
-    rootNodes: e.map((n) => Te(n, t, 0, null)).filter((n) => n !== null),
+    rootNodes: e.map((n) => Ae(n, t, 0, null)).filter((n) => n !== null),
     nodeCount: i,
     truncated: !1
   };
 }
 function q(e) {
-  const t = Math.round(e.r * 255), i = Math.round(e.g * 255), s = Math.round(e.b * 255);
+  const t = Math.round(e.r * 255), i = Math.round(e.g * 255), o = Math.round(e.b * 255);
   if (e.a >= 1)
-    return `#${t.toString(16).padStart(2, "0")}${i.toString(16).padStart(2, "0")}${s.toString(16).padStart(2, "0")}`;
+    return `#${t.toString(16).padStart(2, "0")}${i.toString(16).padStart(2, "0")}${o.toString(16).padStart(2, "0")}`;
   const n = parseFloat(e.a.toFixed(2));
-  return `rgba(${t}, ${i}, ${s}, ${n})`;
+  return `rgba(${t}, ${i}, ${o}, ${n})`;
 }
-function lt(e) {
+function dt(e) {
   const t = e.gradientStops.map((i) => `${q(i.color)} ${Math.round(i.position * 100)}%`).join(", ");
   switch (e.type) {
     case "GRADIENT_LINEAR": {
-      const [i, s] = e.gradientHandlePositions, n = s.x - i.x, o = s.y - i.y, r = Math.atan2(o, n);
+      const [i, o] = e.gradientHandlePositions, n = o.x - i.x, s = o.y - i.y, r = Math.atan2(s, n);
       return `linear-gradient(${(Math.round(r * 180 / Math.PI + 90) % 360 + 360) % 360}deg, ${t})`;
     }
     case "GRADIENT_RADIAL":
@@ -761,134 +761,134 @@ function lt(e) {
       return `linear-gradient(${t})`;
   }
 }
-function ct(e, t) {
-  const i = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), u = [], d = /* @__PURE__ */ new Map();
-  let x = 0, y = 0, v = 0;
-  function C(a) {
-    var m, L, z;
-    if (a.fills && Array.isArray(a.fills)) {
-      const h = dt(a, t);
-      for (const g of a.fills)
+function ft(e, t) {
+  const i = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), u = [], d = /* @__PURE__ */ new Map();
+  let x = 0, y = 0, b = 0;
+  function $(l) {
+    var m, P, z;
+    if (l.fills && Array.isArray(l.fills)) {
+      const h = gt(l, t);
+      for (const g of l.fills)
         if (g.visible !== !1)
           if (g.type === "SOLID") {
-            const A = { ...g.color };
-            g.opacity != null && g.opacity !== 1 && (A.a = A.a * g.opacity);
-            const N = q(A);
-            pe(i, N, a.id, "fill", h);
+            const S = { ...g.color };
+            g.opacity != null && g.opacity !== 1 && (S.a = S.a * g.opacity);
+            const N = q(S);
+            pe(i, N, l.id, "fill", h);
           } else if ((m = g.type) != null && m.startsWith("GRADIENT_")) {
-            const A = lt(g), N = A, P = s.get(N);
-            P ? (P.usageCount++, P.nodeIds.push(a.id)) : (v++, s.set(N, {
-              value: A,
-              name: h ?? `gradient-${v}`,
+            const S = dt(g), N = S, L = o.get(N);
+            L ? (L.usageCount++, L.nodeIds.push(l.id)) : (b++, o.set(N, {
+              value: S,
+              name: h ?? `gradient-${b}`,
               gradientType: g.type,
               usageCount: 1,
-              nodeIds: [a.id]
+              nodeIds: [l.id]
             }));
           } else g.type === "IMAGE" && u.push({
             imageRef: g.imageRef,
             scaleMode: g.scaleMode,
-            nodeId: a.id,
-            nodeName: a.name
+            nodeId: l.id,
+            nodeName: l.name
           });
     }
-    if (a.strokes && Array.isArray(a.strokes)) {
-      const h = ft(a, t);
-      for (const g of a.strokes)
+    if (l.strokes && Array.isArray(l.strokes)) {
+      const h = mt(l, t);
+      for (const g of l.strokes)
         if (g.visible !== !1 && g.type === "SOLID") {
-          const A = { ...g.color };
-          g.opacity != null && g.opacity !== 1 && (A.a = A.a * g.opacity);
-          const N = q(A);
-          pe(i, N, a.id, "stroke", h);
+          const S = { ...g.color };
+          g.opacity != null && g.opacity !== 1 && (S.a = S.a * g.opacity);
+          const N = q(S);
+          pe(i, N, l.id, "stroke", h);
         }
     }
-    if (a.effects && Array.isArray(a.effects)) {
-      const h = gt(a, t);
-      for (const g of a.effects)
+    if (l.effects && Array.isArray(l.effects)) {
+      const h = yt(l, t);
+      for (const g of l.effects)
         if (g.visible === !0 && (g.type === "DROP_SHADOW" || g.type === "INNER_SHADOW")) {
-          const A = g.type === "DROP_SHADOW" ? "drop-shadow" : "inner-shadow", N = q(g.color), P = ((L = g.offset) == null ? void 0 : L.x) ?? 0, H = ((z = g.offset) == null ? void 0 : z.y) ?? 0, O = g.radius ?? 0, _ = g.spread ?? 0, J = `${A}|${N}|${P}|${H}|${O}|${_}`, G = c.get(J);
-          G ? (G.usageCount++, G.nodeIds.push(a.id)) : (y++, c.set(J, {
-            type: A,
+          const S = g.type === "DROP_SHADOW" ? "drop-shadow" : "inner-shadow", N = q(g.color), L = ((P = g.offset) == null ? void 0 : P.x) ?? 0, H = ((z = g.offset) == null ? void 0 : z.y) ?? 0, O = g.radius ?? 0, W = g.spread ?? 0, J = `${S}|${N}|${L}|${H}|${O}|${W}`, G = c.get(J);
+          G ? (G.usageCount++, G.nodeIds.push(l.id)) : (y++, c.set(J, {
+            type: S,
             color: N,
-            offsetX: P,
+            offsetX: L,
             offsetY: H,
             blur: O,
-            spread: _,
+            spread: W,
             name: h ?? `shadow-${y}`,
             usageCount: 1,
-            nodeIds: [a.id]
-          })), pe(i, N, a.id, "shadow", null);
+            nodeIds: [l.id]
+          })), pe(i, N, l.id, "shadow", null);
         }
     }
-    if (a.type === "TEXT" && a.textStyle) {
-      const h = pt(a, t);
-      if ($e(n, a.textStyle, a.id, h), a.textStyleOverrides && typeof a.textStyleOverrides == "object")
-        for (const g of Object.values(a.textStyleOverrides))
-          $e(n, g, a.id, null);
+    if (l.type === "TEXT" && l.textStyle) {
+      const h = ht(l, t);
+      if (ke(n, l.textStyle, l.id, h), l.textStyleOverrides && typeof l.textStyleOverrides == "object")
+        for (const g of Object.values(l.textStyleOverrides))
+          ke(n, g, l.id, null);
     }
-    if (a.autoLayout) {
-      const h = a.autoLayout;
-      h.padding && (Z(o, h.padding.top, "padding-top"), Z(o, h.padding.right, "padding-right"), Z(o, h.padding.bottom, "padding-bottom"), Z(o, h.padding.left, "padding-left")), Z(o, h.gap, "gap"), h.rowGap != null && Z(o, h.rowGap, "row-gap");
+    if (l.autoLayout) {
+      const h = l.autoLayout;
+      h.padding && (Z(s, h.padding.top, "padding-top"), Z(s, h.padding.right, "padding-right"), Z(s, h.padding.bottom, "padding-bottom"), Z(s, h.padding.left, "padding-left")), Z(s, h.gap, "gap"), h.rowGap != null && Z(s, h.rowGap, "row-gap");
     }
-    if (a.cornerRadius != null || a.rectangleCornerRadii != null || ut(a)) {
-      const h = a.rectangleCornerRadii ? null : a.cornerRadius ?? null, g = a.rectangleCornerRadii ?? null;
-      let A = null, N = null;
-      if (a.strokes && Array.isArray(a.strokes)) {
-        const O = a.strokes.find(
-          (_) => _.visible !== !1 && _.type === "SOLID"
+    if (l.cornerRadius != null || l.rectangleCornerRadii != null || pt(l)) {
+      const h = l.rectangleCornerRadii ? null : l.cornerRadius ?? null, g = l.rectangleCornerRadii ?? null;
+      let S = null, N = null;
+      if (l.strokes && Array.isArray(l.strokes)) {
+        const O = l.strokes.find(
+          (W) => W.visible !== !1 && W.type === "SOLID"
         );
-        O && (A = q(O.color), N = a.strokeWeight ?? null);
+        O && (S = q(O.color), N = l.strokeWeight ?? null);
       }
-      const P = `${h}|${JSON.stringify(g)}|${A}|${N}`, H = r.get(P);
-      H ? (H.usageCount++, H.nodeIds.push(a.id)) : (x++, r.set(P, {
+      const L = `${h}|${JSON.stringify(g)}|${S}|${N}`, H = r.get(L);
+      H ? (H.usageCount++, H.nodeIds.push(l.id)) : (x++, r.set(L, {
         radius: h,
         cornerRadii: g,
-        strokeColor: A,
+        strokeColor: S,
         strokeWeight: N,
         name: `border-${x}`,
         usageCount: 1,
-        nodeIds: [a.id]
+        nodeIds: [l.id]
       }));
     }
-    if (a.componentRef) {
-      const h = a.componentRef, g = `${h.componentName}::${JSON.stringify(h.variantProperties ?? {})}`, A = d.get(g), N = a.repeatCount ?? 1;
-      if (A)
-        A.usageCount += N;
+    if (l.componentRef) {
+      const h = l.componentRef, g = `${h.componentName}::${JSON.stringify(h.variantProperties ?? {})}`, S = d.get(g), N = l.repeatCount ?? 1;
+      if (S)
+        S.usageCount += N;
       else {
-        const P = {
+        const L = {
           componentName: h.componentName,
           source: h.source,
           usageCount: N
         };
-        h.description && (P.description = h.description), h.variantProperties && (P.variantProperties = h.variantProperties), d.set(g, P);
+        h.description && (L.description = h.description), h.variantProperties && (L.variantProperties = h.variantProperties), d.set(g, L);
       }
     }
-    if (a.children)
-      for (const h of a.children)
-        C(h);
+    if (l.children)
+      for (const h of l.children)
+        $(h);
   }
-  for (const a of e)
-    C(a);
-  const b = Array.from(i.values()).map((a) => ({
-    value: a.value,
-    name: a.name,
-    usageCount: a.usageCount,
-    nodeIds: a.nodeIds,
-    source: Array.from(a.source)
+  for (const l of e)
+    $(l);
+  const v = Array.from(i.values()).map((l) => ({
+    value: l.value,
+    name: l.name,
+    usageCount: l.usageCount,
+    nodeIds: l.nodeIds,
+    source: Array.from(l.source)
   }));
-  b.sort((a, m) => m.usageCount - a.usageCount);
-  const E = Array.from(s.values());
-  E.sort((a, m) => m.usageCount - a.usageCount);
+  v.sort((l, m) => m.usageCount - l.usageCount);
+  const E = Array.from(o.values());
+  E.sort((l, m) => m.usageCount - l.usageCount);
   const B = Array.from(n.values());
-  B.sort((a, m) => m.usageCount - a.usageCount);
-  const U = Array.from(o.values());
-  U.sort((a, m) => a.value - m.value);
+  B.sort((l, m) => m.usageCount - l.usageCount);
+  const U = Array.from(s.values());
+  U.sort((l, m) => l.value - m.value);
   const M = Array.from(r.values());
-  M.sort((a, m) => m.usageCount - a.usageCount);
+  M.sort((l, m) => m.usageCount - l.usageCount);
   const w = Array.from(c.values());
-  w.sort((a, m) => m.usageCount - a.usageCount);
+  w.sort((l, m) => m.usageCount - l.usageCount);
   const k = Array.from(d.values());
-  return k.sort((a, m) => m.usageCount - a.usageCount), {
-    colors: b,
+  return k.sort((l, m) => m.usageCount - l.usageCount), {
+    colors: v,
     gradients: E,
     typography: B,
     spacing: U,
@@ -898,10 +898,10 @@ function ct(e, t) {
     components: k
   };
 }
-function pe(e, t, i, s, n) {
-  const o = e.get(t);
-  if (o)
-    o.usageCount++, o.nodeIds.includes(i) || o.nodeIds.push(i), o.source.add(s), n && o.name.startsWith("color-") && (o.name = n);
+function pe(e, t, i, o, n) {
+  const s = e.get(t);
+  if (s)
+    s.usageCount++, s.nodeIds.includes(i) || s.nodeIds.push(i), s.source.add(o), n && s.name.startsWith("color-") && (s.name = n);
   else {
     const r = `color-${t.replace(/^#/, "").replace(/[^a-f0-9]/gi, "")}`;
     e.set(t, {
@@ -909,23 +909,23 @@ function pe(e, t, i, s, n) {
       name: n ?? r,
       usageCount: 1,
       nodeIds: [i],
-      source: /* @__PURE__ */ new Set([s])
+      source: /* @__PURE__ */ new Set([o])
     });
   }
 }
-function $e(e, t, i, s) {
-  const n = t.fontFamily ?? "Unknown", o = t.fontSize ?? 16, r = t.fontWeight ?? 400, c = t.lineHeightPx ?? null, u = t.letterSpacing ?? 0, d = `${n}|${o}|${r}|${c}|${u}`, x = e.get(d);
+function ke(e, t, i, o) {
+  const n = t.fontFamily ?? "Unknown", s = t.fontSize ?? 16, r = t.fontWeight ?? 400, c = t.lineHeightPx ?? null, u = t.letterSpacing ?? 0, d = `${n}|${s}|${r}|${c}|${u}`, x = e.get(d);
   if (x)
-    x.usageCount++, x.nodeIds.includes(i) || x.nodeIds.push(i), s && x.name.startsWith(n) && (x.name = s);
+    x.usageCount++, x.nodeIds.includes(i) || x.nodeIds.push(i), o && x.name.startsWith(n) && (x.name = o);
   else {
-    const y = `${n}-${o}-${r}`;
+    const y = `${n}-${s}-${r}`;
     e.set(d, {
       fontFamily: n,
-      fontSize: o,
+      fontSize: s,
       fontWeight: r,
       lineHeight: c,
       letterSpacing: u,
-      name: s ?? y,
+      name: o ?? y,
       usageCount: 1,
       nodeIds: [i]
     });
@@ -933,166 +933,166 @@ function $e(e, t, i, s) {
 }
 function Z(e, t, i) {
   if (t === 0) return;
-  const s = e.get(t);
-  s ? (s.usageCount++, s.sources.includes(i) || s.sources.push(i)) : e.set(t, {
+  const o = e.get(t);
+  o ? (o.usageCount++, o.sources.includes(i) || o.sources.push(i)) : e.set(t, {
     value: t,
     usageCount: 1,
     sources: [i]
   });
 }
-function ut(e) {
+function pt(e) {
   return !e.strokes || !Array.isArray(e.strokes) ? !1 : e.strokes.some((t) => t.visible !== !1 && t.type === "SOLID");
 }
-function dt(e, t) {
-  var s, n;
-  const i = (s = e.styleRefs) == null ? void 0 : s.fill;
-  return i ? ((n = t[i]) == null ? void 0 : n.name) ?? null : null;
-}
-function ft(e, t) {
-  var s, n;
-  const i = (s = e.styleRefs) == null ? void 0 : s.stroke;
-  return i ? ((n = t[i]) == null ? void 0 : n.name) ?? null : null;
-}
-function pt(e, t) {
-  var s, n;
-  const i = (s = e.styleRefs) == null ? void 0 : s.text;
-  return i ? ((n = t[i]) == null ? void 0 : n.name) ?? null : null;
-}
 function gt(e, t) {
-  var s, n;
-  const i = (s = e.styleRefs) == null ? void 0 : s.effect;
+  var o, n;
+  const i = (o = e.styleRefs) == null ? void 0 : o.fill;
   return i ? ((n = t[i]) == null ? void 0 : n.name) ?? null : null;
 }
-const mt = 500, ht = 2e3;
-async function yt(e) {
-  const { shell: t, token: i, fileKey: s, nodeId: n, scope: o } = e;
+function mt(e, t) {
+  var o, n;
+  const i = (o = e.styleRefs) == null ? void 0 : o.stroke;
+  return i ? ((n = t[i]) == null ? void 0 : n.name) ?? null : null;
+}
+function ht(e, t) {
+  var o, n;
+  const i = (o = e.styleRefs) == null ? void 0 : o.text;
+  return i ? ((n = t[i]) == null ? void 0 : n.name) ?? null : null;
+}
+function yt(e, t) {
+  var o, n;
+  const i = (o = e.styleRefs) == null ? void 0 : o.effect;
+  return i ? ((n = t[i]) == null ? void 0 : n.name) ?? null : null;
+}
+const xt = 500, bt = 2e3;
+async function vt(e) {
+  const { shell: t, token: i, fileKey: o, nodeId: n, scope: s } = e;
   let r, c, u;
-  if (o === "node" || o === "frame") {
+  if (s === "node" || s === "frame") {
     if (!n)
       throw new Error(
-        `Cannot extract ${o}: no node ID found in the URL. Paste a Figma URL that includes a node-id, or switch to "Entire Page" scope.`
+        `Cannot extract ${s}: no node ID found in the URL. Paste a Figma URL that includes a node-id, or switch to "Entire Page" scope.`
       );
-    const C = await qe(t, i, s, n);
-    r = [C.rootNode], c = C.components, u = C.styles;
+    const $ = await Qe(t, i, o, n);
+    r = [$.rootNode], c = $.components, u = $.styles;
   } else {
-    const C = await Je(t, i, s), b = C.rootNodes[0];
-    r = (b == null ? void 0 : b.children) || [], c = C.components, u = C.styles;
+    const $ = await et(t, i, o), v = $.rootNodes[0];
+    r = (v == null ? void 0 : v.children) || [], c = $.components, u = $.styles;
   }
   let d = 0;
-  for (const C of r)
-    d += ye(C);
+  for (const $ of r)
+    d += ye($);
   let x;
-  d > mt && (x = {
+  d > xt && (x = {
     nodeCount: d,
     message: `This selection has ~${d} nodes. Large extractions may produce verbose output.`
   });
-  const y = at(r, c);
-  d > ht && (y.truncated = !0);
-  const v = ct(y.rootNodes, u);
-  return { extraction: y, tokens: v, fileKey: s, largeTreeWarning: x, rawRootNodes: r };
+  const y = ut(r, c);
+  d > bt && (y.truncated = !0);
+  const b = ft(y.rootNodes, u);
+  return { extraction: y, tokens: b, fileKey: o, largeTreeWarning: x, rawRootNodes: r };
 }
-async function xt(e, t) {
-  const i = `${t}/.shipstudio/assets`, s = await e.exec("rm", ["-rf", i]);
-  if (s.exit_code !== 0)
-    throw new Error(`Failed to clean assets directory: ${s.stderr}`);
+async function wt(e, t) {
+  const i = `${t}/.shipstudio/assets`, o = await e.exec("rm", ["-rf", i]);
+  if (o.exit_code !== 0)
+    throw new Error(`Failed to clean assets directory: ${o.stderr}`);
   const n = await e.exec("mkdir", ["-p", i]);
   if (n.exit_code !== 0)
     throw new Error(`Failed to create assets directory: ${n.stderr}`);
   return i;
 }
-async function ke(e, t, i) {
-  const s = ["-sS", "-o", i, "--max-time", "30", "-L", t];
-  if ((await e.exec("curl", s, { timeout: 35e3 })).exit_code === 0) return { success: !0 };
-  const o = await e.exec("curl", s, { timeout: 35e3 });
-  return o.exit_code === 0 ? { success: !0 } : {
+async function Ne(e, t, i) {
+  const o = ["-sS", "-o", i, "--max-time", "30", "-L", t];
+  if ((await e.exec("curl", o, { timeout: 35e3 })).exit_code === 0) return { success: !0 };
+  const s = await e.exec("curl", o, { timeout: 35e3 });
+  return s.exit_code === 0 ? { success: !0 } : {
     success: !1,
-    error: o.stderr || `curl exit code ${o.exit_code}`
+    error: s.stderr || `curl exit code ${s.exit_code}`
   };
 }
-function vt(e, t) {
+function Ct(e, t) {
   return e[t] ?? e[encodeURIComponent(t)] ?? e[decodeURIComponent(t)] ?? null;
 }
-async function bt(e) {
-  const { shell: t, token: i, fileKey: s, selectedNodeId: n, projectPath: o, manualAssets: r = [], onProgress: c } = e, u = [], d = r.filter((w) => w.status === "valid"), x = d.length + 1, y = await xt(t, o);
+async function $t(e) {
+  const { shell: t, token: i, fileKey: o, selectedNodeId: n, projectPath: s, manualAssets: r = [], onProgress: c } = e, u = [], d = r.filter((w) => w.status === "valid"), x = d.length + 1, y = await wt(t, s);
   c && c({ current: 0, total: x, currentAsset: "preview.png", phase: "preview" });
-  let v = `${y}/preview.png`;
+  let b = `${y}/preview.png`;
   try {
-    const k = (await fe(t, i, s, [n], "png", 2))[n];
+    const k = (await fe(t, i, o, [n], "png", 2))[n];
     if (k) {
-      const a = await ke(t, k, v);
-      a.success || (u.push(`Preview download failed: ${a.error}`), v = "");
+      const l = await Ne(t, k, b);
+      l.success || (u.push(`Preview download failed: ${l.error}`), b = "");
     } else
-      u.push("Figma could not render preview for this node"), v = "";
+      u.push("Figma could not render preview for this node"), b = "";
   } catch (w) {
-    u.push(`Preview render failed: ${(w == null ? void 0 : w.message) || "Unknown error"}`), v = "";
+    u.push(`Preview render failed: ${(w == null ? void 0 : w.message) || "Unknown error"}`), b = "";
   }
-  const C = d.filter((w) => w.format === "png"), b = d.filter((w) => w.format === "svg");
+  const $ = d.filter((w) => w.format === "png"), v = d.filter((w) => w.format === "svg");
   let E = {}, B = {};
-  if (C.length > 0)
+  if ($.length > 0)
     try {
-      E = await fe(t, i, s, C.map((w) => w.nodeId), "png", 2);
+      E = await fe(t, i, o, $.map((w) => w.nodeId), "png", 2);
     } catch (w) {
       u.push(`PNG batch render failed: ${(w == null ? void 0 : w.message) || "Unknown error"}`), E = {};
     }
-  if (b.length > 0)
+  if (v.length > 0)
     try {
-      B = await fe(t, i, s, b.map((w) => w.nodeId), "svg");
+      B = await fe(t, i, o, v.map((w) => w.nodeId), "svg");
     } catch (w) {
       u.push(`SVG batch render failed: ${(w == null ? void 0 : w.message) || "Unknown error"}`), B = {};
     }
-  const U = [], M = [...C, ...b];
+  const U = [], M = [...$, ...v];
   for (let w = 0; w < M.length; w++) {
-    const k = M[w], a = k.format === "png" ? E : B;
+    const k = M[w], l = k.format === "png" ? E : B;
     c && c({
       current: w + 1,
       total: x,
       currentAsset: k.filename,
       phase: "assets"
     });
-    const m = vt(a, k.nodeId);
+    const m = Ct(l, k.nodeId);
     if (!m) {
       u.push(`Failed to render ${k.filename}: Figma returned no image for node ${k.nodeId}`);
       continue;
     }
-    const L = `${y}/${k.filename}`, z = await ke(t, m, L);
+    const P = `${y}/${k.filename}`, z = await Ne(t, m, P);
     if (!z.success) {
       u.push(`Failed to download ${k.filename}: ${z.error}`);
       continue;
     }
     U.push({
       filename: k.filename,
-      path: L,
+      path: P,
       nodeId: k.nodeId,
       assetType: k.format === "svg" ? "icon" : "image"
     });
   }
   return {
     assetsDir: y,
-    previewPath: v,
+    previewPath: b,
     assets: U,
     warnings: u
   };
 }
-function wt(e) {
+function kt(e) {
   return e.toLowerCase().replace(/[/\s]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "") || "unnamed";
 }
-function Ct(e, t) {
+function Nt(e, t) {
   if (!t.includes(e))
     return e;
-  const i = e.lastIndexOf("."), s = i !== -1, n = s ? e.slice(0, i) : e, o = s ? e.slice(i) : "";
+  const i = e.lastIndexOf("."), o = i !== -1, n = o ? e.slice(0, i) : e, s = o ? e.slice(i) : "";
   let r = 2;
-  for (; t.includes(`${n}-${r}${o}`); )
+  for (; t.includes(`${n}-${r}${s}`); )
     r++;
-  return `${n}-${r}${o}`;
+  return `${n}-${r}${s}`;
 }
-const Ae = /^@s-/i;
-function $t(e) {
-  return Ae.test(e);
+const Re = /^@s-/i;
+function Tt(e) {
+  return Re.test(e);
 }
-function kt(e) {
-  return e.replace(Ae, "");
+function St(e) {
+  return e.replace(Re, "");
 }
-function Se(e) {
+function Ie(e) {
   if (e.fills && Array.isArray(e.fills)) {
     for (const t of e.fills)
       if (t.visible !== !1 && t.type === "IMAGE")
@@ -1100,18 +1100,18 @@ function Se(e) {
   }
   if (e.children && Array.isArray(e.children)) {
     for (const t of e.children)
-      if (Se(t)) return !0;
+      if (Ie(t)) return !0;
   }
   return !1;
 }
-function Ie(e, t, i, s, n, o) {
+function Ee(e, t, i, o, n, s) {
   if (e.visible !== !1) {
-    if ($t(e.name) && !s) {
-      const r = kt(e.name);
+    if (Tt(e.name) && !o) {
+      const r = St(e.name);
       if (!r.trim())
-        o.push(`Skipped layer "${e.name}": empty name after @S- prefix`);
+        s.push(`Skipped layer "${e.name}": empty name after @S- prefix`);
       else {
-        const c = Se(e) ? "png" : "svg";
+        const c = Ie(e) ? "png" : "svg";
         n.push({
           nodeId: e.id,
           nodeName: e.name,
@@ -1121,40 +1121,40 @@ function Ie(e, t, i, s, n, o) {
           parentPath: [...i]
         });
       }
-      s = !0;
+      o = !0;
     }
     if (e.children && Array.isArray(e.children)) {
       const r = [...i, e.name];
       for (const c of e.children)
-        Ie(c, t + 1, r, s, n, o);
+        Ee(c, t + 1, r, o, n, s);
     }
   }
 }
-function Nt(e) {
+function At(e) {
   const t = /* @__PURE__ */ new Map();
   for (const n of e) {
-    const r = `${wt(n.nameAfterPrefix)}.${n.format}`;
+    const r = `${kt(n.nameAfterPrefix)}.${n.format}`;
     t.has(r) || t.set(r, n);
   }
-  const i = [], s = [];
-  for (const [n, o] of t) {
-    const r = Ct(n, i);
-    i.push(r), s.push({
-      nodeId: o.nodeId,
-      nodeName: o.nodeName,
+  const i = [], o = [];
+  for (const [n, s] of t) {
+    const r = Nt(n, i);
+    i.push(r), o.push({
+      nodeId: s.nodeId,
+      nodeName: s.nodeName,
       filename: r,
-      format: o.format,
-      depth: o.depth,
-      parentPath: o.parentPath
+      format: s.format,
+      depth: s.depth,
+      parentPath: s.parentPath
     });
   }
-  return s;
+  return o;
 }
-function Tt(e) {
+function Rt(e) {
   const t = [], i = [];
-  return Ie(e, 0, [], !1, t, i), { assets: Nt(t), warnings: i };
+  return Ee(e, 0, [], !1, t, i), { assets: At(t), warnings: i };
 }
-function At(e) {
+function It(e) {
   return e.map((t) => ({
     nodeId: t.nodeId,
     nodeName: t.nodeName,
@@ -1163,48 +1163,48 @@ function At(e) {
     status: "valid"
   }));
 }
-const St = /^(Frame|Group|Rectangle|Ellipse|Vector|Section|Instance|Line|Star|Polygon)\s*\d*$/i;
-function It(e) {
+const Et = /^(Frame|Group|Rectangle|Ellipse|Vector|Section|Instance|Line|Star|Polygon)\s*\d*$/i;
+function Lt(e) {
   const t = /* @__PURE__ */ new Map();
   for (const i of e) {
-    const s = Ee(i.name) ? [] : [i.name];
-    Re(i, s, t);
+    const o = Pe(i.name) ? [] : [i.name];
+    Le(i, o, t);
   }
   return t;
 }
-function Re(e, t, i) {
-  if (i.set(e.id, Rt(t)), !!e.children)
-    for (const s of e.children) {
-      const n = Ee(s.name) ? t : [...t, s.name];
-      Re(s, n, i);
+function Le(e, t, i) {
+  if (i.set(e.id, Pt(t)), !!e.children)
+    for (const o of e.children) {
+      const n = Pe(o.name) ? t : [...t, o.name];
+      Le(o, n, i);
     }
 }
-function Rt(e) {
+function Pt(e) {
   return e.length === 0 ? "" : e.length <= 4 ? e.join(" > ") : `${e[0]} > ... > ${e[e.length - 2]} > ${e[e.length - 1]}`;
 }
-function Ee(e) {
-  return St.test(e);
+function Pe(e) {
+  return Et.test(e);
 }
-const Et = 12e3;
-function Pt(e) {
+const Mt = 12e3;
+function Ft(e) {
   return Math.ceil(e.length / 4);
 }
-function Lt(e) {
-  const { extraction: t, exportResult: i, projectPath: s } = e, n = t.tokens, o = /* @__PURE__ */ new Map();
-  for (const C of i.assets)
-    C.nodeId && o.set(C.nodeId, C.filename), C.parentInstanceId && !o.has(C.parentInstanceId) && o.set(C.parentInstanceId, C.filename);
-  const r = e.rootNodes ?? t.extraction.rootNodes, c = It(r), d = [
-    Mt(e),
-    Ft(e.mode, e.inspirationText),
-    Bt(i.previewPath, s),
-    Ut(t.extraction.rootNodes, o),
-    Dt(n),
-    Zt(n.components),
-    qt(i.previewPath, i.assets, s, c),
-    Jt()
+function Bt(e) {
+  const { extraction: t, exportResult: i, projectPath: o } = e, n = t.tokens, s = /* @__PURE__ */ new Map();
+  for (const $ of i.assets)
+    $.nodeId && s.set($.nodeId, $.filename), $.parentInstanceId && !s.has($.parentInstanceId) && s.set($.parentInstanceId, $.filename);
+  const r = e.rootNodes ?? t.extraction.rootNodes, c = Lt(r), d = [
+    Ut(e),
+    zt(e.mode, e.inspirationText),
+    Ht(i.previewPath, o),
+    Ot(t.extraction.rootNodes, s),
+    Gt(n),
+    Yt(n.components),
+    Qt(i.previewPath, i.assets, o, c),
+    en()
   ].filter(Boolean).join(`
 
-`), x = d.length, y = Pt(d), v = {
+`), x = d.length, y = Ft(d), b = {
     nodeCount: t.extraction.nodeCount,
     colorCount: n.colors.length,
     fontCount: n.typography.length,
@@ -1215,12 +1215,12 @@ function Lt(e) {
     markdown: d,
     charCount: x,
     estimatedTokens: y,
-    stats: v
+    stats: b
   };
 }
-function Mt(e) {
+function Ut(e) {
   var u;
-  const { extraction: t, fileName: i, figmaUrl: s } = e, n = ((u = t.extraction.rootNodes[0]) == null ? void 0 : u.name) ?? "Untitled", o = e.date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10), c = {
+  const { extraction: t, fileName: i, figmaUrl: o } = e, n = ((u = t.extraction.rootNodes[0]) == null ? void 0 : u.name) ?? "Untitled", s = e.date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10), c = {
     best: "Copy (Best results)",
     pixel: "Copy (Pixel for pixel)",
     inspiration: "Use as inspiration"
@@ -1230,67 +1230,67 @@ function Mt(e) {
     "",
     `**File:** ${i}`,
     `**Frame:** ${n}`,
-    `**Extracted:** ${o}`,
+    `**Extracted:** ${s}`,
     `**Mode:** ${c}`,
-    `**Figma URL:** ${s}`
+    `**Figma URL:** ${o}`
   ].join(`
 `);
 }
-function Ft(e, t) {
-  const i = e ?? "best", s = ["## How to Use This Brief", ""], n = "Read this brief fully. Study the preview image, layout tree, and design tokens before writing any code.", o = "The Assets section below is the complete manifest of provided files. Use only these assets -- every visual element NOT listed there should be built with CSS or HTML, not with image files. For any visual element visible in the preview that appears to be a photograph, logo, icon, or illustration but is NOT listed in the Assets section, create a placeholder box instead -- see the Placeholders section below for styling and naming conventions.", r = "Compare your result against the preview image and verify that layout, spacing, colors, and typography match the design tokens.";
-  return i === "best" ? s.push(
+function zt(e, t) {
+  const i = e ?? "best", o = ["## How to Use This Brief", ""], n = "Read this brief fully. Study the preview image, layout tree, and design tokens before writing any code.", s = "The Assets section below is the complete manifest of provided files. Use only these assets -- every visual element NOT listed there should be built with CSS or HTML, not with image files. For any visual element visible in the preview that appears to be a photograph, logo, icon, or illustration but is NOT listed in the Assets section, create a placeholder box instead -- see the Placeholders section below for styling and naming conventions.", r = "Compare your result against the preview image and verify that layout, spacing, colors, and typography match the design tokens.";
+  return i === "best" ? o.push(
     `**Before building:** ${n}`,
-    `**During building:** Reproduce the design faithfully using clean, production-ready code. Use semantic HTML, CSS flexbox/grid for layout, and relative units (rem, %, vh) where appropriate. Follow the spacing and color tokens exactly, but use responsive patterns so the result works across screen sizes. ${o}`,
+    `**During building:** Reproduce the design faithfully using clean, production-ready code. Use semantic HTML, CSS flexbox/grid for layout, and relative units (rem, %, vh) where appropriate. Follow the spacing and color tokens exactly, but use responsive patterns so the result works across screen sizes. ${s}`,
     `**After building:** ${r}`
-  ) : i === "pixel" ? s.push(
+  ) : i === "pixel" ? o.push(
     `**Before building:** ${n}`,
-    `**During building:** Match the Figma design as exactly as possible. Use the exact pixel values from the design tokens for font sizes, spacing, widths, and heights. Use fixed dimensions rather than responsive units. Prioritize visual accuracy over code flexibility. ${o}`,
+    `**During building:** Match the Figma design as exactly as possible. Use the exact pixel values from the design tokens for font sizes, spacing, widths, and heights. Use fixed dimensions rather than responsive units. Prioritize visual accuracy over code flexibility. ${s}`,
     `**After building:** ${r} Pay special attention to exact pixel dimensions, spacing values, and font sizes.`
-  ) : i === "inspiration" && (s.push(
+  ) : i === "inspiration" && (o.push(
     `**Before building:** ${n} Use this design as a reference for visual patterns, not a spec to copy exactly.`,
-    `**During building:** Adapt the design's style and layout patterns to fit the user's existing site and codebase. Use the color palette, typography choices, and layout structure as guidance, but adjust proportions, spacing, and components to work within the target context. ${o}`,
+    `**During building:** Adapt the design's style and layout patterns to fit the user's existing site and codebase. Use the color palette, typography choices, and layout structure as guidance, but adjust proportions, spacing, and components to work within the target context. ${s}`,
     "**After building:** Verify that your result captures the spirit of the design -- the visual hierarchy, color usage, and layout patterns -- while fitting naturally into the target codebase."
-  ), t && t.trim() && s.push("", "**What to take from this design:**", "", `> ${t.trim().split(`
+  ), t && t.trim() && o.push("", "**What to take from this design:**", "", `> ${t.trim().split(`
 `).join(`
-> `)}`)), s.join(`
+> `)}`)), o.join(`
 `);
 }
-function Bt(e, t) {
+function Ht(e, t) {
   return e ? `## Preview
 
 ![Preview](${me(e, t)})` : "";
 }
-function Ut(e, t) {
+function Ot(e, t) {
   const i = [];
-  for (const s of e)
-    Pe(s, 0, i, t);
+  for (const o of e)
+    Me(o, 0, i, t);
   return i.length === 0 ? "" : `## Layout Tree
 
 ` + i.join(`
 `);
 }
-function Pe(e, t, i, s) {
-  if (e.visible !== !1 && (i.push(Ht(e, t, s)), !e.componentRef && e.children))
+function Me(e, t, i, o) {
+  if (e.visible !== !1 && (i.push(_t(e, t, o)), !e.componentRef && e.children))
     for (const n of e.children)
-      Pe(n, t + 1, i, s);
+      Me(n, t + 1, i, o);
 }
-function zt(e) {
+function Wt(e) {
   return e.charAt(0).toUpperCase() + e.slice(1).toLowerCase();
 }
-function Le(e) {
+function Fe(e) {
   return /Property\s+\d+=/i.test(e) ? e.split(",").map((t) => {
     const i = t.indexOf("=");
     if (i !== -1) {
-      const s = t.slice(0, i).trim(), n = t.slice(i + 1).trim();
-      if (/^Property\s+\d+$/i.test(s)) return n;
+      const o = t.slice(0, i).trim(), n = t.slice(i + 1).trim();
+      if (/^Property\s+\d+$/i.test(o)) return n;
     }
     return t.trim();
   }).join(", ") : e;
 }
-function Ht(e, t, i) {
-  const s = "  ".repeat(t), n = [];
+function _t(e, t, i) {
+  const o = "  ".repeat(t), n = [];
   if (e.componentRef) {
-    let c = `Instance "${Le(e.componentRef.componentName)}"`;
+    let c = `Instance "${Fe(e.componentRef.componentName)}"`;
     if (e.repeatCount && e.repeatCount > 1 && (c += ` x${e.repeatCount} (repeated)`), e.componentRef.variantProperties && Object.keys(e.componentRef.variantProperties).length > 0) {
       const d = Object.entries(e.componentRef.variantProperties).map(([x, y]) => /^Property\s+\d+$/i.test(x) ? String(y) : `${x}: ${y}`).join(", ");
       c += ` (${d})`;
@@ -1302,55 +1302,55 @@ function Ht(e, t, i) {
     let u = "";
     e.textStyle && (u = ` (${e.textStyle.fontFamily} ${e.textStyle.fontSize}/${e.textStyle.fontWeight})`), n.push(`Text '${c}'${u}`);
   } else
-    n.push(`${zt(e.type)} '${e.name}'`);
+    n.push(`${Wt(e.type)} '${e.name}'`);
   if (e.autoLayout) {
     const r = e.autoLayout, c = [r.flexDirection];
     r.gap > 0 && c.push(`gap: ${r.gap}`), r.justifyContent !== "flex-start" && c.push(`justify: ${r.justifyContent}`), r.alignItems !== "flex-start" && c.push(`align: ${r.alignItems}`);
-    const u = _t(r.padding);
+    const u = jt(r.padding);
     u && c.push(u), r.flexWrap === "wrap" && c.push("wrap"), n.push(`(${c.join(", ")})`);
   }
   e.width != null && e.height != null && n.push(`${Math.round(e.width)}x${Math.round(e.height)}`), e.positioning === "ABSOLUTE" && (e.absoluteOffset ? n.push(`[absolute] top:${e.absoluteOffset.top} left:${e.absoluteOffset.left}`) : n.push("[absolute]"));
-  const o = Ot(e);
-  return o && n.push(o), `${s}${n.join(" ")}`;
+  const s = Dt(e);
+  return s && n.push(s), `${o}${n.join(" ")}`;
 }
 function ge(e) {
   if (!e) return null;
   for (const t of e)
     if (t.visible !== !1 && t.type === "SOLID" && t.color) {
-      const i = t.opacity ?? 1, s = { ...t.color, a: (t.color.a ?? 1) * i };
-      return q(s);
+      const i = t.opacity ?? 1, o = { ...t.color, a: (t.color.a ?? 1) * i };
+      return q(o);
     }
   return null;
 }
-function Ot(e) {
+function Dt(e) {
   var i;
   const t = [];
   if (e.widthMode === "FILL" && t.push("w:fill"), e.heightMode === "FILL" && t.push("h:fill"), e.widthMode === "HUG" && t.push("w:hug"), e.heightMode === "HUG" && t.push("h:hug"), e.type !== "TEXT") {
-    const s = ge(e.fills);
-    s && s !== "#ffffff" && s !== "#000000" ? t.push(`bg:${s}`) : s && t.push(`bg:${s}`);
+    const o = ge(e.fills);
+    o && o !== "#ffffff" && o !== "#000000" ? t.push(`bg:${o}`) : o && t.push(`bg:${o}`);
   }
   if (e.type === "TEXT") {
-    const s = ge(e.fills);
-    s && t.push(`color:${s}`);
+    const o = ge(e.fills);
+    o && t.push(`color:${o}`);
   }
   if (e.cornerRadius && e.cornerRadius > 0 && t.push(`r:${Math.round(e.cornerRadius)}`), e.strokeWeight && e.strokeWeight > 0 && ((i = e.strokes) != null && i.length)) {
-    const s = ge(e.strokes);
-    s && t.push(`border:${e.strokeWeight}px ${s}`);
+    const o = ge(e.strokes);
+    o && t.push(`border:${e.strokeWeight}px ${o}`);
   }
   return e.layoutGrow === 1 && t.push("flex-grow:1"), e.layoutAlign === "STRETCH" && t.push("align-self:stretch"), e.opacity != null && e.opacity < 1 && t.push(`opacity:${e.opacity.toFixed(2)}`), t.length === 0 ? null : `{${t.join(" ")}}`;
 }
-function _t(e) {
+function jt(e) {
   return e.top === 0 && e.right === 0 && e.bottom === 0 && e.left === 0 ? null : e.top === e.bottom && e.left === e.right && e.top === e.left ? `padding: ${e.top}` : e.top === e.bottom && e.left === e.right ? `padding: ${e.top} ${e.left}` : `padding: ${e.top} ${e.right} ${e.bottom} ${e.left}`;
 }
-function Dt(e) {
+function Gt(e) {
   const t = [];
-  return e.colors.length > 0 && t.push(Wt(e.colors)), e.gradients.length > 0 && t.push(jt(e.gradients)), e.typography.length > 0 && t.push(Gt(e.typography)), e.spacing.length > 0 && t.push(Vt(e.spacing)), e.borders.length > 0 && t.push(Kt(e.borders)), e.shadows.length > 0 && t.push(Xt(e.shadows)), t.length === 0 ? "" : `## Design Tokens
+  return e.colors.length > 0 && t.push(Vt(e.colors)), e.gradients.length > 0 && t.push(Kt(e.gradients)), e.typography.length > 0 && t.push(Xt(e.typography)), e.spacing.length > 0 && t.push(Zt(e.spacing)), e.borders.length > 0 && t.push(qt(e.borders)), e.shadows.length > 0 && t.push(Jt(e.shadows)), t.length === 0 ? "" : `## Design Tokens
 
 ` + t.join(`
 
 `);
 }
-function Wt(e) {
+function Vt(e) {
   return [
     "### Colors",
     "",
@@ -1360,7 +1360,7 @@ function Wt(e) {
   ].join(`
 `);
 }
-function jt(e) {
+function Kt(e) {
   return [
     "### Gradients",
     "",
@@ -1370,20 +1370,20 @@ function jt(e) {
   ].join(`
 `);
 }
-function Gt(e) {
+function Xt(e) {
   return [
     "### Typography",
     "",
     "| Name | Font | Size | Weight | Line Height |",
     "|------|------|------|--------|-------------|",
     ...e.map((i) => {
-      const s = i.lineHeight !== null ? `${i.lineHeight}px` : "auto";
-      return `| ${i.name} | ${i.fontFamily} | ${i.fontSize}px | ${i.fontWeight} | ${s} |`;
+      const o = i.lineHeight !== null ? `${i.lineHeight}px` : "auto";
+      return `| ${i.name} | ${i.fontFamily} | ${i.fontSize}px | ${i.fontWeight} | ${o} |`;
     })
   ].join(`
 `);
 }
-function Vt(e) {
+function Zt(e) {
   return [
     "### Spacing",
     "",
@@ -1393,58 +1393,58 @@ function Vt(e) {
   ].join(`
 `);
 }
-function Kt(e) {
+function qt(e) {
   return [
     "### Borders",
     "",
     "| Name | Radius | Stroke | Usage |",
     "|------|--------|--------|-------|",
     ...e.map((i) => {
-      const s = i.radius !== null ? `${i.radius}px` : i.cornerRadii ? i.cornerRadii.map((o) => `${o}px`).join(" ") : "--", n = i.strokeWeight !== null && i.strokeColor !== null ? `${i.strokeWeight}px ${i.strokeColor}` : "--";
-      return `| ${i.name} | ${s} | ${n} | ${i.usageCount} |`;
+      const o = i.radius !== null ? `${i.radius}px` : i.cornerRadii ? i.cornerRadii.map((s) => `${s}px`).join(" ") : "--", n = i.strokeWeight !== null && i.strokeColor !== null ? `${i.strokeWeight}px ${i.strokeColor}` : "--";
+      return `| ${i.name} | ${o} | ${n} | ${i.usageCount} |`;
     })
   ].join(`
 `);
 }
-function Xt(e) {
+function Jt(e) {
   return [
     "### Shadows",
     "",
     "| Name | Type | Value | Usage |",
     "|------|------|-------|-------|",
     ...e.map((i) => {
-      const s = `${i.offsetX}px ${i.offsetY}px ${i.blur}px ${i.spread}px ${i.color}`;
-      return `| ${i.name} | ${i.type} | ${s} | ${i.usageCount} |`;
+      const o = `${i.offsetX}px ${i.offsetY}px ${i.blur}px ${i.spread}px ${i.color}`;
+      return `| ${i.name} | ${i.type} | ${o} | ${i.usageCount} |`;
     })
   ].join(`
 `);
 }
-function Zt(e) {
+function Yt(e) {
   return e.length === 0 ? "" : [
     "## Components",
     "",
     "| Component | Source | Variants | Usage |",
     "|-----------|--------|----------|-------|",
     ...e.map((i) => {
-      const s = Le(i.componentName), n = i.variantProperties && Object.keys(i.variantProperties).length > 0 ? Object.entries(i.variantProperties).map(([o, r]) => /^Property\s+\d+$/i.test(o) ? String(r) : `${o}: ${r}`).join(", ") : "--";
-      return `| ${s} | ${i.source} | ${n} | ${i.usageCount} |`;
+      const o = Fe(i.componentName), n = i.variantProperties && Object.keys(i.variantProperties).length > 0 ? Object.entries(i.variantProperties).map(([s, r]) => /^Property\s+\d+$/i.test(s) ? String(r) : `${s}: ${r}`).join(", ") : "--";
+      return `| ${o} | ${i.source} | ${n} | ${i.usageCount} |`;
     })
   ].join(`
 `);
 }
-function qt(e, t, i, s) {
+function Qt(e, t, i, o) {
   if (!e && t.length === 0) return "";
   const n = [];
   if (e) {
-    const o = me(e, i), r = o.split("/").pop() ?? o;
-    n.push(`| ${r} | Preview | Full-page preview screenshot | ${o} |`);
+    const s = me(e, i), r = s.split("/").pop() ?? s;
+    n.push(`| ${r} | Preview | Full-page preview screenshot | ${s} |`);
   }
-  for (const o of t) {
-    const r = me(o.path, i), c = Qt(o.assetType);
+  for (const s of t) {
+    const r = me(s.path, i), c = nn(s.assetType);
     let u = "--";
-    o.nodeId && (u = s.get(o.nodeId) || o.parentInstanceId && s.get(o.parentInstanceId) || "--");
-    const d = Yt(o.assetType, u);
-    n.push(`| ${o.filename} | ${c} | ${d} | ${r} |`);
+    s.nodeId && (u = o.get(s.nodeId) || s.parentInstanceId && o.get(s.parentInstanceId) || "--");
+    const d = tn(s.assetType, u);
+    n.push(`| ${s.filename} | ${c} | ${d} | ${r} |`);
   }
   return [
     "## Assets",
@@ -1455,7 +1455,7 @@ function qt(e, t, i, s) {
   ].join(`
 `);
 }
-function Jt() {
+function en() {
   return [
     "## Placeholders",
     "",
@@ -1493,7 +1493,7 @@ function Jt() {
   ].join(`
 `);
 }
-function Yt(e, t) {
+function tn(e, t) {
   const i = t !== "--" && t !== "";
   switch (e) {
     case "icon":
@@ -1504,7 +1504,7 @@ function Yt(e, t) {
       return i ? `Asset in ${t}` : "Asset";
   }
 }
-function Qt(e) {
+function nn(e) {
   switch (e) {
     case "icon":
       return "Icon";
@@ -1517,41 +1517,41 @@ function Qt(e) {
 function me(e, t) {
   return e.startsWith(t + "/") ? e.slice(t.length + 1) : e;
 }
-function Me({ nodes: e, depth: t = 0, maxDepth: i = 2 }) {
-  return t >= i ? null : /* @__PURE__ */ l("div", { style: { paddingLeft: t > 0 ? "12px" : "0", borderLeft: t > 0 ? "1px solid var(--border)" : "none" }, children: e.map((s, n) => {
-    const o = s.componentRef ? `<${s.componentRef.componentName}${s.repeatCount ? ` x${s.repeatCount}` : ""}>` : s.type === "TEXT" ? `"${(s.textContent ?? "").slice(0, 30)}${(s.textContent ?? "").length > 30 ? "..." : ""}"` : s.name, r = s.autoLayout ? `${s.autoLayout.flexDirection}` : s.type === "INSTANCE" ? "component" : s.type.toLowerCase();
+function Be({ nodes: e, depth: t = 0, maxDepth: i = 2 }) {
+  return t >= i ? null : /* @__PURE__ */ a("div", { style: { paddingLeft: t > 0 ? "12px" : "0", borderLeft: t > 0 ? "1px solid var(--border)" : "none" }, children: e.map((o, n) => {
+    const s = o.componentRef ? `<${o.componentRef.componentName}${o.repeatCount ? ` x${o.repeatCount}` : ""}>` : o.type === "TEXT" ? `"${(o.textContent ?? "").slice(0, 30)}${(o.textContent ?? "").length > 30 ? "..." : ""}"` : o.name, r = o.autoLayout ? `${o.autoLayout.flexDirection}` : o.type === "INSTANCE" ? "component" : o.type.toLowerCase();
     return /* @__PURE__ */ f("div", { style: { fontSize: "11px", lineHeight: 1.7 }, children: [
       /* @__PURE__ */ f("span", { style: { color: "var(--text-muted)" }, children: [
         r,
         " "
       ] }),
-      /* @__PURE__ */ l("span", { style: { color: s.visible === !1 ? "var(--text-muted)" : "var(--text-primary)" }, children: o }),
-      s.visible === !1 && /* @__PURE__ */ l("span", { style: { color: "var(--text-muted)", marginLeft: "4px" }, children: "(hidden)" }),
-      s.children && s.children.length > 0 && t + 1 < i && /* @__PURE__ */ l(Me, { nodes: s.children, depth: t + 1, maxDepth: i }),
-      s.children && s.children.length > 0 && t + 1 >= i && /* @__PURE__ */ f("span", { style: { color: "var(--text-muted)", fontSize: "11px", marginLeft: "12px" }, children: [
+      /* @__PURE__ */ a("span", { style: { color: o.visible === !1 ? "var(--text-muted)" : "var(--text-primary)" }, children: s }),
+      o.visible === !1 && /* @__PURE__ */ a("span", { style: { color: "var(--text-muted)", marginLeft: "4px" }, children: "(hidden)" }),
+      o.children && o.children.length > 0 && t + 1 < i && /* @__PURE__ */ a(Be, { nodes: o.children, depth: t + 1, maxDepth: i }),
+      o.children && o.children.length > 0 && t + 1 >= i && /* @__PURE__ */ f("span", { style: { color: "var(--text-muted)", fontSize: "11px", marginLeft: "12px" }, children: [
         "(",
-        s.children.length,
+        o.children.length,
         " children)"
       ] })
-    ] }, s.id || n);
+    ] }, o.id || n);
   }) });
 }
-function en({
+function on({
   briefResult: e,
   extractionResult: t,
   extractionStats: i,
-  exportResult: s,
+  exportResult: o,
   onCopyBrief: n,
-  onNewBrief: o
+  onNewBrief: s
 }) {
-  const [r, c] = $(!1), u = Math.round(e.stats.estimatedTokens / 1e3), d = e.stats.estimatedTokens > Et;
+  const [r, c] = C(!1), u = Math.round(e.stats.estimatedTokens / 1e3), d = e.stats.estimatedTokens > Mt;
   return /* @__PURE__ */ f("div", { children: [
     /* @__PURE__ */ f("div", { className: "figma-plugin-results-success", children: [
-      /* @__PURE__ */ l("span", { className: "figma-plugin-results-success-icon", children: "✓" }),
-      /* @__PURE__ */ l("span", { style: { fontWeight: 600, fontSize: "13px" }, children: "Brief ready" }),
-      t.truncated && /* @__PURE__ */ l("span", { style: { color: "#f59e0b", fontSize: "11px" }, children: "(truncated)" })
+      /* @__PURE__ */ a("span", { className: "figma-plugin-results-success-icon", children: "✓" }),
+      /* @__PURE__ */ a("span", { style: { fontWeight: 600, fontSize: "13px" }, children: "Brief ready" }),
+      t.truncated && /* @__PURE__ */ a("span", { style: { color: "#f59e0b", fontSize: "11px" }, children: "(truncated)" })
     ] }),
-    /* @__PURE__ */ l(
+    /* @__PURE__ */ a(
       "button",
       {
         className: "btn-primary",
@@ -1560,8 +1560,8 @@ function en({
         children: "Copy Brief to Clipboard"
       }
     ),
-    /* @__PURE__ */ l("p", { className: "figma-plugin-results-guidance", children: "Paste into Claude Code (or your AI coding agent) to start building." }),
-    /* @__PURE__ */ l("p", { className: "figma-plugin-results-refinement", children: "The build may not be perfect on the first try -- refine iteratively by giving your agent feedback on what to adjust." }),
+    /* @__PURE__ */ a("p", { className: "figma-plugin-results-guidance", children: "Paste into Claude Code (or your AI coding agent) to start building." }),
+    /* @__PURE__ */ a("p", { className: "figma-plugin-results-refinement", children: "The build may not be perfect on the first try -- refine iteratively by giving your agent feedback on what to adjust." }),
     /* @__PURE__ */ f("div", { className: "figma-plugin-results-stats", children: [
       e.stats.nodeCount,
       " layers ·",
@@ -1575,12 +1575,12 @@ function en({
         "K tokens"
       ] })
     ] }),
-    e.stats.assetCount === 0 && /* @__PURE__ */ l("div", { style: { color: "var(--text-muted)", fontSize: "11px", marginBottom: "8px" }, children: "No assets exported -- Claude Code will create placeholders for visual elements" }),
+    e.stats.assetCount === 0 && /* @__PURE__ */ a("div", { style: { color: "var(--text-muted)", fontSize: "11px", marginBottom: "8px" }, children: "No assets exported -- Claude Code will create placeholders for visual elements" }),
     d && /* @__PURE__ */ f("div", { className: "figma-plugin-warning", style: { marginBottom: "8px" }, children: [
-      /* @__PURE__ */ l("strong", { children: "This brief is large" }),
-      /* @__PURE__ */ l("p", { children: "Consider extracting a smaller section for better results." })
+      /* @__PURE__ */ a("strong", { children: "This brief is large" }),
+      /* @__PURE__ */ a("p", { children: "Consider extracting a smaller section for better results." })
     ] }),
-    /* @__PURE__ */ l(
+    /* @__PURE__ */ a(
       "button",
       {
         className: "figma-plugin-results-details-toggle",
@@ -1591,20 +1591,20 @@ function en({
     r && /* @__PURE__ */ f("div", { className: "figma-plugin-results-details", children: [
       /* @__PURE__ */ f("h4", { children: [
         "Assets (",
-        s.assets.length,
+        o.assets.length,
         ")"
       ] }),
-      s.assets.length > 0 ? /* @__PURE__ */ l("ul", { className: "figma-plugin-results-asset-list", children: s.assets.map((x, y) => /* @__PURE__ */ f("li", { children: [
+      o.assets.length > 0 ? /* @__PURE__ */ a("ul", { className: "figma-plugin-results-asset-list", children: o.assets.map((x, y) => /* @__PURE__ */ f("li", { children: [
         x.filename,
         x.assetType && /* @__PURE__ */ f("span", { style: { color: "var(--text-muted)", marginLeft: "4px" }, children: [
           "(",
           x.assetType,
           ")"
         ] })
-      ] }, y)) }) : /* @__PURE__ */ l("div", { style: { fontSize: "11px", color: "var(--text-muted)", marginBottom: "8px" }, children: "No assets exported" }),
-      /* @__PURE__ */ l("h4", { children: "Layout tree" }),
-      /* @__PURE__ */ l("div", { style: { maxHeight: "200px", overflowY: "auto" }, children: /* @__PURE__ */ l(Me, { nodes: t.rootNodes, maxDepth: 3 }) }),
-      /* @__PURE__ */ l("h4", { children: "Design tokens" }),
+      ] }, y)) }) : /* @__PURE__ */ a("div", { style: { fontSize: "11px", color: "var(--text-muted)", marginBottom: "8px" }, children: "No assets exported" }),
+      /* @__PURE__ */ a("h4", { children: "Layout tree" }),
+      /* @__PURE__ */ a("div", { style: { maxHeight: "200px", overflowY: "auto" }, children: /* @__PURE__ */ a(Be, { nodes: t.rootNodes, maxDepth: 3 }) }),
+      /* @__PURE__ */ a("h4", { children: "Design tokens" }),
       /* @__PURE__ */ f("div", { style: { fontSize: "11px", color: "var(--text-secondary)" }, children: [
         e.stats.colorCount,
         " colors, ",
@@ -1617,35 +1617,35 @@ function en({
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ l("div", { className: "figma-plugin-results-footer", children: "Also saved to .shipstudio/assets/brief.md" }),
-    /* @__PURE__ */ l(
+    /* @__PURE__ */ a("div", { className: "figma-plugin-results-footer", children: "Also saved to .shipstudio/assets/brief.md" }),
+    /* @__PURE__ */ a(
       "button",
       {
         className: "btn-secondary",
-        onClick: o,
+        onClick: s,
         style: { width: "100%", marginTop: "8px" },
         children: "Get New Brief"
       }
     )
   ] });
 }
-async function tn(e, t, i) {
-  const s = `${t}/brief.md`, n = btoa(unescape(encodeURIComponent(i))), o = await e.exec("bash", [
+async function sn(e, t, i) {
+  const o = `${t}/brief.md`, n = btoa(unescape(encodeURIComponent(i))), s = await e.exec("bash", [
     "-c",
-    `echo '${n}' | base64 -d > '${s}'`
+    `echo '${n}' | base64 -d > '${o}'`
   ]);
-  if (o.exit_code !== 0)
-    throw new Error(`Failed to save brief: ${o.stderr}`);
+  if (s.exit_code !== 0)
+    throw new Error(`Failed to save brief: ${s.stderr}`);
 }
-async function nn(e, t) {
-  const i = btoa(unescape(encodeURIComponent(t))), s = await e.exec("bash", [
+async function Te(e, t) {
+  const i = btoa(unescape(encodeURIComponent(t))), o = await e.exec("bash", [
     "-c",
     `echo '${i}' | base64 -d | pbcopy`
   ]);
-  if (s.exit_code !== 0)
-    throw new Error(`Clipboard copy failed: ${s.stderr}`);
+  if (o.exit_code !== 0)
+    throw new Error(`Clipboard copy failed: ${o.stderr}`);
 }
-const sn = [
+const rn = [
   {
     id: "best",
     name: "Copy (Best results)",
@@ -1662,46 +1662,46 @@ const sn = [
     description: "Adapt the design patterns and style to fit your existing site"
   }
 ];
-function on(e) {
+function an(e) {
   const t = { frames: 0, components: [], textNodes: 0, hiddenNodes: 0 }, i = /* @__PURE__ */ new Map();
-  function s(n) {
+  function o(n) {
     if (n.visible || t.hiddenNodes++, (n.type === "FRAME" || n.type === "GROUP" || n.type === "SECTION") && t.frames++, n.type === "TEXT" && t.textNodes++, n.componentRef) {
-      const o = n.componentRef.componentName, r = n.repeatCount ?? 1;
-      i.set(o, (i.get(o) ?? 0) + r);
+      const s = n.componentRef.componentName, r = n.repeatCount ?? 1;
+      i.set(s, (i.get(s) ?? 0) + r);
     }
-    n.children && n.children.forEach(s);
+    n.children && n.children.forEach(o);
   }
-  return e.forEach(s), t.components = Array.from(i.entries()).map(([n, o]) => ({ name: n, count: o })).sort((n, o) => o.count - n.count), t;
+  return e.forEach(o), t.components = Array.from(i.entries()).map(([n, s]) => ({ name: n, count: s })).sort((n, s) => s.count - n.count), t;
 }
-function rn({ token: e }) {
-  const t = oe(), i = (t == null ? void 0 : t.shell) ?? null, s = (t == null ? void 0 : t.actions) ?? null, [n, o] = $(""), [r, c] = $(null), u = r != null && r.nodeId ? "node" : "page", [d, x] = $(null), [y, v] = $(!1), [C, b] = $(null), [E, B] = $(!1), [U, M] = $(null), [w, k] = $(null), [a, m] = $(!1), [L, z] = $(!1), [h, g] = $(null), [A, N] = $(null), [P, H] = $(!1), [O, _] = $(null), [J, G] = $(null), [xe, V] = $(!1), [Fe, re] = $(0), [K, ve] = $("best"), [ae, Be] = $(""), be = Ge(
-    () => U ? on(U.rootNodes) : null,
+function ln({ token: e }) {
+  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, o = (t == null ? void 0 : t.actions) ?? null, [n, s] = C(""), [r, c] = C(null), u = r != null && r.nodeId ? "node" : "page", [d, x] = C(null), [y, b] = C(!1), [$, v] = C(null), [E, B] = C(!1), [U, M] = C(null), [w, k] = C(null), [l, m] = C(!1), [P, z] = C(!1), [h, g] = C(null), [S, N] = C(null), [L, H] = C(!1), [O, W] = C(null), [J, G] = C(null), [xe, V] = C(!1), [Ue, re] = C(0), [be, ze] = C(!1), [K, ve] = C("best"), [ae, He] = C(""), we = Xe(
+    () => U ? an(U.rootNodes) : null,
     [U]
-  ), D = Q(null), X = Q(null), W = Q(i);
-  W.current = i;
-  const le = Q(0), te = Q(0), ne = R(async (p, T) => {
-    var I, we;
-    if (!W.current || !r) return;
+  ), D = Q(null), X = Q(null), _ = Q(i);
+  _.current = i;
+  const le = Q(0), te = Q(0), ne = I(async (p, T) => {
+    var R, Ce;
+    if (!_.current || !r) return;
     z(!0), g(null), N(null);
-    const S = T ? At(T.assets) : [];
+    const A = T ? It(T.assets) : [];
     try {
-      const j = await bt({
-        shell: W.current,
+      const j = await $t({
+        shell: _.current,
         token: e,
         fileKey: p.fileKey,
-        selectedNodeId: r.nodeId || ((I = p.extraction.rootNodes[0]) == null ? void 0 : I.id) || "0:0",
-        projectPath: ((we = t == null ? void 0 : t.project) == null ? void 0 : we.path) ?? ".",
-        manualAssets: S,
+        selectedNodeId: r.nodeId || ((R = p.extraction.rootNodes[0]) == null ? void 0 : R.id) || "0:0",
+        projectPath: ((Ce = t == null ? void 0 : t.project) == null ? void 0 : Ce.path) ?? ".",
+        manualAssets: A,
         onProgress: g
       });
-      if (T != null && T.warnings.length && j.warnings.push(...T.warnings), N(j), s) {
+      if (T != null && T.warnings.length && j.warnings.push(...T.warnings), N(j), o) {
         const Y = j.assets.length, F = j.warnings.length, ue = `Exported ${Y} asset${Y !== 1 ? "s" : ""}${F > 0 ? ` (${F} warning${F !== 1 ? "s" : ""})` : ""}`;
-        s.showToast(ue, F > 0 ? "info" : "success");
+        o.showToast(ue, F > 0 ? "info" : "success");
       }
-      H(!0), _(null), G(null), setTimeout(() => {
+      H(!0), W(null), G(null), setTimeout(() => {
         var Y;
         try {
-          const F = Lt({
+          const F = Bt({
             extraction: p,
             exportResult: j,
             projectPath: ((Y = t == null ? void 0 : t.project) == null ? void 0 : Y.path) ?? ".",
@@ -1711,9 +1711,9 @@ function rn({ token: e }) {
             mode: K,
             inspirationText: K === "inspiration" ? ae : void 0
           });
-          _(F), H(!1), W.current && tn(W.current, j.assetsDir, F.markdown).catch((ue) => {
+          W(F), H(!1), _.current && sn(_.current, j.assetsDir, F.markdown).catch((ue) => {
             console.error("Brief save failed:", ue);
-          }), s && s.showToast(
+          }), o && o.showToast(
             `Brief ready: ${F.stats.nodeCount} layers, ${F.stats.assetCount} assets, ~${Math.round(F.stats.estimatedTokens / 1e3)}K tokens`,
             "success"
           );
@@ -1722,55 +1722,55 @@ function rn({ token: e }) {
         }
       }, 0);
     } catch (j) {
-      s && s.showToast(`Asset export failed: ${(j == null ? void 0 : j.message) || "Unknown error"}`, "error");
+      o && o.showToast(`Asset export failed: ${(j == null ? void 0 : j.message) || "Unknown error"}`, "error");
     } finally {
       z(!1), g(null);
     }
-  }, [e, r, t, s, d, n, K, ae]), ie = R(async (p) => {
-    const T = p.rawRootNodes.length === 1 ? p.rawRootNodes[0] : { name: "__root__", children: p.rawRootNodes, visible: !0 }, S = Tt(T);
-    if (X.current = S, S.assets.length === 0) {
+  }, [e, r, t, o, d, n, K, ae]), ie = I(async (p) => {
+    const T = p.rawRootNodes.length === 1 ? p.rawRootNodes[0] : { name: "__root__", children: p.rawRootNodes, visible: !0 }, A = Rt(T);
+    if (X.current = A, A.assets.length === 0) {
       D.current = p, V(!0), B(!1);
       return;
     }
-    M(p.extraction), s && s.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, S);
-  }, [s, ne]), Ue = R(
+    M(p.extraction), o && o.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, A);
+  }, [o, ne]), Oe = I(
     (p) => {
       const T = p.target.value;
-      if (o(T), !T.trim()) {
-        c(null), x(null), b(null), v(!1), M(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), _(null), H(!1), G(null), V(!1), re(0), X.current = null;
+      if (s(T), !T.trim()) {
+        c(null), x(null), v(null), b(!1), M(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), W(null), H(!1), G(null), V(!1), re(0), X.current = null;
         return;
       }
-      const S = et(T);
-      if (!S) {
-        c(null), x(null), b("Please paste a valid Figma URL (file, design, proto, or board link)"), v(!1);
+      const A = it(T);
+      if (!A) {
+        c(null), x(null), v("Please paste a valid Figma URL (file, design, proto, or board link)"), b(!1);
         return;
       }
-      c(S), b(null), x(null), M(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), _(null), H(!1), G(null), V(!1), re(0), X.current = null;
+      c(A), v(null), x(null), M(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), W(null), H(!1), G(null), V(!1), re(0), X.current = null;
     },
     []
   );
-  se(() => {
-    if (!r || !W.current) return;
-    const p = ++le.current, T = W.current;
-    v(!0), x(null), b(null), (async () => {
+  oe(() => {
+    if (!r || !_.current) return;
+    const p = ++le.current, T = _.current;
+    b(!0), x(null), v(null), (async () => {
       try {
-        const S = await Ze(T, e, r.fileKey);
-        le.current === p && (x(S), v(!1));
-      } catch (S) {
+        const A = await Ye(T, e, r.fileKey);
+        le.current === p && (x(A), b(!1));
+      } catch (A) {
         if (le.current === p) {
-          const I = (S == null ? void 0 : S.message) || "Failed to validate file access.";
-          I.includes("403") || I.includes("Invalid or expired") ? b("Cannot access this file. Check that your token has File content (Read) scope.") : I.includes("404") || I.includes("not found") ? b("File not found. Check that the URL is correct.") : I.includes("429") || I.includes("Rate limited") ? b("Rate limited by Figma. Please wait a moment and try again.") : b(I), v(!1);
+          const R = (A == null ? void 0 : A.message) || "Failed to validate file access.";
+          R.includes("403") || R.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : R.includes("404") || R.includes("not found") ? v("File not found. Check that the URL is correct.") : R.includes("429") || R.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : v(R), b(!1);
         }
       }
     })();
   }, [r, e]);
-  const ce = R(() => {
-    const p = W.current;
+  const ce = I(() => {
+    const p = _.current;
     if (!p || !r) return;
     const T = ++te.current;
-    B(!0), M(null), b(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), _(null), H(!1), G(null), V(!1), X.current = null, (async () => {
+    B(!0), M(null), v(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), W(null), H(!1), G(null), V(!1), X.current = null, (async () => {
       try {
-        const S = await yt({
+        const A = await vt({
           shell: p,
           token: e,
           fileKey: r.fileKey,
@@ -1778,79 +1778,120 @@ function rn({ token: e }) {
           scope: u
         });
         if (te.current !== T) return;
-        if (S.largeTreeWarning) {
-          D.current = S, k(S.largeTreeWarning), m(!0), B(!1);
+        if (A.largeTreeWarning) {
+          D.current = A, k(A.largeTreeWarning), m(!0), B(!1);
           return;
         }
-        ie(S);
-      } catch (S) {
+        ie(A);
+      } catch (A) {
         if (te.current !== T) return;
-        const I = (S == null ? void 0 : S.message) || "Extraction failed.";
-        I.includes("403") || I.includes("Invalid or expired") ? b("Cannot access this file. Check that your token has File content (Read) scope.") : I.includes("404") || I.includes("not found") ? b("File not found. Check that the URL is correct.") : I.includes("429") || I.includes("Rate limited") ? b("Rate limited by Figma. Please wait a moment and try again.") : I.includes("timeout") || I.includes("timed out") ? b("Request timed out. Try a smaller selection or check your connection.") : b(I);
+        const R = (A == null ? void 0 : A.message) || "Extraction failed.";
+        R.includes("403") || R.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : R.includes("404") || R.includes("not found") ? v("File not found. Check that the URL is correct.") : R.includes("429") || R.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : R.includes("timeout") || R.includes("timed out") ? v("Request timed out. Try a smaller selection or check your connection.") : v(R);
       } finally {
         te.current === T && B(!1);
       }
     })();
-  }, [r, e, u, s, ie]), ze = R(() => {
+  }, [r, e, u, o, ie]), We = I(() => {
     const p = D.current;
     p && (m(!1), k(null), ie(p));
-  }, [ie]), He = R(() => {
+  }, [ie]), _e = I(() => {
     m(!1), k(null), D.current = null;
-  }, []), Oe = R(() => {
+  }, []), De = I(() => {
     V(!1), re((p) => p + 1), D.current = null, X.current = null, ce();
-  }, [ce]), _e = R(() => {
+  }, [ce]), je = I(() => {
     const p = D.current;
-    p && (V(!1), D.current = null, M(p.extraction), s && s.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, X.current ?? void 0));
-  }, [s, ne]), De = R(async () => {
-    if (!(!O || !W.current))
+    p && (V(!1), D.current = null, M(p.extraction), o && o.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, X.current ?? void 0));
+  }, [o, ne]), Ge = I(async () => {
+    if (!(!O || !_.current))
       try {
-        await nn(W.current, O.markdown), s && s.showToast("Brief copied to clipboard", "success");
+        await Te(_.current, O.markdown), o && o.showToast("Brief copied to clipboard", "success");
       } catch (p) {
-        s && s.showToast(`Copy failed: ${(p == null ? void 0 : p.message) || "Unknown error"}`, "error");
+        o && o.showToast(`Copy failed: ${(p == null ? void 0 : p.message) || "Unknown error"}`, "error");
       }
-  }, [O, s]), We = R(() => {
-    _(null), M(null), N(null);
-  }, []), je = !r || !d || y || E || L || P || xe;
-  return O && U && be && A ? /* @__PURE__ */ l(
-    en,
+  }, [O, o]), Ve = I(() => {
+    W(null), M(null), N(null);
+  }, []), Ke = !r || !d || y || E || P || L || xe;
+  return O && U && we && S ? /* @__PURE__ */ a(
+    on,
     {
       briefResult: O,
       extractionResult: U,
-      extractionStats: be,
-      exportResult: A,
-      onCopyBrief: De,
-      onNewBrief: We
+      extractionStats: we,
+      exportResult: S,
+      onCopyBrief: Ge,
+      onNewBrief: Ve
     }
   ) : /* @__PURE__ */ f("div", { children: [
     /* @__PURE__ */ f("div", { className: "figma-plugin-section", style: { color: "var(--text-secondary)", fontSize: "12px", lineHeight: 1.5 }, children: [
       "Prefix layer names with ",
-      /* @__PURE__ */ l("code", { style: { background: "var(--bg-tertiary)", padding: "1px 4px", borderRadius: "3px" }, children: "@S-" }),
+      /* @__PURE__ */ a("code", { style: { background: "var(--bg-tertiary)", padding: "1px 4px", borderRadius: "3px" }, children: "@S-" }),
       " to export them as assets.",
       " ",
       "Example: ",
-      /* @__PURE__ */ l("code", { style: { background: "var(--bg-tertiary)", padding: "1px 4px", borderRadius: "3px" }, children: "@S-hero-image" })
+      /* @__PURE__ */ a("code", { style: { background: "var(--bg-tertiary)", padding: "1px 4px", borderRadius: "3px" }, children: "@S-hero-image" }),
+      /* @__PURE__ */ a("div", { style: { marginTop: "6px" }, children: /* @__PURE__ */ a(
+        "button",
+        {
+          className: "btn-secondary",
+          style: { fontSize: "11px", padding: "4px 10px" },
+          onClick: () => {
+            _.current && Te(_.current, "@S-").then(() => {
+              o && o.showToast("Copied @S- to clipboard", "success");
+            }).catch(() => {
+            });
+          },
+          children: "Copy @S-"
+        }
+      ) }),
+      /* @__PURE__ */ a("div", { style: { marginTop: "10px", fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }, children: "Watch this video before you start!" }),
+      /* @__PURE__ */ f("div", { style: { marginTop: "6px", borderRadius: "6px", overflow: "hidden", position: "relative" }, children: [
+        !be && /* @__PURE__ */ f("div", { style: {
+          width: "100%",
+          aspectRatio: "16/9",
+          background: "var(--bg-tertiary)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          color: "var(--text-muted)",
+          fontSize: "12px"
+        }, children: [
+          /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { width: "14px", height: "14px", borderWidth: "2px" } }),
+          "Loading video..."
+        ] }),
+        /* @__PURE__ */ a(
+          "iframe",
+          {
+            src: "https://www.loom.com/embed/f08ca503b99a4def9b397dd7491b98e0",
+            frameBorder: "0",
+            allowFullScreen: !0,
+            onLoad: () => ze(!0),
+            style: { width: "100%", aspectRatio: "16/9", display: be ? "block" : "none" }
+          }
+        )
+      ] })
     ] }),
     /* @__PURE__ */ f("div", { className: "figma-plugin-section", children: [
-      /* @__PURE__ */ l("label", { className: "figma-plugin-label", children: "Figma URL" }),
-      /* @__PURE__ */ l(
+      /* @__PURE__ */ a("label", { className: "figma-plugin-label", children: "Figma URL" }),
+      /* @__PURE__ */ a(
         "input",
         {
           className: "figma-plugin-input",
           type: "text",
           placeholder: "https://www.figma.com/design/...",
           value: n,
-          onChange: Ue
+          onChange: Oe
         }
       ),
-      C && /* @__PURE__ */ l("div", { className: "figma-plugin-error", children: C })
+      $ && /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: $ })
     ] }),
-    r && /* @__PURE__ */ l("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-file-info", children: [
+    r && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-file-info", children: [
       y && /* @__PURE__ */ f("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: d ? "8px" : "0" }, children: [
-        /* @__PURE__ */ l("span", { className: "figma-plugin-spinner" }),
-        /* @__PURE__ */ l("span", { style: { color: "var(--text-secondary)" }, children: "Checking access..." })
+        /* @__PURE__ */ a("span", { className: "figma-plugin-spinner" }),
+        /* @__PURE__ */ a("span", { style: { color: "var(--text-secondary)" }, children: "Checking access..." })
       ] }),
       d && /* @__PURE__ */ f("div", { style: { marginBottom: "8px" }, children: [
-        /* @__PURE__ */ l("div", { style: { fontWeight: 600, fontSize: "13px", marginBottom: "4px" }, children: d.name }),
+        /* @__PURE__ */ a("div", { style: { fontWeight: 600, fontSize: "13px", marginBottom: "4px" }, children: d.name }),
         /* @__PURE__ */ f("div", { style: { color: "var(--text-secondary)" }, children: [
           d.pages.length,
           " page",
@@ -1872,10 +1913,10 @@ function rn({ token: e }) {
         ] })
       ] })
     ] }) }),
-    r && d && !y && /* @__PURE__ */ l("div", { className: "figma-plugin-section", children: /* @__PURE__ */ l("div", { style: { color: "var(--text-secondary)", fontSize: "12px" }, children: r.nodeId ? "Will extract the selected element" : "Will extract the whole page — select a specific element in Figma to narrow scope" }) }),
+    r && d && !y && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ a("div", { style: { color: "var(--text-secondary)", fontSize: "12px" }, children: r.nodeId ? "Will extract the selected element" : "Will extract the whole page — select a specific element in Figma to narrow scope" }) }),
     r && d && !y && !O && /* @__PURE__ */ f("div", { className: "figma-plugin-mode-section", children: [
-      /* @__PURE__ */ l("span", { className: "figma-plugin-mode-label", children: "Brief mode" }),
-      /* @__PURE__ */ l("div", { className: "figma-plugin-mode-group", children: sn.map((p) => /* @__PURE__ */ f(
+      /* @__PURE__ */ a("span", { className: "figma-plugin-mode-label", children: "Brief mode" }),
+      /* @__PURE__ */ a("div", { className: "figma-plugin-mode-group", children: rn.map((p) => /* @__PURE__ */ f(
         "div",
         {
           className: `figma-plugin-mode-card${K === p.id ? " selected" : ""}`,
@@ -1887,67 +1928,67 @@ function rn({ token: e }) {
             (T.key === "Enter" || T.key === " ") && (T.preventDefault(), ve(p.id));
           },
           children: [
-            /* @__PURE__ */ l("div", { className: "figma-plugin-mode-card-name", children: p.name }),
-            /* @__PURE__ */ l("div", { className: "figma-plugin-mode-card-desc", children: p.description })
+            /* @__PURE__ */ a("div", { className: "figma-plugin-mode-card-name", children: p.name }),
+            /* @__PURE__ */ a("div", { className: "figma-plugin-mode-card-desc", children: p.description })
           ]
         },
         p.id
       )) }),
-      K === "inspiration" && /* @__PURE__ */ l(
+      K === "inspiration" && /* @__PURE__ */ a(
         "textarea",
         {
           className: "figma-plugin-input figma-plugin-inspiration-textarea",
           placeholder: "Describe what to take from this design (e.g., 'Use the color palette and card layout pattern, but adapt spacing and typography to match our existing design system')",
           value: ae,
-          onChange: (p) => Be(p.target.value),
+          onChange: (p) => He(p.target.value),
           rows: 3
         }
       )
     ] }),
-    a && w && /* @__PURE__ */ l("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-warning", children: [
+    l && w && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-warning", children: [
       /* @__PURE__ */ f("strong", { children: [
         w.nodeCount,
         " layers detected"
       ] }),
-      /* @__PURE__ */ l("p", { children: "Large selections may take longer and produce verbose output. Continue?" }),
+      /* @__PURE__ */ a("p", { children: "Large selections may take longer and produce verbose output. Continue?" }),
       /* @__PURE__ */ f("div", { className: "figma-plugin-warning-actions", children: [
-        /* @__PURE__ */ l("button", { className: "btn-primary", onClick: ze, children: "Continue" }),
-        /* @__PURE__ */ l("button", { className: "btn-secondary", onClick: He, children: "Cancel" })
+        /* @__PURE__ */ a("button", { className: "btn-primary", onClick: We, children: "Continue" }),
+        /* @__PURE__ */ a("button", { className: "btn-secondary", onClick: _e, children: "Cancel" })
       ] })
     ] }) }),
-    xe && /* @__PURE__ */ l("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-warning", children: [
-      /* @__PURE__ */ l("strong", { children: "No @S- asset layers found" }),
+    xe && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-warning", children: [
+      /* @__PURE__ */ a("strong", { children: "No @S- asset layers found" }),
       /* @__PURE__ */ f("p", { children: [
         "Prefix layer names with ",
-        /* @__PURE__ */ l("code", { children: "@S-" }),
+        /* @__PURE__ */ a("code", { children: "@S-" }),
         " to mark them for export.",
         " ",
         "Example: ",
-        /* @__PURE__ */ l("code", { children: "@S-hero-image" }),
+        /* @__PURE__ */ a("code", { children: "@S-hero-image" }),
         " becomes ",
-        /* @__PURE__ */ l("code", { children: "hero-image.png" }),
+        /* @__PURE__ */ a("code", { children: "hero-image.png" }),
         ".",
         " ",
         "PNG or SVG format is auto-detected from layer content."
       ] }),
-      Fe > 0 && /* @__PURE__ */ l("p", { style: { fontStyle: "italic", marginTop: "4px" }, children: "Still no @S- layers found. Check your layer names in Figma." }),
+      Ue > 0 && /* @__PURE__ */ a("p", { style: { fontStyle: "italic", marginTop: "4px" }, children: "Still no @S- layers found. Check your layer names in Figma." }),
       /* @__PURE__ */ f("div", { className: "figma-plugin-warning-actions", children: [
-        /* @__PURE__ */ l("button", { className: "btn-primary", onClick: Oe, children: "Try again" }),
-        /* @__PURE__ */ l("button", { className: "btn-secondary", onClick: _e, children: "Continue anyway" })
+        /* @__PURE__ */ a("button", { className: "btn-primary", onClick: De, children: "Try again" }),
+        /* @__PURE__ */ a("button", { className: "btn-secondary", onClick: je, children: "Continue anyway" })
       ] })
     ] }) }),
-    J && /* @__PURE__ */ l("div", { className: "figma-plugin-section", children: /* @__PURE__ */ l("div", { className: "figma-plugin-error", children: J }) }),
+    J && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: J }) }),
     (() => {
-      const p = E || L || P, T = E ? "Extracting layout..." : L ? (h == null ? void 0 : h.phase) === "preview" ? "Rendering preview..." : `Exporting assets${h != null && h.total ? ` (${h.current ?? 0}/${h.total})` : ""}...` : P ? "Generating brief..." : "Get Brief";
+      const p = E || P || L, T = E ? "Extracting layout..." : P ? (h == null ? void 0 : h.phase) === "preview" ? "Rendering preview..." : `Exporting assets${h != null && h.total ? ` (${h.current ?? 0}/${h.total})` : ""}...` : L ? "Generating brief..." : "Get Brief";
       return /* @__PURE__ */ f(
         "button",
         {
           className: "btn-primary",
           onClick: ce,
-          disabled: je,
+          disabled: Ke,
           style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" },
           children: [
-            p && /* @__PURE__ */ l("span", { className: "figma-plugin-spinner", style: { width: "14px", height: "14px", borderWidth: "2px" } }),
+            p && /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { width: "14px", height: "14px", borderWidth: "2px" } }),
             T
           ]
         }
@@ -1955,8 +1996,8 @@ function rn({ token: e }) {
     })()
   ] });
 }
-function an({ onClick: e }) {
-  return /* @__PURE__ */ l(
+function cn({ onClick: e }) {
+  return /* @__PURE__ */ a(
     "button",
     {
       onClick: e,
@@ -1982,83 +2023,83 @@ function an({ onClick: e }) {
           strokeLinecap: "round",
           strokeLinejoin: "round",
           children: [
-            /* @__PURE__ */ l("circle", { cx: "12", cy: "12", r: "3" }),
-            /* @__PURE__ */ l("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
+            /* @__PURE__ */ a("circle", { cx: "12", cy: "12", r: "3" }),
+            /* @__PURE__ */ a("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
           ]
         }
       )
     }
   );
 }
-function ln() {
-  const e = oe(), t = (e == null ? void 0 : e.storage) ?? null, i = (e == null ? void 0 : e.actions) ?? null, [s, n] = $(!1), [o, r] = $(null), [c, u] = $(null), [d, x] = $(!1), [y, v] = $("main");
-  se(() => {
+function un() {
+  const e = se(), t = (e == null ? void 0 : e.storage) ?? null, i = (e == null ? void 0 : e.actions) ?? null, [o, n] = C(!1), [s, r] = C(null), [c, u] = C(null), [d, x] = C(!1), [y, b] = C("main");
+  oe(() => {
     if (!t) return;
-    let a = !1;
+    let l = !1;
     return (async () => {
       try {
         const m = await t.read();
-        !a && typeof m.figmaToken == "string" && (r(m.figmaToken), typeof m.figmaUserHandle == "string" && u({ id: "", handle: m.figmaUserHandle, img_url: "" }));
+        !l && typeof m.figmaToken == "string" && (r(m.figmaToken), typeof m.figmaUserHandle == "string" && u({ id: "", handle: m.figmaUserHandle, img_url: "" }));
       } catch (m) {
         console.error("[figma] Failed to read storage:", m);
       } finally {
-        a || x(!0);
+        l || x(!0);
       }
     })(), () => {
-      a = !0;
+      l = !0;
     };
   }, [t]);
-  const C = R(() => n(!0), []), b = R(() => {
-    n(!1), v("main");
-  }, []), E = R(async (a, m) => {
+  const $ = I(() => n(!0), []), v = I(() => {
+    n(!1), b("main");
+  }, []), E = I(async (l, m) => {
     if (!(!t || !i))
       try {
-        const L = await t.read();
-        await t.write({ ...L, figmaToken: a, figmaUserHandle: m.handle }), r(a), u(m), v("main"), i.showToast(`Connected as ${m.handle}`, "success");
+        const P = await t.read();
+        await t.write({ ...P, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Connected as ${m.handle}`, "success");
       } catch {
         i.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [t, i]), B = R(async (a, m) => {
+  }, [t, i]), B = I(async (l, m) => {
     if (!(!t || !i))
       try {
-        const L = await t.read();
-        await t.write({ ...L, figmaToken: a, figmaUserHandle: m.handle }), r(a), u(m), v("main"), i.showToast(`Token updated — connected as ${m.handle}`, "success");
+        const P = await t.read();
+        await t.write({ ...P, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Token updated — connected as ${m.handle}`, "success");
       } catch {
         i.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [t, i]), U = R(async () => {
+  }, [t, i]), U = I(async () => {
     if (!(!t || !i))
       try {
-        const a = await t.read(), { figmaToken: m, figmaUserHandle: L, ...z } = a;
-        await t.write(z), r(null), u(null), v("main"), i.showToast("Disconnected from Figma", "info");
+        const l = await t.read(), { figmaToken: m, figmaUserHandle: P, ...z } = l;
+        await t.write(z), r(null), u(null), b("main"), i.showToast("Disconnected from Figma", "info");
       } catch {
         i.showToast("Failed to remove token. Please try again.", "error");
       }
-  }, [t, i]), M = "Figma", w = o ? /* @__PURE__ */ l(an, { onClick: () => v("settings") }) : void 0;
+  }, [t, i]), M = "Figma", w = s ? /* @__PURE__ */ a(cn, { onClick: () => b("settings") }) : void 0;
   let k = null;
-  return d && (o ? y === "settings" && c ? k = /* @__PURE__ */ l(
-    Qe,
+  return d && (s ? y === "settings" && c ? k = /* @__PURE__ */ a(
+    nt,
     {
       currentUser: c,
       onTokenUpdated: B,
       onTokenRemoved: U,
-      onBack: () => v("main")
+      onBack: () => b("main")
     }
-  ) : k = /* @__PURE__ */ l(rn, { token: o }) : k = /* @__PURE__ */ l(Ye, { onTokenSaved: E })), /* @__PURE__ */ f(he, { children: [
-    /* @__PURE__ */ l(
+  ) : k = /* @__PURE__ */ a(ln, { token: s }) : k = /* @__PURE__ */ a(tt, { onTokenSaved: E })), /* @__PURE__ */ f(he, { children: [
+    /* @__PURE__ */ a(
       "button",
       {
-        onClick: C,
+        onClick: $,
         title: "Figma Design Brief",
         className: "toolbar-icon-btn",
-        children: /* @__PURE__ */ l(
+        children: /* @__PURE__ */ a(
           "svg",
           {
             width: "14",
             height: "14",
             viewBox: "0 0 15 15",
             fill: "currentColor",
-            children: /* @__PURE__ */ l(
+            children: /* @__PURE__ */ a(
               "path",
               {
                 fillRule: "evenodd",
@@ -2070,11 +2111,11 @@ function ln() {
         )
       }
     ),
-    /* @__PURE__ */ l(
-      Ke,
+    /* @__PURE__ */ a(
+      qe,
       {
-        open: s,
-        onClose: b,
+        open: o,
+        onClose: v,
         title: M,
         headerRight: w,
         children: k
@@ -2082,18 +2123,18 @@ function ln() {
     )
   ] });
 }
-const dn = "Figma", fn = {
-  toolbar: ln
+const pn = "Figma", gn = {
+  toolbar: un
 };
-function pn() {
+function mn() {
   console.log("[figma] Plugin activated");
 }
-function gn() {
+function hn() {
   console.log("[figma] Plugin deactivated");
 }
 export {
-  dn as name,
-  pn as onActivate,
-  gn as onDeactivate,
-  fn as slots
+  pn as name,
+  mn as onActivate,
+  hn as onDeactivate,
+  gn as slots
 };

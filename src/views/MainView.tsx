@@ -111,6 +111,9 @@ export function MainView({ token }: MainViewProps) {
   const [zeroAssetWarning, setZeroAssetWarning] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Loom embed loading state
+  const [loomLoaded, setLoomLoaded] = useState(false);
+
   // Brief mode selection (persists across URL changes within session)
   const [briefMode, setBriefMode] = useState<BriefMode>('best');
   const [inspirationText, setInspirationText] = useState('');
@@ -502,6 +505,49 @@ export function MainView({ token }: MainViewProps) {
       <div className="figma-plugin-section" style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.5 }}>
         Prefix layer names with <code style={{ background: 'var(--bg-tertiary)', padding: '1px 4px', borderRadius: '3px' }}>@S-</code> to export them as assets.
         {' '}Example: <code style={{ background: 'var(--bg-tertiary)', padding: '1px 4px', borderRadius: '3px' }}>@S-hero-image</code>
+        <div style={{ marginTop: '6px' }}>
+          <button
+            className="btn-secondary"
+            style={{ fontSize: '11px', padding: '4px 10px' }}
+            onClick={() => {
+              if (shellRef.current) {
+                copyToClipboard(shellRef.current, '@S-').then(() => {
+                  if (actions) actions.showToast('Copied @S- to clipboard', 'success');
+                }).catch(() => {});
+              }
+            }}
+          >
+            Copy @S-
+          </button>
+        </div>
+        <div style={{ marginTop: '10px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+          Watch this video before you start!
+        </div>
+        <div style={{ marginTop: '6px', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
+          {!loomLoaded && (
+            <div style={{
+              width: '100%',
+              aspectRatio: '16/9',
+              background: 'var(--bg-tertiary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              color: 'var(--text-muted)',
+              fontSize: '12px',
+            }}>
+              <span className="figma-plugin-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />
+              Loading video...
+            </div>
+          )}
+          <iframe
+            src="https://www.loom.com/embed/f08ca503b99a4def9b397dd7491b98e0"
+            frameBorder="0"
+            allowFullScreen
+            onLoad={() => setLoomLoaded(true)}
+            style={{ width: '100%', aspectRatio: '16/9', display: loomLoaded ? 'block' : 'none' }}
+          />
+        </div>
       </div>
 
       {/* URL Input Section */}
