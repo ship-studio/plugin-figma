@@ -156,6 +156,7 @@ export function MainView({ token }: MainViewProps) {
         projectPath: ctx?.project?.path ?? '.',
         rootNodes: result.extraction.rootNodes,
         imageFills: result.tokens.imageFills,
+        instancesWithText: result.instancesWithText,
         onProgress: setAssetProgress,
       });
 
@@ -588,19 +589,29 @@ export function MainView({ token }: MainViewProps) {
             )}
 
             {/* Asset warnings */}
-            {exportResult.warnings.length > 0 && (
-              <div style={{ marginTop: '8px', fontSize: '11px', color: '#f59e0b' }}>
-                {exportResult.warnings.length} warning{exportResult.warnings.length !== 1 ? 's' : ''}:
-                <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-                  {exportResult.warnings.slice(0, 5).map((w, i) => (
-                    <li key={i}>{String(w)}</li>
-                  ))}
-                  {exportResult.warnings.length > 5 && (
-                    <li>...and {exportResult.warnings.length - 5} more</li>
-                  )}
-                </ul>
-              </div>
-            )}
+            {exportResult.warnings.length > 0 && (() => {
+              // Ensure we're working with real strings
+              const allWarnings: string[] = Array.from(exportResult.warnings).map(w =>
+                typeof w === 'string' ? w : JSON.stringify(w),
+              );
+              // Separate composition/illustration auto-detections (already shown above) from real warnings
+              const compositionWarnings = allWarnings.filter(w => w.startsWith('Composition "') || w.startsWith('Illustration "'));
+              const actionableWarnings = allWarnings.filter(w => !w.startsWith('Composition "') && !w.startsWith('Illustration "'));
+
+              return actionableWarnings.length > 0 ? (
+                <div style={{ marginTop: '8px', fontSize: '11px', color: '#f59e0b' }}>
+                  {actionableWarnings.length} warning{actionableWarnings.length !== 1 ? 's' : ''}:
+                  <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                    {actionableWarnings.slice(0, 5).map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                    {actionableWarnings.length > 5 && (
+                      <li>...and {actionableWarnings.length - 5} more</li>
+                    )}
+                  </ul>
+                </div>
+              ) : null;
+            })()}
 
             {/* Tree preview toggle */}
             <button

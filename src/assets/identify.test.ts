@@ -547,7 +547,11 @@ describe('identifyAssets', () => {
   });
 
   describe('ASSET-05: instance child IMAGE fill detection', () => {
-    it('finds IMAGE fills in instance children and exports as png-fill', () => {
+    // Child IMAGE fills are now pre-collected from the raw Figma tree (before normalization)
+    // and passed via the imageFills parameter with parentInstanceId set.
+    // The normalized tree's instance children are stripped by normalization.
+
+    it('finds IMAGE fills in instance children (via imageFills with parentInstanceId) and exports as png-fill', () => {
       const result = identifyAssets([root([
         node({
           id: '13:1', name: 'Card Instance', type: 'INSTANCE',
@@ -555,15 +559,10 @@ describe('identifyAssets', () => {
             componentId: 'comp-card', componentName: 'Card',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({
-              id: 'I13:1;13:2', name: 'Hero Image', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'hero-child-ref', scaleMode: 'FILL' }],
-            }),
-            node({ id: 'I13:1;13:3', name: 'Title', type: 'TEXT' }),
-          ],
         }),
-      ])], []);
+      ])], [
+        { imageRef: 'hero-child-ref', scaleMode: 'FILL', nodeId: 'I13:1;13:2', nodeName: 'Hero Image', parentInstanceId: '13:1' },
+      ]);
       // Should find the child image, not export instance as png-render
       const pngFill = result.find(e => e.exportType === 'png-fill');
       expect(pngFill).toBeDefined();
@@ -580,19 +579,16 @@ describe('identifyAssets', () => {
             componentId: 'comp-card2', componentName: 'ProductCard',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({
-              id: 'I13:4;13:5', name: 'Product Photo', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'product-ref', scaleMode: 'FILL' }],
-            }),
-          ],
         }),
-      ])], []);
+      ])], [
+        { imageRef: 'product-ref', scaleMode: 'FILL', nodeId: 'I13:4;13:5', nodeName: 'Product Photo', parentInstanceId: '13:4' },
+      ]);
       const pngRender = result.find(e => e.exportType === 'png-render');
       expect(pngRender).toBeUndefined();
     });
 
-    it('exports instance as png-render when no child images found (existing behavior)', () => {
+    it('skips instance with text descendants (code-reproducible) when no child images', () => {
+      const instancesWithText = new Set(['13:6']);
       const result = identifyAssets([root([
         node({
           id: '13:6', name: 'Button', type: 'INSTANCE',
@@ -600,18 +596,29 @@ describe('identifyAssets', () => {
             componentId: 'comp-btn', componentName: 'Button',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({ id: 'I13:6;13:7', name: 'Label', type: 'TEXT' }),
-            node({ id: 'I13:6;13:8', name: 'Icon', type: 'VECTOR' }),
-          ],
         }),
-      ])], []);
-      expect(result).toHaveLength(1);
-      expect(result[0].exportType).toBe('png-render');
-      expect(result[0].filename).toBe('button.png');
+      ])], [], new Set(), instancesWithText);
+      // Button has text → code-reproducible → skipped entirely
+      expect(result).toHaveLength(0);
     });
 
-    it('recurses full depth into instance children to find IMAGE fills', () => {
+    it('exports decorative instance as png-render when no child images and no text', () => {
+      const result = identifyAssets([root([
+        node({
+          id: '13:6b', name: 'Logo', type: 'INSTANCE',
+          componentRef: {
+            componentId: 'comp-logo', componentName: 'Logo',
+            isRemote: false, source: 'local',
+          },
+        }),
+      ])], []);
+      // No child images, no text → decorative → png-render
+      expect(result).toHaveLength(1);
+      expect(result[0].exportType).toBe('png-render');
+      expect(result[0].filename).toBe('logo.png');
+    });
+
+    it('uses pre-collected imageFills with parentInstanceId for deep nested images', () => {
       const result = identifyAssets([root([
         node({
           id: '13:9', name: 'Deep Card', type: 'INSTANCE',
@@ -619,24 +626,10 @@ describe('identifyAssets', () => {
             componentId: 'comp-deep', componentName: 'DeepCard',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({
-              id: 'I13:9;13:10', name: 'Content Area', type: 'FRAME',
-              children: [
-                node({
-                  id: 'I13:9;13:11', name: 'Image Container', type: 'FRAME',
-                  children: [
-                    node({
-                      id: 'I13:9;13:12', name: 'Deep Nested Image', type: 'RECTANGLE',
-                      fills: [{ type: 'IMAGE', imageRef: 'deep-ref', scaleMode: 'FILL' }],
-                    }),
-                  ],
-                }),
-              ],
-            }),
-          ],
         }),
-      ])], []);
+      ])], [
+        { imageRef: 'deep-ref', scaleMode: 'FILL', nodeId: 'I13:9;13:12', nodeName: 'Deep Nested Image', parentInstanceId: '13:9' },
+      ]);
       const pngFill = result.find(e => e.exportType === 'png-fill');
       expect(pngFill).toBeDefined();
       expect(pngFill!.nodeName).toBe('Deep Nested Image');
@@ -651,12 +644,6 @@ describe('identifyAssets', () => {
             componentId: 'comp-c', componentName: 'Card',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({
-              id: 'I13:13;13:14', name: 'Hero', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'same-hero-ref', scaleMode: 'FILL' }],
-            }),
-          ],
         }),
         node({
           id: '13:15', name: 'Card 2', type: 'INSTANCE',
@@ -664,21 +651,20 @@ describe('identifyAssets', () => {
             componentId: 'comp-c', componentName: 'Card',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({
-              id: 'I13:15;13:16', name: 'Hero', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'same-hero-ref', scaleMode: 'FILL' }],
-            }),
-          ],
         }),
-      ])], []);
+      ])], [
+        { imageRef: 'same-hero-ref', scaleMode: 'FILL', nodeId: 'I13:13;13:14', nodeName: 'Hero', parentInstanceId: '13:13' },
+        { imageRef: 'same-hero-ref', scaleMode: 'FILL', nodeId: 'I13:15;13:16', nodeName: 'Hero', parentInstanceId: '13:15' },
+      ]);
       // Same imageRef across two instances -- only one exported
       const pngFills = result.filter(e => e.exportType === 'png-fill');
       expect(pngFills).toHaveLength(1);
       expect(pngFills[0].imageRef).toBe('same-hero-ref');
     });
 
-    it('does NOT export SVGs or other types from instance children', () => {
+    it('only extracts IMAGE fills from instance children (no SVGs)', () => {
+      // Instance children are not walked in normalized tree, so SVGs inside
+      // instances never appear. Only IMAGE fills come via imageFills param.
       const result = identifyAssets([root([
         node({
           id: '13:17', name: 'Widget', type: 'INSTANCE',
@@ -686,16 +672,10 @@ describe('identifyAssets', () => {
             componentId: 'comp-w', componentName: 'Widget',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({ id: 'I13:17;13:18', name: 'Icon', type: 'VECTOR' }),
-            node({ id: 'I13:17;13:19', name: 'Shape', type: 'ELLIPSE' }),
-            node({
-              id: 'I13:17;13:20', name: 'Photo', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'widget-photo', scaleMode: 'FILL' }],
-            }),
-          ],
         }),
-      ])], []);
+      ])], [
+        { imageRef: 'widget-photo', scaleMode: 'FILL', nodeId: 'I13:17;13:20', nodeName: 'Photo', parentInstanceId: '13:17' },
+      ]);
       // Only the image -- no SVGs from instance children
       const svgs = result.filter(e => e.exportType === 'svg');
       expect(svgs).toHaveLength(0);
@@ -704,7 +684,7 @@ describe('identifyAssets', () => {
       expect(pngFills[0].nodeName).toBe('Photo');
     });
 
-    it('still scans deduplicated instance children for images (imageRef dedup handles file dedup)', () => {
+    it('exports child images from both instances even when same componentId (imageRef dedup handles file dedup)', () => {
       const result = identifyAssets([root([
         node({
           id: '13:21', name: 'Card A', type: 'INSTANCE',
@@ -712,12 +692,6 @@ describe('identifyAssets', () => {
             componentId: 'comp-dup', componentName: 'DupCard',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({
-              id: 'I13:21;13:22', name: 'Image A', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'unique-ref-a', scaleMode: 'FILL' }],
-            }),
-          ],
         }),
         node({
           id: '13:23', name: 'Card B', type: 'INSTANCE',
@@ -725,16 +699,11 @@ describe('identifyAssets', () => {
             componentId: 'comp-dup', componentName: 'DupCard',
             isRemote: false, source: 'local',
           },
-          children: [
-            node({
-              id: 'I13:23;13:24', name: 'Image B', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'unique-ref-b', scaleMode: 'FILL' }],
-            }),
-          ],
         }),
-      ])], []);
-      // First instance: new, has child image -> no png-render, child image exported
-      // Second instance: deduplicated by component, but child images still scanned
+      ])], [
+        { imageRef: 'unique-ref-a', scaleMode: 'FILL', nodeId: 'I13:21;13:22', nodeName: 'Image A', parentInstanceId: '13:21' },
+        { imageRef: 'unique-ref-b', scaleMode: 'FILL', nodeId: 'I13:23;13:24', nodeName: 'Image B', parentInstanceId: '13:23' },
+      ]);
       // unique-ref-a and unique-ref-b are different imageRefs -- both exported
       const pngFills = result.filter(e => e.exportType === 'png-fill');
       expect(pngFills).toHaveLength(2);
@@ -754,14 +723,10 @@ describe('identifyAssets', () => {
             isRemote: false, source: 'local',
           },
           fills: [{ type: 'IMAGE', imageRef: 'bg-ref', scaleMode: 'FILL' }],
-          children: [
-            node({
-              id: 'I13:25;13:26', name: 'Inner Photo', type: 'RECTANGLE',
-              fills: [{ type: 'IMAGE', imageRef: 'inner-ref', scaleMode: 'FILL' }],
-            }),
-          ],
         }),
-      ])], []);
+      ])], [
+        { imageRef: 'inner-ref', scaleMode: 'FILL', nodeId: 'I13:25;13:26', nodeName: 'Inner Photo', parentInstanceId: '13:25' },
+      ]);
       // Instance's own IMAGE fill takes priority, no child recursion
       expect(result).toHaveLength(1);
       expect(result[0].exportType).toBe('png-fill');

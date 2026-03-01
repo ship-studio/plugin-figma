@@ -73,40 +73,26 @@ function isSimpleRectangle(node: LayoutNode): boolean {
 }
 
 /**
- * Recursively find IMAGE fills in instance children at full depth.
- * Only collects IMAGE fills -- no SVGs, rectangles, or other asset types.
- * Deduplicates by imageRef via the shared seenImageRefs set.
+ * Clean up Figma component names for display / filenames.
+ * Strips "Property N=" prefixes from variant-encoded names.
+ * e.g. "Property 1=Green, Property 2=Large" → "Green, Large"
  */
-function findImageFillsInChildren(
-  node: LayoutNode,
-  imageFillMap: Map<string, string>,
-  matchedNodeIds: Set<string>,
-  seenImageRefs: Set<string>,
-): AssetEntry[] {
-  const results: AssetEntry[] = [];
-  if (!node.children) return results;
-
-  for (const child of node.children) {
-    if (hasImageFill(child)) {
-      const imageRef = imageFillMap.get(child.id) ?? getImageRefFromFills(child);
-      // Dedup by imageRef -- same image across instances exported once
-      if (imageRef && !seenImageRefs.has(imageRef)) {
-        seenImageRefs.add(imageRef);
-        if (imageFillMap.has(child.id)) matchedNodeIds.add(child.id);
-        results.push({
-          nodeId: child.id,
-          nodeName: child.name,
-          exportType: 'png-fill',
-          filename: sanitizeFilename(child.name) + '.png',
-          imageRef,
-        });
-      }
-    }
-    // Recurse deeper (full depth, no limit)
-    results.push(...findImageFillsInChildren(child, imageFillMap, matchedNodeIds, seenImageRefs));
+function cleanComponentName(name: string): string {
+  if (/Property\s+\d+=/i.test(name)) {
+    return name
+      .split(',')
+      .map(part => {
+        const eqIdx = part.indexOf('=');
+        if (eqIdx !== -1) {
+          const key = part.slice(0, eqIdx).trim();
+          const val = part.slice(eqIdx + 1).trim();
+          if (/^Property\s+\d+$/i.test(key)) return val;
+        }
+        return part.trim();
+      })
+      .join(', ');
   }
-
-  return results;
+  return name;
 }
 
 /**
@@ -121,6 +107,8 @@ function walkTree(
   seenInstances: Set<string>,
   seenSvgNames: Set<string>,
   seenImageRefs: Set<string>,
+  instanceChildFills: Map<string, ImageFillRef[]>,
+  instancesWithText: Set<string>,
 ): void {
   // Composition check FIRST
   if (compositionIds.has(node.id)) {
@@ -139,6 +127,9 @@ function walkTree(
     if (hasImageFill(node)) {
       const imageRef = imageFillMap.get(node.id) ?? getImageRefFromFills(node);
       if (imageFillMap.has(node.id)) matchedNodeIds.add(node.id);
+      // Mark any child fills as matched so they don't appear as orphans
+      const childFills = instanceChildFills.get(node.id) ?? [];
+      for (const cf of childFills) matchedNodeIds.add(cf.nodeId);
       // Dedup by imageRef
       if (imageRef && seenImageRefs.has(imageRef)) return;
       if (imageRef) seenImageRefs.add(imageRef);
@@ -149,35 +140,48 @@ function walkTree(
         filename: sanitizeFilename(node.name) + '.png',
         imageRef,
       });
-      // Don't also export as png-render -- fill override replaces component render
       return;
     }
 
-    // ASSET-05: Recurse into children to find IMAGE fills
-    const childImages = findImageFillsInChildren(node, imageFillMap, matchedNodeIds, seenImageRefs);
-    // Tag child images with parentInstanceId for layout tree cross-referencing
-    for (const img of childImages) {
-      img.parentInstanceId = node.id;
+    // Use pre-collected child fills from the raw tree (normalization strips instance children)
+    const childFills = instanceChildFills.get(node.id) ?? [];
+
+    if (childFills.length > 0) {
+      // Export each child image fill individually
+      for (const fill of childFills) {
+        // Always mark as matched to prevent orphan re-addition
+        matchedNodeIds.add(fill.nodeId);
+        if (seenImageRefs.has(fill.imageRef)) continue;
+        seenImageRefs.add(fill.imageRef);
+        entries.push({
+          nodeId: fill.nodeId,
+          nodeName: fill.nodeName,
+          exportType: 'png-fill',
+          filename: sanitizeFilename(fill.nodeName) + '.png',
+          imageRef: fill.imageRef,
+          parentInstanceId: node.id,
+        });
+      }
+      return;
     }
 
-    // Instance component dedup
+    // No child image fills — decide based on text content
+    if (instancesWithText.has(node.id)) {
+      // Instance has text descendants → code-reproducible (button, card, nav item) → skip
+      return;
+    }
+
+    // No child fills, no text → decorative component (logo, icon) → png-render
+    const cleanName = cleanComponentName(node.componentRef.componentName);
     const key = instanceDedupKey(node);
     if (!seenInstances.has(key)) {
       seenInstances.add(key);
-      // Only export as png-render if no child images found (existing behavior)
-      if (childImages.length === 0) {
-        entries.push({
-          nodeId: node.id,
-          nodeName: node.componentRef.componentName,
-          exportType: 'png-render',
-          filename: sanitizeFilename(node.componentRef.componentName) + '.png',
-        });
-      }
-    }
-
-    // Add child image entries
-    for (const img of childImages) {
-      entries.push(img);
+      entries.push({
+        nodeId: node.id,
+        nodeName: cleanName,
+        exportType: 'png-render',
+        filename: sanitizeFilename(cleanName) + '.png',
+      });
     }
 
     return;
@@ -236,7 +240,7 @@ function walkTree(
   // Recurse into children for container types
   if (node.children) {
     for (const child of node.children) {
-      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances, seenSvgNames, seenImageRefs);
+      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances, seenSvgNames, seenImageRefs, instanceChildFills, instancesWithText);
     }
   }
 }
@@ -252,10 +256,24 @@ export function identifyAssets(
   rootNodes: LayoutNode[],
   imageFills: ImageFillRef[],
   compositionIds: Set<string> = new Set(),
+  instancesWithText: Set<string> = new Set(),
 ): AssetEntry[] {
   const imageFillMap = new Map<string, string>();
   for (const fill of imageFills) {
     imageFillMap.set(fill.nodeId, fill.imageRef);
+  }
+
+  // Build map: instanceId → child image fills collected from the raw tree
+  const instanceChildFills = new Map<string, ImageFillRef[]>();
+  for (const fill of imageFills) {
+    if (fill.parentInstanceId) {
+      let arr = instanceChildFills.get(fill.parentInstanceId);
+      if (!arr) {
+        arr = [];
+        instanceChildFills.set(fill.parentInstanceId, arr);
+      }
+      arr.push(fill);
+    }
   }
 
   const entries: AssetEntry[] = [];
@@ -267,7 +285,7 @@ export function identifyAssets(
   for (const rootNode of rootNodes) {
     if (!rootNode.children) continue;
     for (const child of rootNode.children) {
-      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances, seenSvgNames, seenImageRefs);
+      walkTree(child, imageFillMap, matchedNodeIds, entries, compositionIds, seenInstances, seenSvgNames, seenImageRefs, instanceChildFills, instancesWithText);
     }
   }
 

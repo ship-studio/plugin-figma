@@ -87,7 +87,7 @@ describe('detectCompositions', () => {
 
     const result = detectCompositions([root([group])]);
     expect(result.compositionNodeIds.has('illustration')).toBe(true);
-    expect(result.warnings).toContain('Auto-detected "Hero Illustration" as a composition');
+    expect(result.warnings).toContain('Composition "Hero Illustration" — multi-layer group with blend/mask effects, exported as single PNG');
   });
 
   it('flags group with mask child AND nesting depth >= 3', () => {
@@ -187,8 +187,8 @@ describe('detectCompositions', () => {
     const result = detectCompositions([root([compA, compB])]);
     expect(result.compositionNodeIds.size).toBe(2);
     expect(result.warnings).toHaveLength(2);
-    expect(result.warnings).toContain('Auto-detected "Comp A" as a composition');
-    expect(result.warnings).toContain('Auto-detected "Comp B" as a composition');
+    expect(result.warnings).toContain('Composition "Comp A" — multi-layer group with blend/mask effects, exported as single PNG');
+    expect(result.warnings).toContain('Composition "Comp B" — multi-layer group with blend/mask effects, exported as single PNG');
   });
 
   it('flags vector-only group (5+ primitives, no visual effects) as illustration', () => {
@@ -203,7 +203,7 @@ describe('detectCompositions', () => {
     const result = detectCompositions([root([group])]);
     expect(result.compositionNodeIds.has('illustration')).toBe(true);
     expect(result.warnings).toContain(
-      'Auto-detected "Hero Illustration" as an illustration (vector-only group)',
+      'Illustration "Hero Illustration" — vector-only group (no text/instances), exported as single PNG',
     );
   });
 

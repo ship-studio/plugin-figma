@@ -35,6 +35,8 @@ export interface ExtractLayoutResult {
   fileKey: string;
   /** Set when nodeCount exceeds WARN_THRESHOLD before normalization. */
   largeTreeWarning?: { nodeCount: number; message: string };
+  /** Instance node IDs that contain TEXT descendants (code-reproducible). */
+  instancesWithText: Set<string>;
 }
 
 /**
@@ -43,9 +45,14 @@ export interface ExtractLayoutResult {
  *
  * This must run BEFORE normalization so that instance children's IMAGE fills
  * are captured (normalization collapses INSTANCE subtrees).
+ *
+ * @param ancestorInstanceId — when recursing inside an INSTANCE, the instance's node ID
  */
-export function collectImageFillsFromRawTree(node: any): ImageFillRef[] {
+export function collectImageFillsFromRawTree(node: any, ancestorInstanceId?: string): ImageFillRef[] {
   const results: ImageFillRef[] = [];
+
+  // If this node IS an instance, it becomes the ancestor for its children
+  const currentInstanceId = node.type === 'INSTANCE' ? node.id : ancestorInstanceId;
 
   if (node.fills && Array.isArray(node.fills)) {
     for (const paint of node.fills) {
@@ -55,6 +62,7 @@ export function collectImageFillsFromRawTree(node: any): ImageFillRef[] {
           scaleMode: paint.scaleMode ?? 'FILL',
           nodeId: node.id,
           nodeName: node.name,
+          parentInstanceId: ancestorInstanceId,
         });
       }
     }
@@ -62,11 +70,45 @@ export function collectImageFillsFromRawTree(node: any): ImageFillRef[] {
 
   if (node.children && Array.isArray(node.children)) {
     for (const child of node.children) {
-      results.push(...collectImageFillsFromRawTree(child));
+      results.push(...collectImageFillsFromRawTree(child, currentInstanceId));
     }
   }
 
   return results;
+}
+
+/**
+ * Walk raw Figma API response and collect IDs of INSTANCE nodes
+ * that have at least one TEXT descendant. Such instances are
+ * code-reproducible (buttons, cards, nav items) and should NOT
+ * be exported as PNG screenshots.
+ */
+export function collectInstancesWithText(node: any): Set<string> {
+  const result = new Set<string>();
+
+  function hasTextDescendant(n: any): boolean {
+    if (n.type === 'TEXT') return true;
+    if (n.children && Array.isArray(n.children)) {
+      for (const child of n.children) {
+        if (hasTextDescendant(child)) return true;
+      }
+    }
+    return false;
+  }
+
+  function walk(n: any): void {
+    if (n.type === 'INSTANCE' && hasTextDescendant(n)) {
+      result.add(n.id);
+    }
+    if (n.children && Array.isArray(n.children)) {
+      for (const child of n.children) {
+        walk(child);
+      }
+    }
+  }
+
+  walk(node);
+  return result;
 }
 
 /**
@@ -134,6 +176,14 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
     rawImageFills.push(...collectImageFillsFromRawTree(node));
   }
 
+  // 4b. Collect instance IDs that contain text descendants (code-reproducible)
+  const instancesWithText = new Set<string>();
+  for (const node of rootNodes) {
+    for (const id of collectInstancesWithText(node)) {
+      instancesWithText.add(id);
+    }
+  }
+
   // 5. Normalize the tree
   const extraction = normalizeTree(rootNodes, components);
 
@@ -154,5 +204,5 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
     }
   }
 
-  return { extraction, tokens, fileKey, largeTreeWarning };
+  return { extraction, tokens, fileKey, largeTreeWarning, instancesWithText };
 }

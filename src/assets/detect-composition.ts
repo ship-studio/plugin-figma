@@ -85,9 +85,9 @@ function detectInNode(
     compositions.add(node.id);
     // Prefer "composition" label when visual effects are present
     if (hasStructuralComplexity(node) && hasVisualEffects(node, 0)) {
-      warnings.push(`Auto-detected "${node.name}" as a composition`);
+      warnings.push(`Composition "${node.name}" — multi-layer group with blend/mask effects, exported as single PNG`);
     } else {
-      warnings.push(`Auto-detected "${node.name}" as an illustration (vector-only group)`);
+      warnings.push(`Illustration "${node.name}" — vector-only group (no text/instances), exported as single PNG`);
     }
     return; // Outer wins -- don't recurse
   }

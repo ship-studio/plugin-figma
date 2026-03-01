@@ -87,6 +87,8 @@ export interface ImageFillRef {
   scaleMode: string;
   nodeId: string;
   nodeName: string;
+  /** When this image fill lives inside an INSTANCE, the instance's node ID */
+  parentInstanceId?: string;
 }
 
 /** A component instance entry for the component inventory. */

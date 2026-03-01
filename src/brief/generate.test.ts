@@ -31,6 +31,7 @@ function makeExtraction(
     extraction: { rootNodes, nodeCount, truncated: false },
     tokens: makeTokens(tokens),
     fileKey: 'abc123',
+    instancesWithText: new Set(),
   };
 }
 

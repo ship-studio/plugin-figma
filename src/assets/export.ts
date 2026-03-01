@@ -31,11 +31,13 @@ export interface ExportAssetsOptions {
   projectPath: string;
   rootNodes: LayoutNode[];
   imageFills: ImageFillRef[];
+  /** Instance node IDs that contain TEXT descendants (code-reproducible, skip PNG export). */
+  instancesWithText?: Set<string>;
   onProgress?: (progress: AssetExportProgress) => void;
 }
 
 export async function exportAssets(options: ExportAssetsOptions): Promise<ExportResult> {
-  const { shell, token, fileKey, selectedNodeId, projectPath, rootNodes, imageFills, onProgress } = options;
+  const { shell, token, fileKey, selectedNodeId, projectPath, rootNodes, imageFills, instancesWithText, onProgress } = options;
   const warnings: string[] = [];
 
   // 1. Create fresh assets directory inside the project
@@ -44,7 +46,7 @@ export async function exportAssets(options: ExportAssetsOptions): Promise<Export
   // 2. Detect compositions and identify exportable assets
   const { compositionNodeIds, warnings: compositionWarnings } = detectCompositions(rootNodes);
   warnings.push(...compositionWarnings);
-  const assetEntries = identifyAssets(rootNodes, imageFills, compositionNodeIds);
+  const assetEntries = identifyAssets(rootNodes, imageFills, compositionNodeIds, instancesWithText);
 
   // 3. Batch API calls for render URLs
   //    - One call for preview PNG (2x scale)
