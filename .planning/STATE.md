@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Asset Completeness & Polish
-status: unknown
-last_updated: "2026-03-01T09:14:49.316Z"
+status: in-progress
+last_updated: "2026-03-01T09:20:03.000Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 12 of 14 (Instance Asset Detection) -- first of 3 v1.3 phases
-Plan: 1 of 2
-Status: Plan 01 complete, Plan 02 pending
-Last activity: 2026-03-01 -- Completed 12-01-PLAN.md (instance asset detection core)
+Plan: 2 of 2 (COMPLETE)
+Status: Phase 12 complete -- all plans executed
+Last activity: 2026-03-01 -- Completed 12-02-PLAN.md (pipeline integration)
 
-Progress: [█░░░░░░░░░] 17% (v1.3 -- 1/6 plans)
+Progress: [███░░░░░░░] 33% (v1.3 -- 2/6 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16 (v1.0: 11, v1.1: 5)
+- Total plans completed: 17 (v1.0: 11, v1.1: 5, v1.3: 1)
 - Average duration: ~30 min (v1.0), ~9 min (v1.1)
-- Total execution time: ~6.3 hours
+- Total execution time: ~6.4 hours
 
 **By Phase (v1.1):**
 
@@ -46,6 +46,7 @@ Progress: [█░░░░░░░░░] 17% (v1.3 -- 1/6 plans)
 
 *Updated after each plan completion*
 | Phase 12 P01 | 3min | 2 tasks | 2 files |
+| Phase 12 P02 | 4min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 12]: Instance own IMAGE fill (ASSET-06) takes priority over child recursion
 - [Phase 12]: imageRef dedup is global across all walkTree calls to prevent duplicate exports
 - [Phase 12]: Rectangle filtering only in main tree walk, not inside instance children
+- [Phase 12]: collectImageFillsFromRawTree runs before normalization to capture instance children IMAGE fills
+- [Phase 12]: parentInstanceId threads through full export pipeline for layout tree cross-referencing
+- [Phase 12]: Breadcrumb fallback: direct nodeId -> parentInstanceId -> '--' for instance child images
 
 ### Pending Todos
 
@@ -77,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 12-01-PLAN.md (instance asset detection core -- identify.ts).
-Next: `/gsd:execute-phase 12` to execute Plan 02 (token collection and brief generation integration).
+Stopped at: Completed 12-02-PLAN.md (pipeline integration -- Phase 12 fully complete).
+Next: Phase 13 (next v1.3 phase) or `/gsd:execute-phase 13`.
