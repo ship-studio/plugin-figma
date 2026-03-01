@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Ship Studio plugin that extracts structured design data from Figma and formats it as a complete design brief for Claude Code. Users paste a Figma URL, and the plugin extracts layout structure (including spacing, flex properties, and absolute positioning), design tokens, component mapping, and all visible image assets — then assembles everything into a structured markdown brief ready to paste into Claude Code.
+A Ship Studio plugin that extracts structured design data from Figma and formats it as a complete design brief for Claude Code. Users paste a Figma URL for the page/frame, then manually add assets by pasting Figma URLs for specific elements and choosing their export format (PNG or SVG). The plugin extracts layout structure, design tokens, component mapping, and the user-specified assets — then assembles everything into a structured markdown brief ready to paste into Claude Code.
 
 ## Core Value
 
@@ -46,7 +46,15 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 
 ### Active
 
-(No active requirements — define with `/gsd:new-milestone`)
+<!-- v2.0 Manual Asset Control -->
+- [ ] User can add assets by pasting Figma URLs (single node or multi-select) and choosing PNG or SVG format
+- [ ] User can add multiple assets, building a list before exporting
+- [ ] User can remove assets from the list before exporting
+- [ ] Asset filenames are auto-derived from Figma layer names
+- [ ] Duplicate layer names are auto-numbered (icon.png, icon-2.png)
+- [ ] Assets are mapped to their position in the layout tree by node ID
+- [ ] All automatic asset detection code is removed (detect-composition, identify, SVG dedup, illustration heuristics)
+- [ ] Full-page preview PNG remains auto-generated
 
 ## Completed Milestones
 
@@ -55,12 +63,24 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - **v1.2** (shipped 2026-03-01) — Illustration detection, layout tree quality, UI fixes
 - **v1.3** (shipped 2026-03-01) — Instance asset detection, spacing accuracy, plugin icon
 
+## Current Milestone: v2.0 Manual Asset Control
+
+**Goal:** Replace unreliable automatic asset detection with explicit user-driven asset selection — users specify exactly which Figma elements to export and in what format, producing a perfect brief every time.
+
+**Target features:**
+- Manual asset addition via Figma URL + format picker (PNG/SVG)
+- Support for both single-node URLs and multi-select URLs
+- Asset list management (add, remove, review before export)
+- Auto-derived filenames from Figma layer names with conflict resolution
+- Layout tree cross-referencing by node ID
+- Complete removal of auto-detection code
+
 ## Deferred Features
 
+- Text alignment in brief (textAlignHorizontal from Figma)
 - Progressive asset disclosure in results UI
 - Collapsible tree preview
 - Executable verification loop/checklist
-- Text alignment in brief (textAlignHorizontal from Figma)
 - Advanced options behind progressive disclosure
 
 ### Out of Scope
@@ -75,7 +95,7 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 ## Context
 
 - Built on the Ship Studio plugin starter template (React/TypeScript/Vite, Tauri runtime)
-- Current state: 9,411 LOC TypeScript, 303 tests, 4 milestones shipped (v1.0-v1.3)
+- Current state: 9,411 LOC TypeScript, 303 tests, 4 milestones shipped (v1.0-v1.3) — will shrink significantly after removing auto-detection code
 - Tech stack: React 18, TypeScript, Vite, Vitest, @figma/rest-api-spec
 - Plugins render in the "toolbar" slot and can open modals for richer UI
 - Plugin has shell access (`shell.exec`) for HTTP requests (curl) to Figma REST API
@@ -83,6 +103,7 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 - `dist/index.js` must be committed to the repo — Ship Studio clones without building
 - v1.3 improvements: instance images now fully detected at any nesting depth, spacing/flex properties in brief, Figma logo icon in toolbar
 - Known areas for improvement: text alignment not yet in brief, bounding-box spacing may need tuning with real designs
+- v2.0 direction: auto-detection was unreliable (missed assets, over-captured sections as PNG). Users prefer spending more time for a perfect result over getting a mediocre result faster
 
 ## Constraints
 
@@ -113,6 +134,8 @@ Turn any Figma design into a structured, complete design brief that gives Claude
 | absoluteBoundingBox for offsets | Use absoluteBoundingBox (not absoluteRenderBounds) for position offsets | ✓ Good — represents layout intent, not visual bounds with shadows/strokes (v1.3) |
 | Noise reduction for flex defaults | Only store layoutGrow when 1, layoutAlign when STRETCH | ✓ Good — brief stays concise (v1.3) |
 | User-provided Figma logo SVG | Used viewBox 0 0 15 15 version instead of Simple Icons 0 0 24 24 | ✓ Good — correct rendering in toolbar (v1.3) |
+| Manual asset control over auto-detection | Auto-detection was unreliable in both directions; users prefer perfect results over speed | — Pending (v2.0) |
+| Remove all auto-detection code | Dead code after manual control; clean slate reduces maintenance burden | — Pending (v2.0) |
 
 ---
-*Last updated: 2026-03-01 after v1.3 milestone*
+*Last updated: 2026-03-01 after v2.0 milestone started*
