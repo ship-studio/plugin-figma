@@ -3,9 +3,39 @@
 **Defined:** 2026-03-01
 **Core Value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
 
-## v2.1 Requirements
+## v2.2 Requirements
 
-Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phases.
+Requirements for Designer Asset Workflow & Results UX milestone. Each maps to roadmap phases.
+
+### Detection
+
+- [ ] **DETECT-01**: Plugin scans the raw Figma tree for layers whose name starts with `@S-` (case-insensitive)
+- [ ] **DETECT-02**: Layers containing image fills (direct or in descendants) are exported as PNG
+- [ ] **DETECT-03**: Layers with only vector/text content are exported as SVG
+- [ ] **DETECT-04**: `@S-` prefix is stripped from filenames (e.g. `@S-hero` → `hero.png`)
+- [ ] **DETECT-05**: Detected assets are mapped to their position in the layout tree
+
+### Warning
+
+- [ ] **WARN-01**: Plugin shows a warning when no `@S-` layers are found
+- [ ] **WARN-02**: Warning explains the `@S-` naming convention for designers
+- [ ] **WARN-03**: User can "Continue anyway" to proceed without assets
+- [ ] **WARN-04**: User can "Try again" which re-fetches from the Figma API
+
+### Results
+
+- [ ] **RSLT-01**: Results view is a clean modal stating the brief is ready
+- [ ] **RSLT-02**: Results modal includes a copy-to-clipboard button
+- [ ] **RSLT-03**: Results modal tells user to paste the brief into their agent
+- [ ] **RSLT-04**: Results modal warns about potential mistakes and encourages refinement
+- [ ] **RSLT-05**: Results modal has an expandable "View details" section with assets, layout tree, and tokens
+
+### Cleanup
+
+- [ ] **CLNP-01**: Manual asset URL workflow removed (AssetListPanel, manual asset state)
+- [ ] **CLNP-02**: Resolve helpers for manual asset URLs removed
+
+## Previous Milestone Requirements (v2.1 -- Complete)
 
 ### Brief Modes
 
@@ -28,18 +58,9 @@ Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phas
 - [x] **ASTC-01**: Brief clearly distinguishes provided assets from non-asset elements
 - [x] **ASTC-02**: Brief explicitly lists all provided assets with their intended usage context
 
-## Previous Milestone Requirements (v2.0 -- Complete)
-
-All 20 v2.0 requirements completed. See `.planning/milestones/` for details.
-
 ## Future Requirements
 
 Deferred to future milestones. Tracked but not in current roadmap.
-
-### Asset Input Enhancements
-
-- **AINP-07**: User can paste multiple URLs at once (batch add)
-- **AINP-08**: Asset list persists across plugin close/reopen
 
 ### UX Enhancements
 
@@ -52,8 +73,9 @@ Deferred to future milestones. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Plugin-side placeholder detection | Claude Code can see the preview + assets; no need to rebuild auto-detection for flagging |
-| Auto-detection fallback | Replaced by manual control in v2.0; not bringing it back |
+| Instance propagation | @S- on a master component does not auto-detect instances — designer prefixes individual layers for full control |
+| Near-miss prefix detection | e.g. `@S icon` (space instead of dash) — deferred, strict convention is simpler |
+| Plugin-side placeholder detection | Claude Code can see the preview + assets; no need for plugin-side detection |
 | Mode-specific extraction | All three modes use the same extracted data; only the brief instructions change |
 
 ## Traceability
@@ -62,24 +84,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MODE-01 | Phase 20 | Complete |
-| MODE-02 | Phase 20 | Complete |
-| MODE-03 | Phase 21 | Complete |
-| MODE-04 | Phase 21 | Complete |
-| MODE-05 | Phase 21 | Complete |
-| MODE-06 | Phase 21 | Complete |
-| PLCH-01 | Phase 23 | Complete |
-| PLCH-02 | Phase 23 | Complete |
-| PLCH-03 | Phase 23 | Complete |
-| PLCH-04 | Phase 23 | Complete |
-| ASTC-01 | Phase 22 | Complete |
-| ASTC-02 | Phase 22 | Complete |
+| DETECT-01 | — | Pending |
+| DETECT-02 | — | Pending |
+| DETECT-03 | — | Pending |
+| DETECT-04 | — | Pending |
+| DETECT-05 | — | Pending |
+| WARN-01 | — | Pending |
+| WARN-02 | — | Pending |
+| WARN-03 | — | Pending |
+| WARN-04 | — | Pending |
+| RSLT-01 | — | Pending |
+| RSLT-02 | — | Pending |
+| RSLT-03 | — | Pending |
+| RSLT-04 | — | Pending |
+| RSLT-05 | — | Pending |
+| CLNP-01 | — | Pending |
+| CLNP-02 | — | Pending |
 
 **Coverage:**
-- v2.1 requirements: 12 total
-- Mapped to phases: 12
-- Unmapped: 0
+- v2.2 requirements: 16 total
+- Mapped to phases: 0
+- Unmapped: 16 ⚠️
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after roadmap creation*
+*Last updated: 2026-03-01 after initial definition*
