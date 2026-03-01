@@ -18,10 +18,10 @@ Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phas
 
 ### Placeholders
 
-- [ ] **PLCH-01**: Brief instructs Claude Code to compare the preview against provided assets and identify visual elements that need assets but don't have them
-- [ ] **PLCH-02**: Brief instructs Claude Code to create visible placeholder boxes for missing assets
-- [ ] **PLCH-03**: Each placeholder has a unique reference name (e.g. `[asset-ref-1]`)
-- [ ] **PLCH-04**: Users can reference placeholders in follow-up prompts (e.g. "Replace asset-ref-1 with this file")
+- [x] **PLCH-01**: Brief instructs Claude Code to compare the preview against provided assets and identify visual elements that need assets but don't have them
+- [x] **PLCH-02**: Brief instructs Claude Code to create visible placeholder boxes for missing assets
+- [x] **PLCH-03**: Each placeholder has a unique reference name (e.g. `[asset-ref-1]`)
+- [x] **PLCH-04**: Users can reference placeholders in follow-up prompts (e.g. "Replace asset-ref-1 with this file")
 
 ### Asset Clarity
 
@@ -68,10 +68,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MODE-04 | Phase 21 | Complete |
 | MODE-05 | Phase 21 | Complete |
 | MODE-06 | Phase 21 | Complete |
-| PLCH-01 | Phase 23 | Pending |
-| PLCH-02 | Phase 23 | Pending |
-| PLCH-03 | Phase 23 | Pending |
-| PLCH-04 | Phase 23 | Pending |
+| PLCH-01 | Phase 23 | Complete |
+| PLCH-02 | Phase 23 | Complete |
+| PLCH-03 | Phase 23 | Complete |
+| PLCH-04 | Phase 23 | Complete |
 | ASTC-01 | Phase 22 | Complete |
 | ASTC-02 | Phase 22 | Complete |
 
