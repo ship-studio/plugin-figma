@@ -155,6 +155,10 @@ function walkTree(
 
     // ASSET-05: Recurse into children to find IMAGE fills
     const childImages = findImageFillsInChildren(node, imageFillMap, matchedNodeIds, seenImageRefs);
+    // Tag child images with parentInstanceId for layout tree cross-referencing
+    for (const img of childImages) {
+      img.parentInstanceId = node.id;
+    }
 
     // Instance component dedup
     const key = instanceDedupKey(node);

@@ -9,7 +9,7 @@
 
 import type { Shell, ExtractionScope } from '../types';
 import type { ExtractionResult } from './types';
-import type { DesignTokens } from '../tokens/types';
+import type { DesignTokens, ImageFillRef } from '../tokens/types';
 import { fetchFileNodes, fetchFullFile } from '../figma-api';
 import { normalizeTree, countNodes } from './normalize';
 import { collectTokens } from '../tokens/collect';
@@ -35,6 +35,38 @@ export interface ExtractLayoutResult {
   fileKey: string;
   /** Set when nodeCount exceeds WARN_THRESHOLD before normalization. */
   largeTreeWarning?: { nodeCount: number; message: string };
+}
+
+/**
+ * Walk raw Figma API response nodes recursively and collect IMAGE fills
+ * from all nodes, including instance children that normalization strips.
+ *
+ * This must run BEFORE normalization so that instance children's IMAGE fills
+ * are captured (normalization collapses INSTANCE subtrees).
+ */
+export function collectImageFillsFromRawTree(node: any): ImageFillRef[] {
+  const results: ImageFillRef[] = [];
+
+  if (node.fills && Array.isArray(node.fills)) {
+    for (const paint of node.fills) {
+      if (paint.type === 'IMAGE' && paint.visible !== false) {
+        results.push({
+          imageRef: paint.imageRef,
+          scaleMode: paint.scaleMode ?? 'FILL',
+          nodeId: node.id,
+          nodeName: node.name,
+        });
+      }
+    }
+  }
+
+  if (node.children && Array.isArray(node.children)) {
+    for (const child of node.children) {
+      results.push(...collectImageFillsFromRawTree(child));
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -95,7 +127,14 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
     };
   }
 
-  // 4. Normalize the tree
+  // 4. Collect IMAGE fills from raw tree BEFORE normalization
+  //    (normalization strips instance children, losing their IMAGE fills)
+  const rawImageFills: ImageFillRef[] = [];
+  for (const node of rootNodes) {
+    rawImageFills.push(...collectImageFillsFromRawTree(node));
+  }
+
+  // 5. Normalize the tree
   const extraction = normalizeTree(rootNodes, components);
 
   // Mark as truncated if exceeding MAX_THRESHOLD
@@ -103,8 +142,17 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
     extraction.truncated = true;
   }
 
-  // 5. Collect design tokens from the normalized tree
+  // 6. Collect design tokens from the normalized tree
   const tokens = collectTokens(extraction.rootNodes, styles);
+
+  // 7. Merge raw-tree imageFills into tokens.imageFills, deduplicating by nodeId
+  const seenNodeIds = new Set(tokens.imageFills.map(f => f.nodeId));
+  for (const fill of rawImageFills) {
+    if (!seenNodeIds.has(fill.nodeId)) {
+      seenNodeIds.add(fill.nodeId);
+      tokens.imageFills.push(fill);
+    }
+  }
 
   return { extraction, tokens, fileKey, largeTreeWarning };
 }

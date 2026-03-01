@@ -54,6 +54,10 @@ export function generateBrief(input: BriefInput): BriefResult {
         compositionNodeIds.add(asset.nodeId);
       }
     }
+    // Map parentInstanceId -> filename so INSTANCE lines show -> child-image.png
+    if (asset.parentInstanceId && !assetNodeMap.has(asset.parentInstanceId)) {
+      assetNodeMap.set(asset.parentInstanceId, asset.filename);
+    }
   }
 
   // Compute breadcrumb map from rootNodes for asset location column
@@ -503,7 +507,12 @@ function buildAssetsSection(
   for (const asset of assets) {
     const relPath = toRelativePath(asset.path, projectPath);
     const typeLabel = assetTypeLabel(asset.assetType);
-    const location = asset.nodeId ? (breadcrumbMap.get(asset.nodeId) || '--') : '--';
+    // Breadcrumb lookup: try direct nodeId first, then fallback to parentInstanceId
+    // (instance child nodeIds aren't in the normalized tree's breadcrumb map)
+    let location = '--';
+    if (asset.nodeId) {
+      location = breadcrumbMap.get(asset.nodeId) || (asset.parentInstanceId ? (breadcrumbMap.get(asset.parentInstanceId) || '--') : '--');
+    }
     rows.push(`| ${asset.filename} | ${typeLabel} | ${location} | ${relPath} |`);
   }
 
