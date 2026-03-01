@@ -137,7 +137,9 @@ Plans:
   3. The modal includes a message about potential mistakes and encourages the user to refine iteratively
   4. An expandable "View details" toggle reveals the asset list, layout tree, and token summary -- collapsed by default
   5. The user can dismiss the modal and start a new brief without stale state from the previous run
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 27-01-PLAN.md -- Create ResultsModal component with success message, copy button, agent guidance, refinement encouragement, and expandable details; wire into MainView as view replacement
 
 ## Progress
 
@@ -172,4 +174,4 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 26. MainView Rewiring & Cleanup | 1/1 | Complete    | 2026-03-01 | - |
-| 27. Results Modal | v2.2 | 0/? | Not started | - |
+| 27. Results Modal | v2.2 | 0/1 | Not started | - |
