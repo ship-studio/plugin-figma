@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Manual Asset Control
 status: unknown
-last_updated: "2026-03-01T14:27:51.165Z"
+last_updated: "2026-03-01T14:38:40Z"
 progress:
   total_phases: 6
   completed_phases: 6
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 9
+  completed_plans: 9
 ---
 
 # Project State
@@ -18,22 +18,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v2.0 Manual Asset Control -- Phase 17: Export Pipeline Rebuild
+**Current focus:** v2.0 Manual Asset Control -- Phase 18: Brief Generator Updates
 
 ## Current Position
 
-Phase: 17 of 19 (Export Pipeline Rebuild) -- third of 5 v2.0 phases
+Phase: 18 of 19 (Brief Generator Updates) -- fourth of 5 v2.0 phases
 Plan: 1 of 1 COMPLETE
-Status: Phase 17 complete
-Last activity: 2026-03-01 -- Executed 17-01 (Export pipeline with ManualAsset format-aware batching)
+Status: Phase 18 complete
+Last activity: 2026-03-01 -- Executed 18-01 (Manual asset cross-referencing tests)
 
-Progress: [######....] 60% (3/5 phases)
+Progress: [########..] 80% (4/5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 3)
-- v2.0 average: ~2.9 min/plan
+- Total plans completed: 27 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 4)
+- v2.0 average: ~2.7 min/plan
 - Total execution time: ~6.7 hours across 5 milestones
 
 ## Accumulated Context
@@ -56,6 +56,8 @@ Key v2.0 decisions:
 - lookupUrl tries raw, encoded, and decoded nodeId variants for Figma API response map lookup
 - Format batching: one fetchImages call per non-empty partition (PNG at 2x, SVG without scale)
 - Per-asset failures produce warnings without throwing, allowing other assets to succeed
+- No generate.ts changes needed for Phase 18 -- existing code already handles manual asset cross-referencing correctly
+- Test fixtures must use non-generic names to avoid breadcrumb GENERIC_NAME_PATTERN skipping
 
 ### Pending Todos
 
@@ -68,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 17-01-PLAN.md (Export pipeline with ManualAsset format-aware batching)
-Next: `/gsd:plan-phase 18` (Brief Generator)
+Stopped at: Completed 18-01-PLAN.md (Manual asset cross-referencing tests)
+Next: `/gsd:plan-phase 19` (UI Wiring)

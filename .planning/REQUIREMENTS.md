@@ -32,7 +32,7 @@ Requirements for Manual Asset Control milestone. Each maps to roadmap phases.
 ### Export Pipeline
 
 - [x] **EXPT-01**: Plugin exports all listed assets in a single batch (one fetchImages call per format)
-- [ ] **EXPT-02**: Plugin maps each exported asset to its position in the layout tree by node ID
+- [x] **EXPT-02**: Plugin maps each exported asset to its position in the layout tree by node ID
 - [x] **EXPT-03**: Plugin generates a brief with zero assets if the list is empty (layout + tokens + preview only)
 - [x] **EXPT-04**: Full-page preview PNG remains auto-generated
 
@@ -84,7 +84,7 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | AINP-05 | Phase 16 | Complete |
 | AINP-06 | Phase 16 | Complete |
 | EXPT-01 | Phase 17 | Complete |
-| EXPT-02 | Phase 18 | Pending |
+| EXPT-02 | Phase 18 | Complete |
 | AINP-01 | Phase 19 | Pending |
 | AINP-02 | Phase 19 | Pending |
 | AINP-03 | Phase 19 | Pending |
