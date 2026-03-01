@@ -8,7 +8,8 @@ import type { ExtractLayoutResult } from '../layout/extract';
 import type { ExtractionResult, LayoutNode } from '../layout/types';
 import type { FigmaUrlParts, ExtractionScope, FigmaFileInfo } from '../types';
 import { exportAssets } from '../assets/export';
-import type { ExportResult, AssetExportProgress } from '../assets/types';
+import type { ExportResult, AssetExportProgress, ManualAsset } from '../assets/types';
+import { AssetListPanel } from '../components/AssetListPanel';
 import { generateBrief, TOKEN_WARNING_THRESHOLD } from '../brief/generate';
 import type { BriefResult } from '../brief/types';
 import { saveBrief, copyToClipboard } from '../brief/io';
@@ -122,6 +123,39 @@ export function MainView({ token }: MainViewProps) {
   const [briefResult, setBriefResult] = useState(null as BriefResult | null);
   const [briefError, setBriefError] = useState(null as string | null);
 
+  // Manual asset list state
+  const [manualAssets, setManualAssets] = useState<ManualAsset[]>([]);
+
+  const handleAddAsset = useCallback((asset: ManualAsset) => {
+    setManualAssets(prev => [...prev, asset]);
+  }, []);
+
+  const handleRemoveAsset = useCallback((nodeId: string) => {
+    setManualAssets(prev => prev.filter(a => a.nodeId !== nodeId));
+  }, []);
+
+  const handleClearAssets = useCallback(() => {
+    setManualAssets([]);
+  }, []);
+
+  const handleRenameAsset = useCallback((nodeId: string, newFilename: string) => {
+    setManualAssets(prev => prev.map(a =>
+      a.nodeId === nodeId ? { ...a, filename: newFilename } : a
+    ));
+  }, []);
+
+  const handleAssetResolved = useCallback((nodeId: string, resolved: ManualAsset) => {
+    setManualAssets(prev => prev.map(a =>
+      a.nodeId === nodeId ? resolved : a
+    ));
+  }, []);
+
+  const handleAssetFormatChange = useCallback((nodeId: string, newFormat: 'png' | 'svg', newFilename: string) => {
+    setManualAssets(prev => prev.map(a =>
+      a.nodeId === nodeId ? { ...a, format: newFormat, filename: newFilename } : a
+    ));
+  }, []);
+
   const extractionStats = useMemo(
     () => extractionResult ? collectStats(extractionResult.rootNodes) : null,
     [extractionResult],
@@ -154,6 +188,7 @@ export function MainView({ token }: MainViewProps) {
         fileKey: result.fileKey,
         selectedNodeId: parsedUrl.nodeId || result.extraction.rootNodes[0]?.id || '0:0',
         projectPath: ctx?.project?.path ?? '.',
+        manualAssets,
         onProgress: setAssetProgress,
       });
 
@@ -212,7 +247,7 @@ export function MainView({ token }: MainViewProps) {
       setExportingAssets(false);
       setAssetProgress(null);
     }
-  }, [token, parsedUrl, ctx, actions, fileInfo, urlInput]);
+  }, [token, parsedUrl, ctx, actions, fileInfo, urlInput, manualAssets]);
 
   const handleUrlChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -238,6 +273,8 @@ export function MainView({ token }: MainViewProps) {
         setBriefResult(null);
         setGeneratingBrief(false);
         setBriefError(null);
+        // Clear manual asset list
+        setManualAssets([]);
         return;
       }
 
@@ -267,6 +304,8 @@ export function MainView({ token }: MainViewProps) {
       setBriefResult(null);
       setGeneratingBrief(false);
       setBriefError(null);
+      // Clear manual asset list
+      setManualAssets([]);
 
     },
     []
@@ -419,7 +458,8 @@ export function MainView({ token }: MainViewProps) {
     }
   }, [briefResult, actions]);
 
-  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets || generatingBrief;
+  const hasResolvingAssets = manualAssets.some(a => a.status === 'resolving');
+  const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets || generatingBrief || hasResolvingAssets;
 
   return (
     <div>
@@ -476,6 +516,23 @@ export function MainView({ token }: MainViewProps) {
               : 'Will extract the whole page — select a specific element in Figma to narrow scope'}
           </div>
         </div>
+      )}
+
+      {/* Asset List Panel -- visible when design URL is validated */}
+      {parsedUrl && fileInfo && !validating && shell && (
+        <AssetListPanel
+          designFileKey={parsedUrl.fileKey}
+          assets={manualAssets}
+          onAdd={handleAddAsset}
+          onRemove={handleRemoveAsset}
+          onClear={handleClearAssets}
+          onRename={handleRenameAsset}
+          onResolved={handleAssetResolved}
+          onFormatChange={handleAssetFormatChange}
+          disabled={extracting || exportingAssets || generatingBrief}
+          shell={shell}
+          token={token}
+        />
       )}
 
       {/* Large Tree Warning */}
@@ -640,7 +697,9 @@ export function MainView({ token }: MainViewProps) {
               ? 'Generating brief...'
               : briefResult
                 ? 'Get New Brief'
-                : 'Get Brief';
+                : manualAssets.filter(a => a.status === 'valid').length > 0
+                  ? `Get Brief (${manualAssets.filter(a => a.status === 'valid').length} asset${manualAssets.filter(a => a.status === 'valid').length !== 1 ? 's' : ''})`
+                  : 'Get Brief';
         return (
           <button
             className={briefResult && !isLoading ? 'btn-secondary' : 'btn-primary'}
