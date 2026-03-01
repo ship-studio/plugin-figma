@@ -48,3 +48,27 @@ export interface ExportResult {
   /** Skipped assets, failed downloads */
   warnings: string[];
 }
+
+/**
+ * A manually-added asset entry for v2.0 manual asset control.
+ *
+ * Created when a user adds a Figma node URL. Auto-derives filename
+ * and format from the node's layer name and type. Consumed by the
+ * export pipeline, brief generator, and asset list UI.
+ */
+export interface ManualAsset {
+  /** Figma node ID (e.g., "12:34") */
+  nodeId: string;
+  /** Original Figma layer name, for display */
+  nodeName: string;
+  /** Sanitized filename WITH extension (e.g., "hero-image.png") */
+  filename: string;
+  /** User-selected or auto-suggested format */
+  format: 'png' | 'svg';
+  /** Lifecycle status */
+  status: 'resolving' | 'valid' | 'error';
+  /** Error message when status is 'error' */
+  error?: string;
+  /** Warning message (e.g., "Auto-named: frame-427.png -- consider renaming") */
+  warning?: string;
+}
