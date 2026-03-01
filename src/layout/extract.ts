@@ -35,6 +35,8 @@ export interface ExtractLayoutResult {
   fileKey: string;
   /** Set when nodeCount exceeds WARN_THRESHOLD before normalization. */
   largeTreeWarning?: { nodeCount: number; message: string };
+  /** Raw Figma API nodes (pre-normalization) for asset detection. */
+  rawRootNodes: any[];
 }
 
 /**
@@ -106,5 +108,5 @@ export async function extractLayout(options: ExtractLayoutOptions): Promise<Extr
   // 5. Collect design tokens from the normalized tree
   const tokens = collectTokens(extraction.rootNodes, styles);
 
-  return { extraction, tokens, fileKey, largeTreeWarning };
+  return { extraction, tokens, fileKey, largeTreeWarning, rawRootNodes: rootNodes };
 }
