@@ -15,6 +15,8 @@ export interface AssetEntry {
   filename: string;
   /** For png-fill: the Figma imageRef to resolve via image fills API */
   imageRef?: string;
+  /** For instance child images: the parent INSTANCE node's ID, enabling layout tree cross-referencing */
+  parentInstanceId?: string;
 }
 
 /** Progress update emitted during asset export. */
@@ -40,6 +42,8 @@ export interface ExportResult {
     nodeId?: string;
     /** Asset classification for Type column in brief */
     assetType?: 'icon' | 'image' | 'composition' | 'component';
+    /** For instance child images: parent INSTANCE node ID for layout tree cross-referencing */
+    parentInstanceId?: string;
   }[];
   /** Skipped assets, failed downloads */
   warnings: string[];

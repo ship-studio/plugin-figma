@@ -706,6 +706,108 @@ describe('generateBrief', () => {
     });
   });
 
+  // ── Instance child image cross-referencing ─────────────────────
+
+  describe('instance child image cross-referencing', () => {
+    it('annotates instance line with -> child-image.png when child asset has matching parentInstanceId', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Card Section', type: 'FRAME', visible: true,
+        children: [
+          {
+            id: '20:1', name: 'Card Instance', type: 'INSTANCE', visible: true,
+            width: 300, height: 400,
+            componentRef: {
+              componentId: 'comp-card', componentName: 'Card',
+              isRemote: false, source: 'local',
+            },
+          },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'hero-image.png',
+              path: '/Users/test/project/.shipstudio/assets/hero-image.png',
+              nodeId: 'I20:1;20:2',
+              assetType: 'image',
+              parentInstanceId: '20:1',
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('Instance "Card"');
+      expect(result.markdown).toContain('-> hero-image.png');
+    });
+
+    it('preserves existing behavior: instance shows -> component.png for direct asset match', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Section', type: 'FRAME', visible: true,
+        children: [
+          {
+            id: '21:1', name: 'Button', type: 'INSTANCE', visible: true,
+            width: 200, height: 48,
+            componentRef: {
+              componentId: 'comp-btn', componentName: 'Button',
+              isRemote: false, source: 'local',
+            },
+          },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'button.png',
+              path: '/Users/test/project/.shipstudio/assets/button.png',
+              nodeId: '21:1',
+              assetType: 'component',
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('Instance "Button" -> button.png');
+    });
+
+    it('shows breadcrumb for instance child image in Assets table via parentInstanceId fallback', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Hero Section', type: 'FRAME', visible: true,
+        children: [
+          {
+            id: '22:1', name: 'Product Card', type: 'INSTANCE', visible: true,
+            width: 300, height: 400,
+            componentRef: {
+              componentId: 'comp-pcard', componentName: 'ProductCard',
+              isRemote: false, source: 'local',
+            },
+          },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'product-photo.png',
+              path: '/Users/test/project/.shipstudio/assets/product-photo.png',
+              nodeId: 'I22:1;22:2',
+              assetType: 'image',
+              parentInstanceId: '22:1',
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      // The child node I22:1;22:2 is NOT in the normalized tree, so direct lookup fails.
+      // Fallback via parentInstanceId: breadcrumb of 22:1 -> "Hero Section > Product Card"
+      expect(result.markdown).toContain('| product-photo.png | Image | Hero Section > Product Card |');
+    });
+  });
+
   // ── Empty sections ──────────────────────────────────────────────
 
   describe('empty sections', () => {
