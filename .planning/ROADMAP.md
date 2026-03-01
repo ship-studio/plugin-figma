@@ -139,11 +139,11 @@ Plans:
   2. When a component instance node itself has an IMAGE fill override (e.g., a card background image), that image is exported as a PNG file
   3. Simple solid-color RECTANGLE nodes (no strokes, no gradients, no image fills) are NOT exported as SVG -- only rectangles with visual complexity are exported
   4. The layout tree in the brief cross-references instance child images with their exported filenames (e.g., `-> hero-image.png`)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
+- [ ] 12-01-PLAN.md -- TDD: Instance asset detection and rectangle filtering in identifyAssets (isSimpleRectangle, findImageFillsInChildren, instance IMAGE fill override)
+- [ ] 12-02-PLAN.md -- Pipeline integration: raw tree image fill collection, layout tree cross-referencing, export pipeline threading
 
 ### Phase 13: Spacing & Layout Accuracy
 **Goal**: The design brief provides Claude Code with accurate spacing, positioning, and flex properties so builds match the Figma design without manual CSS tweaking
