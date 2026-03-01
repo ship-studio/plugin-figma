@@ -73,8 +73,8 @@ Deferred to future milestones. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Instance propagation | @S- on a master component does not auto-detect instances — designer prefixes individual layers for full control |
-| Near-miss prefix detection | e.g. `@S icon` (space instead of dash) — deferred, strict convention is simpler |
+| Instance propagation | @S- on a master component does not auto-detect instances -- designer prefixes individual layers for full control |
+| Near-miss prefix detection | e.g. `@S icon` (space instead of dash) -- deferred, strict convention is simpler |
 | Plugin-side placeholder detection | Claude Code can see the preview + assets; no need for plugin-side detection |
 | Mode-specific extraction | All three modes use the same extracted data; only the brief instructions change |
 
@@ -84,28 +84,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DETECT-01 | — | Pending |
-| DETECT-02 | — | Pending |
-| DETECT-03 | — | Pending |
-| DETECT-04 | — | Pending |
-| DETECT-05 | — | Pending |
-| WARN-01 | — | Pending |
-| WARN-02 | — | Pending |
-| WARN-03 | — | Pending |
-| WARN-04 | — | Pending |
-| RSLT-01 | — | Pending |
-| RSLT-02 | — | Pending |
-| RSLT-03 | — | Pending |
-| RSLT-04 | — | Pending |
-| RSLT-05 | — | Pending |
-| CLNP-01 | — | Pending |
-| CLNP-02 | — | Pending |
+| DETECT-01 | Phase 24 | Pending |
+| DETECT-02 | Phase 24 | Pending |
+| DETECT-03 | Phase 24 | Pending |
+| DETECT-04 | Phase 24 | Pending |
+| DETECT-05 | Phase 24 | Pending |
+| WARN-01 | Phase 25 | Pending |
+| WARN-02 | Phase 25 | Pending |
+| WARN-03 | Phase 25 | Pending |
+| WARN-04 | Phase 25 | Pending |
+| RSLT-01 | Phase 27 | Pending |
+| RSLT-02 | Phase 27 | Pending |
+| RSLT-03 | Phase 27 | Pending |
+| RSLT-04 | Phase 27 | Pending |
+| RSLT-05 | Phase 27 | Pending |
+| CLNP-01 | Phase 26 | Pending |
+| CLNP-02 | Phase 26 | Pending |
 
 **Coverage:**
 - v2.2 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16 ⚠️
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after initial definition*
+*Last updated: 2026-03-01 after roadmap creation*

@@ -7,7 +7,8 @@
 - ✅ **v1.2 Brief Quality Overhaul** -- Phases 9-11 (shipped 2026-03-01, outside GSD workflow)
 - ✅ **v1.3 Asset Completeness & Polish** -- Phases 12-14 (shipped 2026-03-01)
 - ✅ **v2.0 Manual Asset Control** -- Phases 15-19 (shipped 2026-03-01)
-- **v2.1 Brief Modes & Placeholders** -- Phases 20-23 (in progress)
+- ✅ **v2.1 Brief Modes & Placeholders** -- Phases 20-23 (shipped 2026-03-01)
+- **v2.2 Designer Asset Workflow & Results UX** -- Phases 24-27 (in progress)
 
 ## Phases
 
@@ -64,69 +65,78 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 
 </details>
 
-### v2.1 Brief Modes & Placeholders
+<details>
+<summary>v2.1 Brief Modes & Placeholders (Phases 20-23) -- SHIPPED 2026-03-01</summary>
 
-**Milestone Goal:** Give users control over how Claude Code interprets the design brief -- from pixel-perfect reproduction to loose inspiration -- and ensure every missing asset gets a named placeholder for easy follow-up.
+- [x] Phase 20: Mode Selector UI (1/1 plans) -- completed 2026-03-01
+- [x] Phase 21: Mode-Specific Brief Instructions (1/1 plans) -- completed 2026-03-01
+- [x] Phase 22: Asset Clarity in Brief (1/1 plans) -- completed 2026-03-01
+- [x] Phase 23: Placeholder System (1/1 plans) -- completed 2026-03-01
 
-- [x] **Phase 20: Mode Selector UI** - Add brief mode picker with three options and explanatory text (completed 2026-03-01)
-- [x] **Phase 21: Mode-Specific Brief Instructions** - Generate different Claude Code instructions per mode, including inspiration text area (completed 2026-03-01)
-- [x] **Phase 22: Asset Clarity in Brief** - Clearly distinguish provided assets from non-asset elements with explicit usage context (completed 2026-03-01)
-- [x] **Phase 23: Placeholder System** - Brief instructs Claude Code to identify missing assets and create named placeholder boxes (completed 2026-03-01)
+</details>
+
+### v2.2 Designer Asset Workflow & Results UX
+
+**Milestone Goal:** Replace the manual asset URL workflow with convention-based `@S-` prefix detection, and transform the results screen into a clean "brief is done" experience that guides designers on next steps.
+
+- [ ] **Phase 24: Detection Foundation** - Pure function that walks the raw Figma tree to find `@S-` prefixed layers and auto-detect their export format
+- [ ] **Phase 25: Pipeline Integration & Zero-Asset Warning** - Wire detection output into the export pipeline and add a checkpoint warning when no assets are found
+- [ ] **Phase 26: MainView Rewiring & Cleanup** - Replace manual asset state with detected assets end-to-end and delete the old manual workflow code
+- [ ] **Phase 27: Results Modal** - Replace inline results card with a clean modal guiding designers to paste the brief and iterate
 
 ## Phase Details
 
-### Phase 20: Mode Selector UI
-**Goal**: Users can see and choose between three brief modes, each with clear explanatory text describing what it does
-**Depends on**: Phase 19
-**Requirements**: MODE-01, MODE-02
+### Phase 24: Detection Foundation
+**Goal**: The plugin can scan any raw Figma tree and produce a correctly-typed list of detected assets with auto-determined export formats and clean filenames
+**Depends on**: Phase 23 (v2.1 complete)
+**Requirements**: DETECT-01, DETECT-02, DETECT-03, DETECT-04, DETECT-05
 **Success Criteria** (what must be TRUE):
-  1. User sees three brief mode options in the plugin UI: "Copy (Best results)", "Copy (Pixel for pixel)", and "Use as inspiration"
-  2. Each mode displays explanatory text that describes its behavior in plain language (e.g., what Claude Code will do differently)
-  3. The selected mode persists during the current session -- user does not need to re-select after navigating back from results
-  4. The default mode is "Copy (Best results)" when no prior selection exists
-**Plans**: 1 plan
-Plans:
-- [ ] 20-01-PLAN.md — Add mode selector CSS and UI (mode cards with state, rendering, persistence)
-
-### Phase 21: Mode-Specific Brief Instructions
-**Goal**: The generated brief contains different Claude Code instructions depending on the selected mode, and the "Use as inspiration" mode captures custom user context
-**Depends on**: Phase 20
-**Requirements**: MODE-03, MODE-04, MODE-05, MODE-06
-**Success Criteria** (what must be TRUE):
-  1. Selecting "Copy (Best results)" produces a brief that instructs Claude Code to faithfully reproduce the design with clean, responsive development practices
-  2. Selecting "Copy (Pixel for pixel)" produces a brief that instructs Claude Code to match the Figma design as exactly as possible (exact pixel values, no responsive abstractions)
-  3. Selecting "Use as inspiration" shows a text area where the user describes what to take from the design -- and the brief incorporates that custom context into instructions telling Claude Code to adapt the design patterns rather than copy them
-  4. The mode-specific instructions replace the existing static "How to Use This Brief" section -- there is only one set of instructions, not two
+  1. Given a Figma tree containing layers named `@S-hero`, `@S-icon`, and `@S-logo`, the detection function returns exactly those three layers as detected assets (case-insensitive matching)
+  2. A layer named `@S-hero` containing a child RECTANGLE with an IMAGE fill is detected as PNG format; a layer named `@S-icon` with only vector children is detected as SVG format
+  3. Detected asset filenames have the `@S-` prefix stripped and are sanitized (e.g. `@S-hero-image` becomes `hero-image.png`), with duplicates auto-numbered (`icon.svg`, `icon-2.svg`)
+  4. Each detected asset carries its Figma node ID, enabling downstream mapping to the layout tree position
+  5. Hidden layers (visible=false) and layers inside an `@S-` subtree are not double-detected
 **Plans**: TBD
 
-### Phase 22: Asset Clarity in Brief
-**Goal**: The brief output makes it immediately obvious which elements have provided assets and which do not, with explicit usage context for every asset
-**Depends on**: Phase 21
-**Requirements**: ASTC-01, ASTC-02
+### Phase 25: Pipeline Integration & Zero-Asset Warning
+**Goal**: Detection output flows through the existing export pipeline and the user sees a clear warning when no `@S-` assets exist in their design
+**Depends on**: Phase 24
+**Requirements**: WARN-01, WARN-02, WARN-03, WARN-04
 **Success Criteria** (what must be TRUE):
-  1. The brief clearly distinguishes provided assets from non-asset elements -- a reader can tell at a glance which visual elements in the design have real files and which do not
-  2. The brief includes an explicit asset manifest listing every provided asset with its filename, format, and intended usage context (e.g., "hero-image.png -- background image for the hero section")
-**Plans**: 1 plan
-Plans:
-- [ ] 22-01-PLAN.md — Add Usage column to Assets table and enhance asset clarity in instructions
+  1. The extraction pipeline exposes raw Figma nodes (pre-normalization) so detection can run on the full tree including INSTANCE subtrees
+  2. When no `@S-` layers are found, the user sees a warning explaining the `@S-` naming convention with both "Continue anyway" and "Try again" options
+  3. "Try again" re-fetches from the Figma API (not re-scanning in-memory data), so the designer can fix their file and retry
+  4. "Continue anyway" proceeds to generate a brief with zero assets (preview-only brief)
+  5. `DetectedAsset[]` flows into the existing `exportAssets()` pipeline without type errors or node ID corruption
+**Plans**: TBD
 
-### Phase 23: Placeholder System
-**Goal**: The brief instructs Claude Code to create visible, named placeholder boxes for any visual element that needs an asset but does not have one -- users can reference these placeholders in follow-up prompts
-**Depends on**: Phase 22
-**Requirements**: PLCH-01, PLCH-02, PLCH-03, PLCH-04
+### Phase 26: MainView Rewiring & Cleanup
+**Goal**: The plugin works end-to-end with `@S-` detection as the sole asset workflow, with all manual URL code removed
+**Depends on**: Phase 25
+**Requirements**: CLNP-01, CLNP-02
 **Success Criteria** (what must be TRUE):
-  1. The brief instructs Claude Code to compare the preview image against the provided asset list and identify visual elements (images, icons, illustrations) that need assets but were not provided
-  2. The brief instructs Claude Code to create visible colored placeholder boxes (not invisible divs) for each missing asset, sized to match the design
-  3. Each placeholder has a unique, human-readable reference name (e.g., `[asset-ref-1: hero background]`) that appears both in the placeholder box and in the brief's placeholder summary
-  4. Users can reference placeholders in follow-up prompts (e.g., "Replace asset-ref-1 with this file") and Claude Code knows exactly which element to update
-**Plans**: 1 plan
-Plans:
-- [ ] 23-01-PLAN.md — Add placeholder section to brief and update instructions to use placeholder system
+  1. The manual asset URL workflow is completely gone -- no AssetListPanel, no "paste Figma URL" input, no manual asset state or callbacks in MainView
+  2. The resolve helpers (resolve.ts, resolve.test.ts) are deleted and no imports reference them
+  3. The plugin generates a correct brief with detected `@S-` assets end-to-end: extraction, detection, export, brief generation, clipboard copy all work in sequence
+  4. The existing test suite passes after cleanup (no broken imports, no orphaned types)
+**Plans**: TBD
+
+### Phase 27: Results Modal
+**Goal**: After brief generation, the user sees a clean modal that confirms success, guides them to paste the brief into their agent, and offers expandable details for power users
+**Depends on**: Phase 26
+**Requirements**: RSLT-01, RSLT-02, RSLT-03, RSLT-04, RSLT-05
+**Success Criteria** (what must be TRUE):
+  1. After brief generation, a modal appears with a clear success message and a primary "Copy to clipboard" button
+  2. The modal tells the user to paste the brief into Claude Code (or their agent) as the next step
+  3. The modal includes a message about potential mistakes and encourages the user to refine iteratively
+  4. An expandable "View details" toggle reveals the asset list, layout tree, and token summary -- collapsed by default
+  5. The user can dismiss the modal and start a new brief without stale state from the previous run
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 20 -> 21 -> 22 -> 23
+Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -149,7 +159,11 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23
 | 17. Export Pipeline Rebuild | v2.0 | 1/1 | Complete | 2026-03-01 |
 | 18. Brief Generator Updates | v2.0 | 1/1 | Complete | 2026-03-01 |
 | 19. Asset List UI & Integration | v2.0 | 2/2 | Complete | 2026-03-01 |
-| 20. Mode Selector UI | 1/1 | Complete    | 2026-03-01 | - |
-| 21. Mode-Specific Brief Instructions | 1/1 | Complete    | 2026-03-01 | - |
-| 22. Asset Clarity in Brief | 1/1 | Complete    | 2026-03-01 | - |
-| 23. Placeholder System | 1/1 | Complete    | 2026-03-01 | - |
+| 20. Mode Selector UI | v2.1 | 1/1 | Complete | 2026-03-01 |
+| 21. Mode-Specific Brief Instructions | v2.1 | 1/1 | Complete | 2026-03-01 |
+| 22. Asset Clarity in Brief | v2.1 | 1/1 | Complete | 2026-03-01 |
+| 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
+| 24. Detection Foundation | v2.2 | 0/? | Not started | - |
+| 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 0/? | Not started | - |
+| 26. MainView Rewiring & Cleanup | v2.2 | 0/? | Not started | - |
+| 27. Results Modal | v2.2 | 0/? | Not started | - |
