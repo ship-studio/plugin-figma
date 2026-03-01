@@ -148,6 +148,7 @@ export function MainView({ token }: MainViewProps) {
 
   // Brief mode selection (persists across URL changes within session)
   const [briefMode, setBriefMode] = useState<BriefMode>('best');
+  const [inspirationText, setInspirationText] = useState('');
 
   const handleAddAsset = useCallback((asset: ManualAsset) => {
     setManualAssets(prev => [...prev, asset]);
@@ -238,6 +239,8 @@ export function MainView({ token }: MainViewProps) {
             fileName: fileInfo?.name ?? 'Untitled',
             figmaUrl: urlInput,
             rootNodes: result.extraction.rootNodes,
+            mode: briefMode,
+            inspirationText: briefMode === 'inspiration' ? inspirationText : undefined,
           });
 
           setBriefResult(brief);
@@ -270,7 +273,7 @@ export function MainView({ token }: MainViewProps) {
       setExportingAssets(false);
       setAssetProgress(null);
     }
-  }, [token, parsedUrl, ctx, actions, fileInfo, urlInput, manualAssets]);
+  }, [token, parsedUrl, ctx, actions, fileInfo, urlInput, manualAssets, briefMode, inspirationText]);
 
   const handleUrlChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -566,6 +569,15 @@ export function MainView({ token }: MainViewProps) {
               </div>
             ))}
           </div>
+          {briefMode === 'inspiration' && (
+            <textarea
+              className="figma-plugin-input figma-plugin-inspiration-textarea"
+              placeholder="Describe what to take from this design (e.g., 'Use the color palette and card layout pattern, but adapt spacing and typography to match our existing design system')"
+              value={inspirationText}
+              onChange={(e) => setInspirationText(e.target.value)}
+              rows={3}
+            />
+          )}
         </div>
       )}
 

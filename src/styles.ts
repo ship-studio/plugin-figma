@@ -139,6 +139,16 @@ export const PLUGIN_CSS = `
   line-height: 1.3;
 }
 
+/* Inspiration textarea */
+.figma-plugin-inspiration-textarea {
+  margin-top: 8px;
+  resize: vertical;
+  min-height: 60px;
+  max-height: 120px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .figma-plugin-radio-group {
   display: flex;
   flex-direction: column;

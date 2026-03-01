@@ -21,6 +21,10 @@ export interface BriefInput {
   date?: string;
   /** Root nodes for breadcrumb computation (optional; falls back to extraction.extraction.rootNodes). */
   rootNodes?: LayoutNode[];
+  /** Brief mode selected by the user. Defaults to 'best'. */
+  mode?: 'best' | 'pixel' | 'inspiration';
+  /** User-provided context for inspiration mode. */
+  inspirationText?: string;
 }
 
 /** Summary statistics for the plugin UI. */
