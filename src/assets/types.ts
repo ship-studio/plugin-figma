@@ -41,7 +41,7 @@ export interface ExportResult {
     /** Stable key for breadcrumb lookup (populated when pipeline threads nodeId) */
     nodeId?: string;
     /** Asset classification for Type column in brief */
-    assetType?: 'icon' | 'image' | 'composition' | 'component';
+    assetType?: 'icon' | 'image';
     /** For instance child images: parent INSTANCE node ID for layout tree cross-referencing */
     parentInstanceId?: string;
   }[];
