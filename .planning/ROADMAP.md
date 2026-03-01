@@ -106,7 +106,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The brief clearly distinguishes provided assets from non-asset elements -- a reader can tell at a glance which visual elements in the design have real files and which do not
   2. The brief includes an explicit asset manifest listing every provided asset with its filename, format, and intended usage context (e.g., "hero-image.png -- background image for the hero section")
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 22-01-PLAN.md — Add Usage column to Assets table and enhance asset clarity in instructions
 
 ### Phase 23: Placeholder System
 **Goal**: The brief instructs Claude Code to create visible, named placeholder boxes for any visual element that needs an asset but does not have one -- users can reference these placeholders in follow-up prompts
