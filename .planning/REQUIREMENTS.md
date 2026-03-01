@@ -25,8 +25,8 @@ Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phas
 
 ### Asset Clarity
 
-- [ ] **ASTC-01**: Brief clearly distinguishes provided assets from non-asset elements
-- [ ] **ASTC-02**: Brief explicitly lists all provided assets with their intended usage context
+- [x] **ASTC-01**: Brief clearly distinguishes provided assets from non-asset elements
+- [x] **ASTC-02**: Brief explicitly lists all provided assets with their intended usage context
 
 ## Previous Milestone Requirements (v2.0 -- Complete)
 
@@ -72,8 +72,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLCH-02 | Phase 23 | Pending |
 | PLCH-03 | Phase 23 | Pending |
 | PLCH-04 | Phase 23 | Pending |
-| ASTC-01 | Phase 22 | Pending |
-| ASTC-02 | Phase 22 | Pending |
+| ASTC-01 | Phase 22 | Complete |
+| ASTC-02 | Phase 22 | Complete |
 
 **Coverage:**
 - v2.1 requirements: 12 total

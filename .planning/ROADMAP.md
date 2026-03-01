@@ -70,7 +70,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 
 - [x] **Phase 20: Mode Selector UI** - Add brief mode picker with three options and explanatory text (completed 2026-03-01)
 - [x] **Phase 21: Mode-Specific Brief Instructions** - Generate different Claude Code instructions per mode, including inspiration text area (completed 2026-03-01)
-- [ ] **Phase 22: Asset Clarity in Brief** - Clearly distinguish provided assets from non-asset elements with explicit usage context
+- [x] **Phase 22: Asset Clarity in Brief** - Clearly distinguish provided assets from non-asset elements with explicit usage context (completed 2026-03-01)
 - [ ] **Phase 23: Placeholder System** - Brief instructs Claude Code to identify missing assets and create named placeholder boxes
 
 ## Phase Details
@@ -149,5 +149,5 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23
 | 19. Asset List UI & Integration | v2.0 | 2/2 | Complete | 2026-03-01 |
 | 20. Mode Selector UI | 1/1 | Complete    | 2026-03-01 | - |
 | 21. Mode-Specific Brief Instructions | 1/1 | Complete    | 2026-03-01 | - |
-| 22. Asset Clarity in Brief | v2.1 | 0/? | Not started | - |
+| 22. Asset Clarity in Brief | 1/1 | Complete   | 2026-03-01 | - |
 | 23. Placeholder System | v2.1 | 0/? | Not started | - |

@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Brief Modes & Placeholders
-status: unknown
-last_updated: "2026-03-01T17:15:33.826Z"
+status: in-progress
+last_updated: "2026-03-01T17:28:00Z"
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,27 +18,28 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v2.1 Brief Modes & Placeholders -- Phase 21 complete
+**Current focus:** v2.1 Brief Modes & Placeholders -- Phase 22 complete
 
 ## Current Position
 
-Phase: 21 of 23 (Mode-Specific Brief Instructions)
+Phase: 22 of 23 (Asset Clarity in Brief)
 Plan: 1 of 1 (complete)
-Status: Phase 21 complete
-Last activity: 2026-03-01 -- Completed 21-01 (Mode-Specific Brief Instructions)
+Status: Phase 22 complete
+Last activity: 2026-03-01 -- Completed 22-01 (Asset Clarity in Brief)
 
-Progress: [####░░░░░░] 50%
+Progress: [######░░░░] 63%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 8, v2.1: 2)
+- Total plans completed: 31 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 8, v2.1: 3)
 - Total execution time: ~6.7 hours across 6 milestones
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 20    | 01   | 2min     | 2     | 2     |
 | 21    | 01   | 2min     | 2     | 4     |
+| 22    | 01   | 3min     | 2     | 2     |
 
 ## Accumulated Context
 
@@ -53,6 +54,9 @@ Key v2.1 decisions so far:
 - briefMode persists across URL changes within session via React useState
 - Brief instructions use Before/During/After structure with shared base rules + mode-specific additions
 - inspirationText only passed when mode is 'inspiration' to prevent stale text leaking
+- Replace Location column with Usage column (not add alongside) for cleaner asset table
+- Usage format: 'Type in Breadcrumb' for located assets, plain 'Type' for unlocated
+- Assets section instructions call it "complete manifest" and direct CSS/HTML for non-listed elements
 
 ### Pending Todos
 
@@ -65,5 +69,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 21-01-PLAN.md (Mode-Specific Brief Instructions)
-Next: Plan phase 22 (Placeholder Detection)
+Stopped at: Completed 22-01-PLAN.md (Asset Clarity in Brief)
+Next: Plan phase 23 (Placeholder Detection)
