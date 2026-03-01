@@ -948,4 +948,165 @@ describe('generateBrief', () => {
       expect(result.markdown).not.toContain('align-self');
     });
   });
+
+  // ── Manual asset cross-referencing (Phase 18) ─────────────────
+
+  describe('manual asset cross-referencing (Phase 18)', () => {
+    it('maps manual asset to tree node via direct nodeId match', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Page', type: 'FRAME', visible: true,
+        children: [
+          {
+            id: '2:1', name: 'Hero', type: 'FRAME', visible: true,
+            children: [
+              {
+                id: '3:1', name: 'Icons', type: 'FRAME', visible: true,
+                children: [
+                  { id: '5:1', name: 'StarIcon', type: 'VECTOR', visible: true },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'star.svg',
+              path: '/Users/test/project/.shipstudio/assets/star.svg',
+              nodeId: '5:1',
+              assetType: 'icon',
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| star.svg | Icon | Page > Hero > Icons > StarIcon |');
+    });
+
+    it('maps manual asset to INSTANCE node with tree annotation', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Nav Bar', type: 'FRAME', visible: true,
+        children: [
+          {
+            id: '10:1', name: 'Logo', type: 'INSTANCE', visible: true,
+            width: 120, height: 40,
+            componentRef: {
+              componentId: 'comp-logo', componentName: 'Logo',
+              isRemote: false, source: 'local',
+            },
+          },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'logo.png',
+              path: '/Users/test/project/.shipstudio/assets/logo.png',
+              nodeId: '10:1',
+              assetType: 'image',
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      // Assets table: location via breadcrumb
+      expect(result.markdown).toContain('| logo.png | Image | Nav Bar > Logo |');
+      // Layout tree: instance annotation
+      expect(result.markdown).toContain('Instance "Logo" -> logo.png');
+    });
+
+    it('shows Icon for SVG and Image for PNG type labels with no legacy labels', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+        children: [
+          { id: '4:1', name: 'Arrow', type: 'VECTOR', visible: true },
+          { id: '4:2', name: 'Banner', type: 'RECTANGLE', visible: true },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'arrow.svg',
+              path: '/Users/test/project/.shipstudio/assets/arrow.svg',
+              nodeId: '4:1',
+              assetType: 'icon',
+            },
+            {
+              filename: 'banner.png',
+              path: '/Users/test/project/.shipstudio/assets/banner.png',
+              nodeId: '4:2',
+              assetType: 'image',
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| Icon |');
+      expect(result.markdown).toContain('| Image |');
+      // No legacy type labels
+      expect(result.markdown).not.toMatch(/\| Composition \|/);
+      expect(result.markdown).not.toMatch(/\| Illustration \|/);
+      expect(result.markdown).not.toMatch(/\| Component \|/);
+    });
+
+    it('shows -- for I-prefix instance-child nodeId without parentInstanceId', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Page', type: 'FRAME', visible: true,
+        children: [
+          {
+            id: '20:1', name: 'Card', type: 'INSTANCE', visible: true,
+            width: 300, height: 400,
+            componentRef: {
+              componentId: 'comp-card', componentName: 'Card',
+              isRemote: false, source: 'local',
+            },
+          },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'card-bg.png',
+              path: '/Users/test/project/.shipstudio/assets/card-bg.png',
+              nodeId: 'I20:1;20:2',
+              assetType: 'image',
+              // No parentInstanceId -- manual assets don't have it
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| card-bg.png | Image | -- |');
+    });
+
+    it('shows -- for nodeId with no tree match', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            {
+              filename: 'mystery.svg',
+              path: '/Users/test/project/.shipstudio/assets/mystery.svg',
+              nodeId: '999:999',
+              assetType: 'icon',
+            },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| mystery.svg | Icon | -- |');
+    });
+  });
 });
