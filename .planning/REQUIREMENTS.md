@@ -11,10 +11,10 @@ Requirements for Brief Modes & Placeholders milestone. Each maps to roadmap phas
 
 - [x] **MODE-01**: User can choose between three brief modes: "Copy (Best results)", "Copy (Pixel for pixel)", "Use as inspiration"
 - [x] **MODE-02**: Each mode has clear explanatory text in the UI describing its behavior
-- [ ] **MODE-03**: "Copy (Best results)" mode instructs Claude Code to faithfully reproduce the design with clean, responsive development practices
-- [ ] **MODE-04**: "Copy (Pixel for pixel)" mode instructs Claude Code to match the Figma design as exactly as possible
-- [ ] **MODE-05**: "Use as inspiration" mode shows a text area for the user to describe what to take from the design
-- [ ] **MODE-06**: "Use as inspiration" mode instructs Claude Code to adapt design patterns to the user's site, incorporating their custom context
+- [x] **MODE-03**: "Copy (Best results)" mode instructs Claude Code to faithfully reproduce the design with clean, responsive development practices
+- [x] **MODE-04**: "Copy (Pixel for pixel)" mode instructs Claude Code to match the Figma design as exactly as possible
+- [x] **MODE-05**: "Use as inspiration" mode shows a text area for the user to describe what to take from the design
+- [x] **MODE-06**: "Use as inspiration" mode instructs Claude Code to adapt design patterns to the user's site, incorporating their custom context
 
 ### Placeholders
 
@@ -64,10 +64,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | MODE-01 | Phase 20 | Complete |
 | MODE-02 | Phase 20 | Complete |
-| MODE-03 | Phase 21 | Pending |
-| MODE-04 | Phase 21 | Pending |
-| MODE-05 | Phase 21 | Pending |
-| MODE-06 | Phase 21 | Pending |
+| MODE-03 | Phase 21 | Complete |
+| MODE-04 | Phase 21 | Complete |
+| MODE-05 | Phase 21 | Complete |
+| MODE-06 | Phase 21 | Complete |
 | PLCH-01 | Phase 23 | Pending |
 | PLCH-02 | Phase 23 | Pending |
 | PLCH-03 | Phase 23 | Pending |
