@@ -188,6 +188,6 @@ Phases execute in numeric order: 12 -> 12.x -> 13 -> 13.x -> 14
 | 9. Smart Illustration Detection | v1.2 | N/A | Complete | 2026-03-01 |
 | 10. Layout Tree Quality | v1.2 | N/A | Complete | 2026-03-01 |
 | 11. UI Fixes | v1.2 | N/A | Complete | 2026-03-01 |
-| 12. Instance Asset Detection | 2/2 | Complete   | 2026-03-01 | - |
+| 12. Instance Asset Detection | 2/2 | Complete    | 2026-03-01 | - |
 | 13. Spacing & Layout Accuracy | v1.3 | 0/TBD | Not started | - |
 | 14. Plugin Icon | v1.3 | 0/TBD | Not started | - |
