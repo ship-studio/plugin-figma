@@ -123,7 +123,9 @@ Plans:
   2. The resolve helpers (resolve.ts, resolve.test.ts) are deleted and no imports reference them
   3. The plugin generates a correct brief with detected `@S-` assets end-to-end: extraction, detection, export, brief generation, clipboard copy all work in sequence
   4. The existing test suite passes after cleanup (no broken imports, no orphaned types)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 26-01-PLAN.md -- Relocate resolveFilenameCollision to sanitize.ts, delete resolve.ts/resolve.test.ts/AssetListPanel.tsx, strip all manual asset plumbing from MainView, clean orphaned CSS
 
 ### Phase 27: Results Modal
 **Goal**: After brief generation, the user sees a clean modal that confirms success, guides them to paste the brief into their agent, and offers expandable details for power users
@@ -168,6 +170,6 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 22. Asset Clarity in Brief | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
-| 25. Pipeline Integration & Zero-Asset Warning | 1/1 | Complete    | 2026-03-01 | - |
-| 26. MainView Rewiring & Cleanup | v2.2 | 0/? | Not started | - |
+| 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 1/1 | Complete | 2026-03-01 |
+| 26. MainView Rewiring & Cleanup | v2.2 | 0/1 | Not started | - |
 | 27. Results Modal | v2.2 | 0/? | Not started | - |
