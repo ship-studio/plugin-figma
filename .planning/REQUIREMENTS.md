@@ -9,11 +9,11 @@ Requirements for Designer Asset Workflow & Results UX milestone. Each maps to ro
 
 ### Detection
 
-- [ ] **DETECT-01**: Plugin scans the raw Figma tree for layers whose name starts with `@S-` (case-insensitive)
-- [ ] **DETECT-02**: Layers containing image fills (direct or in descendants) are exported as PNG
-- [ ] **DETECT-03**: Layers with only vector/text content are exported as SVG
-- [ ] **DETECT-04**: `@S-` prefix is stripped from filenames (e.g. `@S-hero` → `hero.png`)
-- [ ] **DETECT-05**: Detected assets are mapped to their position in the layout tree
+- [x] **DETECT-01**: Plugin scans the raw Figma tree for layers whose name starts with `@S-` (case-insensitive)
+- [x] **DETECT-02**: Layers containing image fills (direct or in descendants) are exported as PNG
+- [x] **DETECT-03**: Layers with only vector/text content are exported as SVG
+- [x] **DETECT-04**: `@S-` prefix is stripped from filenames (e.g. `@S-hero` → `hero.png`)
+- [x] **DETECT-05**: Detected assets are mapped to their position in the layout tree
 
 ### Warning
 
@@ -84,11 +84,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DETECT-01 | Phase 24 | Pending |
-| DETECT-02 | Phase 24 | Pending |
-| DETECT-03 | Phase 24 | Pending |
-| DETECT-04 | Phase 24 | Pending |
-| DETECT-05 | Phase 24 | Pending |
+| DETECT-01 | Phase 24 | Complete |
+| DETECT-02 | Phase 24 | Complete |
+| DETECT-03 | Phase 24 | Complete |
+| DETECT-04 | Phase 24 | Complete |
+| DETECT-05 | Phase 24 | Complete |
 | WARN-01 | Phase 25 | Pending |
 | WARN-02 | Phase 25 | Pending |
 | WARN-03 | Phase 25 | Pending |

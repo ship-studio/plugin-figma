@@ -79,7 +79,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
 
 **Milestone Goal:** Replace the manual asset URL workflow with convention-based `@S-` prefix detection, and transform the results screen into a clean "brief is done" experience that guides designers on next steps.
 
-- [ ] **Phase 24: Detection Foundation** - Pure function that walks the raw Figma tree to find `@S-` prefixed layers and auto-detect their export format
+- [x] **Phase 24: Detection Foundation** - Pure function that walks the raw Figma tree to find `@S-` prefixed layers and auto-detect their export format (completed 2026-03-01)
 - [ ] **Phase 25: Pipeline Integration & Zero-Asset Warning** - Wire detection output into the export pipeline and add a checkpoint warning when no assets are found
 - [ ] **Phase 26: MainView Rewiring & Cleanup** - Replace manual asset state with detected assets end-to-end and delete the old manual workflow code
 - [ ] **Phase 27: Results Modal** - Replace inline results card with a clean modal guiding designers to paste the brief and iterate
@@ -96,7 +96,7 @@ See: `.planning/milestones/v1.3-ROADMAP.md` for full details.
   3. Detected asset filenames have the `@S-` prefix stripped and are sanitized (e.g. `@S-hero-image` becomes `hero-image.png`), with duplicates auto-numbered (`icon.svg`, `icon-2.svg`)
   4. Each detected asset carries its Figma node ID, enabling downstream mapping to the layout tree position
   5. Hidden layers (visible=false) and layers inside an `@S-` subtree are not double-detected
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 24-01-PLAN.md -- TDD: DetectedAsset type + detectAssets pure function with @S- prefix scanning, format auto-detection, and filename handling
 
@@ -165,7 +165,7 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 21. Mode-Specific Brief Instructions | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 22. Asset Clarity in Brief | v2.1 | 1/1 | Complete | 2026-03-01 |
 | 23. Placeholder System | v2.1 | 1/1 | Complete | 2026-03-01 |
-| 24. Detection Foundation | v2.2 | 0/1 | Planned | - |
+| 24. Detection Foundation | 1/1 | Complete   | 2026-03-01 | - |
 | 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 0/? | Not started | - |
 | 26. MainView Rewiring & Cleanup | v2.2 | 0/? | Not started | - |
 | 27. Results Modal | v2.2 | 0/? | Not started | - |
