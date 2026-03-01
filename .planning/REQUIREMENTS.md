@@ -74,32 +74,32 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AINP-01 | — | Pending |
-| AINP-02 | — | Pending |
-| AINP-03 | — | Pending |
-| AINP-04 | — | Pending |
-| AINP-05 | — | Pending |
-| AINP-06 | — | Pending |
-| LIST-01 | — | Pending |
-| LIST-02 | — | Pending |
-| LIST-03 | — | Pending |
-| LIST-04 | — | Pending |
-| LIST-05 | — | Pending |
-| NAME-01 | — | Pending |
-| NAME-02 | — | Pending |
-| EXPT-01 | — | Pending |
-| EXPT-02 | — | Pending |
-| EXPT-03 | — | Pending |
-| EXPT-04 | — | Pending |
-| CLEAN-01 | — | Pending |
-| CLEAN-02 | — | Pending |
-| CLEAN-03 | — | Pending |
+| CLEAN-01 | Phase 15 | Pending |
+| CLEAN-02 | Phase 15 | Pending |
+| CLEAN-03 | Phase 15 | Pending |
+| EXPT-03 | Phase 15 | Pending |
+| EXPT-04 | Phase 15 | Pending |
+| NAME-01 | Phase 16 | Pending |
+| NAME-02 | Phase 16 | Pending |
+| AINP-05 | Phase 16 | Pending |
+| AINP-06 | Phase 16 | Pending |
+| EXPT-01 | Phase 17 | Pending |
+| EXPT-02 | Phase 18 | Pending |
+| AINP-01 | Phase 19 | Pending |
+| AINP-02 | Phase 19 | Pending |
+| AINP-03 | Phase 19 | Pending |
+| AINP-04 | Phase 19 | Pending |
+| LIST-01 | Phase 19 | Pending |
+| LIST-02 | Phase 19 | Pending |
+| LIST-03 | Phase 19 | Pending |
+| LIST-04 | Phase 19 | Pending |
+| LIST-05 | Phase 19 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20
+- Mapped to phases: 20
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after initial definition*
+*Last updated: 2026-03-01 after roadmap creation*
