@@ -53,3 +53,26 @@ export function resolveCollisions(entries: AssetEntry[]): AssetEntry[] {
     return { ...entry, filename: `${base}-${count + 1}${ext}` };
   });
 }
+
+/**
+ * Resolve a filename collision against a list of existing filenames.
+ * If the candidate is unique, returns it as-is. Otherwise appends
+ * -2, -3, etc. before the extension until a unique name is found.
+ */
+export function resolveFilenameCollision(
+  candidateFilename: string,
+  existingFilenames: string[],
+): string {
+  if (!existingFilenames.includes(candidateFilename)) {
+    return candidateFilename;
+  }
+  const dotIndex = candidateFilename.lastIndexOf('.');
+  const hasExtension = dotIndex !== -1;
+  const base = hasExtension ? candidateFilename.slice(0, dotIndex) : candidateFilename;
+  const ext = hasExtension ? candidateFilename.slice(dotIndex) : '';
+  let counter = 2;
+  while (existingFilenames.includes(`${base}-${counter}${ext}`)) {
+    counter++;
+  }
+  return `${base}-${counter}${ext}`;
+}

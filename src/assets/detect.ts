@@ -10,7 +10,7 @@
  */
 
 import { sanitizeFilename } from './sanitize';
-import { resolveFilenameCollision } from './resolve';
+import { resolveFilenameCollision } from './sanitize';
 import type { DetectedAsset, DetectionResult } from './types';
 
 // ── Constants ───────────────────────────────────────────────────────

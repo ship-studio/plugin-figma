@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeFilename, resolveCollisions } from './sanitize';
+import { sanitizeFilename, resolveCollisions, resolveFilenameCollision } from './sanitize';
 import type { AssetEntry } from './types';
 
 describe('sanitizeFilename', () => {
@@ -92,5 +92,27 @@ describe('resolveCollisions', () => {
     const result = resolveCollisions(entries);
     // Different extensions = no collision
     expect(result.map((e) => e.filename)).toEqual(['logo.svg', 'logo.png']);
+  });
+});
+
+describe('resolveFilenameCollision', () => {
+  it('returns filename as-is when no collision', () => {
+    expect(resolveFilenameCollision('icon.png', [])).toBe('icon.png');
+  });
+
+  it('appends -2 for first collision', () => {
+    expect(resolveFilenameCollision('icon.png', ['icon.png'])).toBe('icon-2.png');
+  });
+
+  it('appends -3 when -2 is also taken', () => {
+    expect(resolveFilenameCollision('icon.png', ['icon.png', 'icon-2.png'])).toBe('icon-3.png');
+  });
+
+  it('does not collide with different extensions', () => {
+    expect(resolveFilenameCollision('icon.svg', ['icon.png'])).toBe('icon.svg');
+  });
+
+  it('handles filenames without extension', () => {
+    expect(resolveFilenameCollision('logo', [])).toBe('logo');
   });
 });
