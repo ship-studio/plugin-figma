@@ -96,19 +96,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-04 | Phase 7 | Complete |
 | UX-01 | Phase 6 | Complete |
 | UX-02 | Phase 8 | Complete |
-| ASSET-05 | TBD | Pending |
-| ASSET-06 | TBD | Pending |
-| ASSET-07 | TBD | Pending |
-| SPACE-01 | TBD | Pending |
-| SPACE-02 | TBD | Pending |
-| SPACE-03 | TBD | Pending |
-| POLISH-01 | TBD | Pending |
+| ASSET-05 | Phase 12 | Pending |
+| ASSET-06 | Phase 12 | Pending |
+| ASSET-07 | Phase 12 | Pending |
+| SPACE-01 | Phase 13 | Pending |
+| SPACE-02 | Phase 13 | Pending |
+| SPACE-03 | Phase 13 | Pending |
+| POLISH-01 | Phase 14 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 7 total
-- Mapped to phases: 0
-- Unmapped: 7 (pending roadmap creation)
+- Mapped to phases: 7/7
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-03-01 after v1.3 requirements definition*
+*Last updated: 2026-03-01 after v1.3 roadmap creation*

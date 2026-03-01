@@ -5,6 +5,7 @@
 - ✅ **v1.0 Ship Studio Figma Plugin** -- Phases 1-5 (shipped 2026-02-28)
 - ✅ **v1.1 Brief Quality & UX** -- Phases 6-8 (shipped 2026-02-28)
 - ✅ **v1.2 Brief Quality Overhaul** -- Phases 9-11 (shipped 2026-03-01, outside GSD workflow)
+- 🚧 **v1.3 Asset Completeness & Polish** -- Phases 12-14 (in progress)
 
 ## Phases
 
@@ -28,21 +29,24 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 - [x] Phase 7: Smart Asset Detection & Layout Mapping (2/2 plans) -- completed 2026-02-28
 - [x] Phase 8: UX Flow Simplification (1/1 plans) -- completed 2026-02-28
 
-See phase details below.
+</details>
+
+<details>
+<summary>✅ v1.2 Brief Quality Overhaul (Phases 9-11) -- SHIPPED 2026-03-01</summary>
+
+- [x] Phase 9: Smart Illustration Detection -- completed 2026-03-01
+- [x] Phase 10: Layout Tree Quality -- completed 2026-03-01
+- [x] Phase 11: UI Fixes -- completed 2026-03-01
 
 </details>
 
-### ✅ v1.2 Brief Quality Overhaul (Shipped 2026-03-01)
+### 🚧 v1.3 Asset Completeness & Polish (In Progress)
 
-**Milestone Goal:** Refine brief output quality — smarter illustration detection, cleaner layout tree, and bugfixes. Executed outside GSD workflow.
+**Milestone Goal:** Make asset detection bulletproof -- every visible asset in a Figma design gets exported -- and tighten spacing accuracy so Claude Code builds match the design on first attempt.
 
-- [x] **Phase 9: Smart Illustration Detection** - Detect vector-only groups as illustrations, deduplicate SVGs, filter LINE nodes
-- [x] **Phase 10: Layout Tree Quality** - Collapse illustration subtrees, add asset cross-references, clean component names
-- [x] **Phase 11: UI Fixes** - Defensive warning rendering, component assetType support
-
-### Post-milestone Fixes (applied outside GSD workflow)
-
-- **Temp directory migration (2026-03-01):** Assets and brief now written to OS temp dir (`mktemp -d`) instead of `${projectPath}/.shipstudio/assets/`. Eliminates risk of `rm -rf` destroying user files. Files changed: `download.ts`, `types.ts`, `export.ts`, `io.ts`, `MainView.tsx`. All 276 tests pass.
+- [ ] **Phase 12: Instance Asset Detection** - Recurse into component instances to find and export all IMAGE fills; filter out noise SVGs
+- [ ] **Phase 13: Spacing & Layout Accuracy** - Extract absolute positioning, flex-grow, and align-self so spacing in the brief matches Figma
+- [ ] **Phase 14: Plugin Icon** - Display Figma logo SVG in Ship Studio toolbar
 
 ## Phase Details
 
@@ -84,36 +88,92 @@ Plans:
 
 </details>
 
-### Phase 9: Smart Illustration Detection (v1.2)
-**Goal**: Vector-only groups (GROUPs/FRAMEs where ALL descendants are primitives — no TEXT or INSTANCE) are detected and exported as single PNGs instead of dozens of individual SVGs
+<details>
+<summary>Phase 9: Smart Illustration Detection (v1.2)</summary>
+
+**Goal**: Vector-only groups (GROUPs/FRAMEs where ALL descendants are primitives -- no TEXT or INSTANCE) are detected and exported as single PNGs instead of dozens of individual SVGs
 **Depends on**: Phase 7 (composition detection)
 **Changes**:
-  - `detect-composition.ts` — Added vector-only group detection heuristic
-  - `identify.ts` — LINE nodes excluded from SVG export (they're CSS borders)
-  - SVG deduplication by sanitized filename — one `linkedin.svg` instead of six copies
+  - `detect-composition.ts` -- Added vector-only group detection heuristic
+  - `identify.ts` -- LINE nodes excluded from SVG export (they're CSS borders)
+  - SVG deduplication by sanitized filename -- one `linkedin.svg` instead of six copies
   - Warning messages now distinguish "composition" (visual effects) from "illustration" (vector-only group)
 
-### Phase 10: Layout Tree Quality (v1.2)
+</details>
+
+<details>
+<summary>Phase 10: Layout Tree Quality (v1.2)</summary>
+
 **Goal**: Layout tree output is cleaner and more useful for Claude Code
 **Depends on**: Phase 9
 **Changes**:
   - Composition/illustration subtrees collapsed to single line: `[Illustration] 'Hero' 500x400 -> hero.png`
   - INSTANCE tree lines show `-> filename.png` when matching asset exists (cross-referencing)
   - Text content truncation increased from 60 to 200 chars
-  - Component names cleaned: `"Property 1=Green"` → `"Green"` (strips generic Figma property prefixes)
+  - Component names cleaned: `"Property 1=Green"` -> `"Green"` (strips generic Figma property prefixes)
   - Components table uses same cleaning logic
 
-### Phase 11: UI Fixes (v1.2)
+</details>
+
+<details>
+<summary>Phase 11: UI Fixes (v1.2)</summary>
+
 **Goal**: Fix minor bugs in the plugin UI
 **Depends on**: Phase 10
 **Changes**:
-  - `MainView.tsx` — Defensive `String(w)` wrapper for warning rendering
-  - `download.ts` — `downloadAllAssets` type updated to include `'component'` in assetType union
+  - `MainView.tsx` -- Defensive `String(w)` wrapper for warning rendering
+  - `download.ts` -- `downloadAllAssets` type updated to include `'component'` in assetType union
+
+</details>
+
+### Post-milestone Fixes (applied outside GSD workflow)
+
+- **Temp directory migration (2026-03-01):** Assets and brief now written to OS temp dir (`mktemp -d`) instead of `${projectPath}/.shipstudio/assets/`. Eliminates risk of `rm -rf` destroying user files. Files changed: `download.ts`, `types.ts`, `export.ts`, `io.ts`, `MainView.tsx`. All 276 tests pass.
+
+### Phase 12: Instance Asset Detection
+**Goal**: Every visible image asset in a Figma design is detected and exported, regardless of how deeply it is nested inside component instances
+**Depends on**: Phase 11 (v1.2 complete)
+**Requirements**: ASSET-05, ASSET-06, ASSET-07
+**Success Criteria** (what must be TRUE):
+  1. When a Figma design contains an image (photo, hero image, avatar) nested inside a component instance, that image appears in the exported assets directory as a PNG file
+  2. When a component instance node itself has an IMAGE fill override (e.g., a card background image), that image is exported as a PNG file
+  3. Simple solid-color RECTANGLE nodes (no strokes, no gradients, no image fills) are NOT exported as SVG -- only rectangles with visual complexity are exported
+  4. The layout tree in the brief cross-references instance child images with their exported filenames (e.g., `-> hero-image.png`)
+**Plans**: TBD
+
+Plans:
+- [ ] 12-01: TBD
+- [ ] 12-02: TBD
+
+### Phase 13: Spacing & Layout Accuracy
+**Goal**: The design brief provides Claude Code with accurate spacing, positioning, and flex properties so builds match the Figma design without manual CSS tweaking
+**Depends on**: Phase 12
+**Requirements**: SPACE-01, SPACE-02, SPACE-03
+**Success Criteria** (what must be TRUE):
+  1. When an element in Figma is absolutely positioned (not in an auto-layout frame), the brief includes its top/left offset relative to its parent
+  2. When a flex child in Figma has `layoutGrow: 1`, the brief includes `flex-grow: 1` for that element
+  3. When a flex child in Figma has `layoutAlign: STRETCH`, the brief includes `align-self: stretch` for that element
+**Plans**: TBD
+
+Plans:
+- [ ] 13-01: TBD
+
+### Phase 14: Plugin Icon
+**Goal**: The plugin has proper visual identity in the Ship Studio toolbar
+**Depends on**: Nothing (independent of Phases 12-13)
+**Requirements**: POLISH-01
+**Success Criteria** (what must be TRUE):
+  1. The Ship Studio toolbar displays the Figma logo SVG icon next to the plugin name
+  2. The icon renders correctly at the toolbar's standard icon size
+**Plans**: TBD
+
+Plans:
+- [ ] 14-01: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 6 -> 6.x -> 7 -> 7.x -> 8 -> 8.x
+Phases execute in numeric order: 12 -> 12.x -> 13 -> 13.x -> 14
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -128,3 +188,6 @@ Phases execute in numeric order: 6 -> 6.x -> 7 -> 7.x -> 8 -> 8.x
 | 9. Smart Illustration Detection | v1.2 | N/A | Complete | 2026-03-01 |
 | 10. Layout Tree Quality | v1.2 | N/A | Complete | 2026-03-01 |
 | 11. UI Fixes | v1.2 | N/A | Complete | 2026-03-01 |
+| 12. Instance Asset Detection | v1.3 | 0/TBD | Not started | - |
+| 13. Spacing & Layout Accuracy | v1.3 | 0/TBD | Not started | - |
+| 14. Plugin Icon | v1.3 | 0/TBD | Not started | - |
