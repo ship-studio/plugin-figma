@@ -68,6 +68,7 @@ export function generateBrief(input: BriefInput): BriefResult {
     buildDesignTokensSection(tokens),
     buildComponentsSection(tokens.components),
     buildAssetsSection(exportResult.previewPath, exportResult.assets, projectPath, breadcrumbMap),
+    buildPlaceholdersSection(),
   ].filter(Boolean);
 
   const markdown = sections.join('\n\n');
@@ -121,7 +122,7 @@ function buildInstructionsSection(mode?: 'best' | 'pixel' | 'inspiration', inspi
 
   // Shared base rules (all modes)
   const sharedBefore = 'Read this brief fully. Study the preview image, layout tree, and design tokens before writing any code.';
-  const sharedDuring = 'The Assets section below is the complete manifest of provided files. Use only these assets -- every visual element NOT listed there should be built with CSS or HTML, not with image files. If you need an asset that is not listed, ask the user rather than substituting or fabricating a replacement.';
+  const sharedDuring = 'The Assets section below is the complete manifest of provided files. Use only these assets -- every visual element NOT listed there should be built with CSS or HTML, not with image files. For any visual element visible in the preview that appears to be a photograph, logo, icon, or illustration but is NOT listed in the Assets section, create a placeholder box instead -- see the Placeholders section below for styling and naming conventions.';
   const sharedAfter = 'Compare your result against the preview image and verify that layout, spacing, colors, and typography match the design tokens.';
 
   if (effectiveMode === 'best') {
@@ -552,6 +553,44 @@ function buildAssetsSection(
     '| File | Type | Usage | Path |',
     '|------|------|-------|------|',
     ...rows,
+  ].join('\n');
+}
+
+function buildPlaceholdersSection(): string {
+  return [
+    '## Placeholders',
+    '',
+    'Compare the preview image against the Assets table above. For any element that is clearly visible as a photograph, logo, icon, or illustration in the preview but has no matching file in the Assets table, create a placeholder box. Only flag elements you are confident are images or icons -- when uncertain, skip it.',
+    '',
+    '### Placeholder box styling',
+    '',
+    'For each missing asset, create a visible placeholder box:',
+    '',
+    '- **Border:** 2px dashed in a muted color that fits the site\'s design context (choose a color that is visible but does not clash with the surrounding design)',
+    '- **Background:** Light semi-transparent tint matching the border color',
+    '- **Label:** Centered text showing the reference name and original dimensions from the design, e.g. `[hero-bg] 1200x600`',
+    '- **Size:** Match the element\'s intended dimensions from the layout',
+    '',
+    '### Reference naming',
+    '',
+    '- Use descriptive names derived from element context: e.g. `[hero-bg]`, `[team-photo]`, `[social-linkedin-icon]`',
+    '- Use square brackets for scannability: `[hero-bg]`',
+    '- Auto-number duplicate element types: `[team-photo-1]`, `[team-photo-2]`',
+    '',
+    '### Placeholder summary table',
+    '',
+    'After building, list all created placeholders in a table:',
+    '',
+    '| Reference | Description | Expected Size |',
+    '|-----------|-------------|---------------|',
+    '| [hero-bg] | Hero section background image | 1200x600 |',
+    '',
+    '### Replacing placeholders',
+    '',
+    'To replace a placeholder with a real asset, tell Claude Code:',
+    '',
+    '- "Replace [hero-bg] with hero.jpg"',
+    '- "Replace [social-linkedin-icon] with this SVG file"',
   ].join('\n');
 }
 
