@@ -11,7 +11,8 @@ import { exportAssets } from '../assets/export';
 import type { ExportResult, AssetExportProgress, DetectionResult } from '../assets/types';
 import { detectAssets } from '../assets/detect';
 import { detectedToManual } from '../assets/adapt';
-import { generateBrief, TOKEN_WARNING_THRESHOLD } from '../brief/generate';
+import { generateBrief } from '../brief/generate';
+import { ResultsModal } from '../components/ResultsModal';
 import type { BriefResult } from '../brief/types';
 import { saveBrief, copyToClipboard } from '../brief/io';
 
@@ -68,43 +69,6 @@ function collectStats(nodes: LayoutNode[]): ExtractionStats {
   return stats;
 }
 
-function TreePreview({ nodes, depth = 0, maxDepth = 2 }: { nodes: LayoutNode[]; depth?: number; maxDepth?: number }) {
-  if (depth >= maxDepth) return null;
-  return (
-    <div style={{ paddingLeft: depth > 0 ? '12px' : '0', borderLeft: depth > 0 ? '1px solid var(--border)' : 'none' }}>
-      {nodes.map((node, i) => {
-        const label = node.componentRef
-          ? `<${node.componentRef.componentName}${node.repeatCount ? ` x${node.repeatCount}` : ''}>`
-          : node.type === 'TEXT'
-            ? `"${(node.textContent ?? '').slice(0, 30)}${(node.textContent ?? '').length > 30 ? '...' : ''}"`
-            : node.name;
-        const tag = node.autoLayout
-          ? `${node.autoLayout.flexDirection}`
-          : node.type === 'INSTANCE'
-            ? 'component'
-            : node.type.toLowerCase();
-        return (
-          <div key={node.id || i} style={{ fontSize: '11px', lineHeight: 1.7 }}>
-            <span style={{ color: 'var(--text-muted)' }}>{tag} </span>
-            <span style={{ color: node.visible === false ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-              {label}
-            </span>
-            {node.visible === false && <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>(hidden)</span>}
-            {node.children && node.children.length > 0 && depth + 1 < maxDepth && (
-              <TreePreview nodes={node.children} depth={depth + 1} maxDepth={maxDepth} />
-            )}
-            {node.children && node.children.length > 0 && depth + 1 >= maxDepth && (
-              <span style={{ color: 'var(--text-muted)', fontSize: '11px', marginLeft: '12px' }}>
-                ({node.children.length} children)
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 interface MainViewProps {
   token: string;
 }
@@ -132,7 +96,6 @@ export function MainView({ token }: MainViewProps) {
   const [extractionResult, setExtractionResult] = useState(null as ExtractionResult | null);
   const [largeTreeWarning, setLargeTreeWarning] = useState(null as { nodeCount: number; message: string } | null);
   const [awaitingLargeTreeConfirm, setAwaitingLargeTreeConfirm] = useState(false);
-  const [showTree, setShowTree] = useState(false);
 
   // Asset export state
   const [exportingAssets, setExportingAssets] = useState(false);
@@ -296,7 +259,6 @@ export function MainView({ token }: MainViewProps) {
         setExtractionResult(null);
         setLargeTreeWarning(null);
         setAwaitingLargeTreeConfirm(false);
-        setShowTree(false);
         pendingResultRef.current = null;
         // Clear asset export state
         setExportResult(null);
@@ -329,7 +291,6 @@ export function MainView({ token }: MainViewProps) {
       setExtractionResult(null);
       setLargeTreeWarning(null);
       setAwaitingLargeTreeConfirm(false);
-      setShowTree(false);
       pendingResultRef.current = null;
       // Clear asset export state
       setExportResult(null);
@@ -510,7 +471,30 @@ export function MainView({ token }: MainViewProps) {
     }
   }, [briefResult, actions]);
 
+  const handleNewBrief = useCallback(() => {
+    setBriefResult(null);
+    setExtractionResult(null);
+    setExportResult(null);
+    // extractionStats is derived from extractionResult via useMemo, so it clears automatically.
+    // Do NOT clear urlInput, parsedUrl, fileInfo -- user likely wants same page
+    // Do NOT clear briefMode or inspirationText -- user likely wants same mode
+  }, []);
+
   const extractDisabled = !parsedUrl || !fileInfo || validating || extracting || exportingAssets || generatingBrief || zeroAssetWarning;
+
+  // View replacement: when all results are ready, show ResultsModal instead of form
+  if (briefResult && extractionResult && extractionStats && exportResult) {
+    return (
+      <ResultsModal
+        briefResult={briefResult}
+        extractionResult={extractionResult}
+        extractionStats={extractionStats}
+        exportResult={exportResult}
+        onCopyBrief={handleCopyBrief}
+        onNewBrief={handleNewBrief}
+      />
+    );
+  }
 
   return (
     <div>
@@ -658,137 +642,6 @@ export function MainView({ token }: MainViewProps) {
         </div>
       )}
 
-      {/* Merged Result Card -- renders only when entire pipeline is complete */}
-      {briefResult && extractionResult && extractionStats && exportResult && (
-        <div className="figma-plugin-section">
-          <div className="figma-plugin-file-info">
-            {/* Success header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-              <span style={{ color: '#38a169' }}>&#10003;</span>
-              <span style={{ fontWeight: 600, fontSize: '13px' }}>Brief ready</span>
-              {extractionResult.truncated && (
-                <span style={{ color: '#f59e0b', fontSize: '11px' }}>(truncated)</span>
-              )}
-            </div>
-
-            {/* Copy button -- most prominent, at top per user decision */}
-            <button
-              className="btn-primary"
-              onClick={handleCopyBrief}
-              style={{ width: '100%', marginBottom: '12px' }}
-            >
-              Copy Brief to Clipboard
-            </button>
-
-            {/* Stats row */}
-            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6 }}>
-              {briefResult.stats.nodeCount} layers &middot;{' '}
-              {briefResult.stats.assetCount} assets &middot;{' '}
-              <span style={{
-                color: briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD
-                  ? '#f59e0b'
-                  : 'inherit',
-              }}>
-                ~{Math.round(briefResult.stats.estimatedTokens / 1000)}K tokens
-              </span>
-            </div>
-
-            {/* Zero-asset info line */}
-            {briefResult.stats.assetCount === 0 && (
-              <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px' }}>
-                No assets exported -- Claude Code will create placeholders for visual elements
-              </div>
-            )}
-
-            {/* Token warning banner */}
-            {briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD && (
-              <div className="figma-plugin-warning" style={{ marginTop: '8px' }}>
-                <strong>This brief is large</strong>
-                <p>Consider extracting a smaller section for better results.</p>
-              </div>
-            )}
-
-            {/* Component badges */}
-            {extractionStats.components.length > 0 && (
-              <div style={{ marginTop: '10px' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>Components</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {extractionStats.components.slice(0, 8).map((c) => (
-                    <span
-                      key={c.name}
-                      style={{
-                        fontSize: '11px',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      {c.name}{c.count > 1 ? ` x${c.count}` : ''}
-                    </span>
-                  ))}
-                  {extractionStats.components.length > 8 && (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '2px 4px' }}>
-                      +{extractionStats.components.length - 8} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Asset warnings */}
-            {exportResult.warnings.length > 0 && (() => {
-              // Ensure we're working with real strings
-              const allWarnings: string[] = Array.from(exportResult.warnings).map(w =>
-                typeof w === 'string' ? w : JSON.stringify(w),
-              );
-              const actionableWarnings = allWarnings;
-
-              return actionableWarnings.length > 0 ? (
-                <div style={{ marginTop: '8px', fontSize: '11px', color: '#f59e0b' }}>
-                  {actionableWarnings.length} warning{actionableWarnings.length !== 1 ? 's' : ''}:
-                  <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-                    {actionableWarnings.slice(0, 5).map((w, i) => (
-                      <li key={i}>{w}</li>
-                    ))}
-                    {actionableWarnings.length > 5 && (
-                      <li>...and {actionableWarnings.length - 5} more</li>
-                    )}
-                  </ul>
-                </div>
-              ) : null;
-            })()}
-
-            {/* Tree preview toggle */}
-            <button
-              onClick={() => setShowTree(!showTree)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--accent, #0d99ff)',
-                fontSize: '11px',
-                cursor: 'pointer',
-                padding: '4px 0',
-                marginTop: '8px',
-              }}
-            >
-              {showTree ? 'Hide tree' : 'Show tree preview'}
-            </button>
-            {showTree && (
-              <div style={{ marginTop: '6px', padding: '8px', background: 'var(--bg-primary)', borderRadius: '4px', border: '1px solid var(--border)', maxHeight: '200px', overflowY: 'auto' }}>
-                <TreePreview nodes={extractionResult.rootNodes} />
-              </div>
-            )}
-
-            {/* File save note */}
-            <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
-              Also saved to .shipstudio/assets/brief.md
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Extract Button */}
       {(() => {
         const isLoading = extracting || exportingAssets || generatingBrief;
@@ -800,12 +653,10 @@ export function MainView({ token }: MainViewProps) {
               : `Exporting assets${assetProgress?.total ? ` (${assetProgress.current ?? 0}/${assetProgress.total})` : ''}...`
             : generatingBrief
               ? 'Generating brief...'
-              : briefResult
-                ? 'Get New Brief'
-                : 'Get Brief';
+              : 'Get Brief';
         return (
           <button
-            className={briefResult && !isLoading ? 'btn-secondary' : 'btn-primary'}
+            className="btn-primary"
             onClick={handleExtract}
             disabled={extractDisabled}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
