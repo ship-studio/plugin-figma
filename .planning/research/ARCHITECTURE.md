@@ -1,570 +1,639 @@
-# Architecture Integration: v1.3 Asset Completeness & Spacing Accuracy
+# Architecture: v2.0 Manual Asset Control Integration
 
 **Project:** Ship Studio Figma Plugin
-**Milestone:** v1.3 -- Complete asset detection, spacing accuracy, plugin icon
+**Milestone:** v2.0 -- Manual asset control replacing auto-detection
 **Researched:** 2026-03-01
-**Focus:** How deeper asset traversal and spacing accuracy integrate with the existing identify/export/download pipeline
-**Confidence:** HIGH
+**Focus:** How the manual asset list integrates with existing architecture, what changes, what is new, and complete data flow
+**Confidence:** HIGH (based on full codebase analysis)
 
 ## Executive Summary
 
-v1.3 addresses two systematic gaps in the extraction pipeline: (1) **assets inside component instances are invisible** because `identify.ts` treats INSTANCE nodes as leaf nodes and never inspects their children or fills, and (2) **spacing values come only from auto-layout properties**, missing the many Figma frames that use manual positioning where spacing must be inferred from bounding boxes.
+The v2.0 milestone transforms the plugin from a single-button pipeline into a two-phase user interaction. The current architecture runs extraction, auto-detection, export, and brief generation as one uninterruptible sequence. v2.0 introduces a pause between extraction and export where the user manually builds an asset list by pasting Figma URLs and choosing formats.
 
-The Figma REST API **does return children and fills for INSTANCE nodes** (confirmed via `@figma/rest-api-spec` -- `InstanceNode` extends `FrameTraits` which includes `HasChildrenTrait` and `HasGeometryTrait`). The current code intentionally skips INSTANCE children in both `normalize.ts` (line 173: `return result` before recursion) and `identify.ts` (line 87: `return` after pushing the instance entry). This was a reasonable v1.0 simplification but means background images, nested logos, and image fills inside components are never discovered.
+The change is architecturally clean because the existing pipeline already has a natural boundary between extraction (layout/extract.ts) and asset export (assets/export.ts). The auto-detection layer (identify.ts, detect-composition.ts) sits between these two steps and is the code being removed. The extraction result feeds the brief generator through the same `ExtractLayoutResult` type; only the `ExportResult` changes shape because assets now come from a user-provided list rather than tree heuristics.
 
-The fix requires **surgical changes to existing files** -- no new architectural layers. The pipeline structure (identify -> export -> download) remains intact. Two files need modification (`identify.ts`, `normalize.ts`), one file needs a small addition (`flexbox-map.ts`), and the brief generator needs minor formatting changes. No new modules are needed.
+Four files are deleted entirely (identify.ts, detect-composition.ts, and their tests). Three files are modified significantly (export.ts, extract.ts, MainView.tsx). One new file is created (resolve.ts for node name lookup). The brief generator, download pipeline, sanitizer, breadcrumb builder, URL parser, and Figma API client are unchanged or need only minor type updates.
 
-## Current Architecture (v1.2 Baseline)
+## Current Architecture (v1.3)
 
 ```
 User Input (URL + token)
     |
 [1. URL Parser] -> fileKey, nodeId
     |
-[2. Figma API Client] -> raw node JSON (with full children, fills, etc.)
+[2. Figma API Client] -> validate access, fetch node tree
     |
-[3. Layout Normalization] -> LayoutNode tree (CSS flexbox terms)
-    |                         INSTANCE = leaf node (no children traversed)
-    |                         fills[] preserved on nodes for token extraction
+[3. Layout Extraction] -> raw tree -> normalization -> LayoutNode tree
+    |                      + collectImageFillsFromRawTree (pre-normalization)
+    |                      + collectInstancesWithText (pre-normalization)
+    |                      + collectTokens -> DesignTokens (with imageFills)
     |
-[4. Token Extraction] -> design tokens + imageFills[] from IMAGE paints
-    |                     walks full tree BUT skips INSTANCE children
-    |                     (because normalize.ts already excluded them)
-    |
-[5. Asset Detection]  -> detect-composition.ts (composition/illustration IDs)
+[4. Asset Detection]  -> detect-composition.ts (composition/illustration IDs)
     |                  -> identify.ts (walk tree, classify nodes as assets)
-    |                     INSTANCE = png-render, then RETURN (skip children)
-    |                     IMAGE fill = png-fill
-    |                     SVG types = svg
+    |                     AUTO-DETECT: instances, SVGs, image fills, compositions
     |
-[6. Asset Export]     -> export.ts orchestrates:
-    |                     batch fetchImages (SVG, PNG renders)
-    |                     batch fetchImageFills (IMAGE paint URLs)
+[5. Asset Export]     -> export.ts orchestrates:
+    |                     fetchImages (SVG batch, PNG-render batch)
+    |                     fetchImageFills (image fill URL resolution)
     |                     sequential download to temp dir
     |
-[7. Brief Assembly]   -> generate.ts (pure function, markdown output)
-    |                     layout tree with inline styles
-    |                     asset cross-references (nodeId -> filename)
+[6. Brief Assembly]   -> generate.ts (pure function, markdown output)
+    |                     layout tree with [Illustration] collapse + asset cross-refs
     |                     breadcrumb paths for asset location
     |
-[8. Output]           -> clipboard + file save
+[7. Output]           -> clipboard + file save
 ```
 
-## Gap Analysis
+**Critical behavior:** Steps 3-7 run as one continuous sequence triggered by the "Get Brief" button in MainView.tsx. There is no user interaction between extraction and export.
 
-### Gap 1: Assets Inside Component Instances
+## v2.0 Architecture
 
-**Root cause:** Two coordinated `return` statements prevent traversal into INSTANCE children.
+### Fundamental Structural Change
 
-In `normalize.ts` line 171-173:
-```typescript
-case 'INSTANCE':
-  result.componentRef = buildComponentRef(node, components);
-  return result; // <-- Children never normalized
+The pipeline splits into two user-triggered phases:
+
+```
+PHASE 1: Extract (triggered by "Extract" button)
+  URL Input -> Validate -> Extract Layout
+  [User sees layout stats + tree preview]
+  [Asset list UI becomes available]
+
+USER INTERACTION: Build Asset List
+  Paste asset URLs -> Resolve names -> Add to list
+  Remove assets -> Recalculate filenames
+  Choose format (PNG/SVG) per asset
+
+PHASE 2: Export + Brief (triggered by "Get Brief" button)
+  Asset List -> Export Assets -> Generate Brief -> Copy/Save
 ```
 
-In `identify.ts` line 76-88:
+### Component Boundaries
+
+| Component | Status | Change Summary |
+|-----------|--------|----------------|
+| `url-parser.ts` | **Unchanged** | Parses page/frame URLs; reused to parse asset URLs |
+| `figma-api.ts` | **Unchanged** | All needed endpoints already exist |
+| `layout/extract.ts` | **Simplified** | Remove `collectImageFillsFromRawTree`, `collectInstancesWithText`, imageFills merge |
+| `layout/normalize.ts` | **Unchanged** | Tree normalization is independent of asset strategy |
+| `layout/types.ts` | **Unchanged** | LayoutNode shape does not change |
+| `tokens/collect.ts` | **Simplified** | Stop populating `imageFills` (keep field as empty array for compat) |
+| `tokens/types.ts` | **Unchanged** | `ImageFillRef` type remains for compat; just not populated |
+| `assets/identify.ts` | **DELETE** | Auto-detection logic entirely replaced by user list |
+| `assets/identify.test.ts` | **DELETE** | Tests for deleted code |
+| `assets/detect-composition.ts` | **DELETE** | Composition heuristics no longer needed |
+| `assets/detect-composition.test.ts` | **DELETE** | Tests for deleted code |
+| `assets/export.ts` | **Modified** | Accept `ManualAsset[]` instead of auto-detecting; remove identify/detect imports |
+| `assets/download.ts` | **Unchanged** | Downloads any URL to any path; format-agnostic |
+| `assets/sanitize.ts` | **Unchanged** | `sanitizeFilename` and `resolveCollisions` reused by asset list builder |
+| `assets/breadcrumb.ts` | **Unchanged** | Builds nodeId -> path map from layout tree |
+| `assets/types.ts` | **Modified** | Add `ManualAsset` type; simplify `ExportResult.assets` shape |
+| `brief/generate.ts` | **Modified** | Remove composition collapse in tree; simplify asset type labels |
+| `brief/types.ts` | **Minor update** | `BriefInput` no longer carries `instancesWithText` concern |
+| `brief/io.ts` | **Unchanged** | Save/copy mechanics do not change |
+| `views/MainView.tsx` | **Major rewrite** | Two-phase flow, asset list UI, new state management |
+| **`assets/resolve.ts`** | **NEW** | Resolve node ID to layer name via Figma API |
+
+### New Data Types
+
 ```typescript
-if (node.type === 'INSTANCE' && node.componentRef) {
-  // ... push png-render entry
-  return; // <-- Children never walked for asset detection
+/**
+ * A user-specified asset to export.
+ * Created when user pastes a Figma URL in the asset list.
+ */
+interface ManualAsset {
+  /** Unique ID for React list rendering and removal */
+  id: string;
+  /** Figma node ID (e.g., "12:34") -- parsed from pasted URL */
+  nodeId: string;
+  /** Figma layer name -- fetched via API after URL paste */
+  nodeName: string;
+  /** User-selected export format */
+  format: 'png' | 'svg';
+  /** Auto-derived filename (sanitized from nodeName + format extension) */
+  filename: string;
+  /** Validation state for this asset entry */
+  status: 'resolving' | 'valid' | 'error';
+  /** Error message when status === 'error' */
+  error?: string;
 }
 ```
 
-In `collect.ts` line 288-309:
-```typescript
-if (node.componentRef) {
-  // ... accumulate component inventory
-}
-// Recurse into children happens at line 312
-// BUT children were already excluded by normalize.ts
+This type lives in `assets/types.ts` alongside the existing types. It replaces `AssetEntry` as the input to the export pipeline.
+
+## Complete Data Flow
+
+### Phase 1: Layout Extraction (simplified from v1.3)
+
+```
+User pastes page/frame URL
+  -> parseFigmaUrl(url) -> { fileKey, nodeId, fileType }
+  -> validateFileAccess(shell, token, fileKey) -> { name, pages }
+
+User clicks "Extract":
+  -> extractLayout({ shell, token, fileKey, nodeId, scope })
+     1. Fetch raw tree via fetchFileNodes or fetchFullFile
+     2. Count raw nodes -> large tree warning if > 500
+     3. [REMOVED: collectImageFillsFromRawTree]
+     4. [REMOVED: collectInstancesWithText]
+     5. normalizeTree(rootNodes, components) -> ExtractionResult
+     6. collectTokens(rootNodes, styles) -> DesignTokens
+        [imageFills array is now always empty]
+     7. [REMOVED: merge raw image fills into tokens]
+     -> ExtractLayoutResult { extraction, tokens, fileKey, largeTreeWarning }
+
+  UI shows: extraction stats, tree preview, asset list input
 ```
 
-**What gets missed:**
+**Key change:** `ExtractLayoutResult` loses the `instancesWithText` field. The `tokens.imageFills` field is always `[]`. Three pre-normalization tree walks are eliminated, making extraction faster.
 
-1. **Image fills on the INSTANCE node itself** -- An INSTANCE can have its own fills (background image). The fills array IS present on the normalized LayoutNode (line 127-129 of normalize.ts captures fills), BUT identify.ts checks for IMAGE fills only AFTER the INSTANCE check, so it never reaches the IMAGE fill branch for INSTANCE nodes.
+### User Interaction: Build Asset List
 
-2. **Image fills on children inside instances** -- Photos, logos, or icons placed as child rectangles/frames inside a component. These children exist in the API response but normalize.ts never creates LayoutNode children for them.
+```
+User pastes asset URL into input field:
+  -> parseFigmaUrl(assetUrl) -> { fileKey: assetFileKey, nodeId: assetNodeId }
 
-3. **Nested component instances** -- An INSTANCE containing another INSTANCE (e.g., a Card component containing a Button component that has an icon). The outer instance stops traversal entirely.
+Validation checks:
+  1. Must have nodeId (reject file-level URLs without a selected element)
+  2. assetFileKey must equal the extracted file's fileKey (same file enforcement)
 
-4. **SVG vectors inside instances** -- Icon vectors placed as children inside a component. Rare to need separately (the instance PNG includes them), but relevant when the same icon appears standalone elsewhere.
+Name resolution:
+  -> resolveNodeName(shell, token, fileKey, assetNodeId)
+     Uses fetchFileNodes internally, reads only rootNode.name and rootNode.type
+     -> { nodeName, nodeType }
 
-**What the API provides:** Confirmed via `@figma/rest-api-spec`:
-- `InstanceNode` extends `FrameTraits` which includes `HasChildrenTrait` (children: SubcanvasNode[])
-- `InstanceNode` extends `FrameTraits` which includes `HasGeometryTrait` -> `MinimalFillsTrait` (fills: Paint[])
-- Children are fully populated in the REST API response (not truncated)
-- IMAGE paints on any node have `imageRef: string` for resolution via `fetchImageFills`
+Filename derivation:
+  -> sanitizeFilename(nodeName) + (format === 'svg' ? '.svg' : '.png')
+  -> recalculateFilenames(updatedList) for collision resolution
+     (icon.png stays, second icon.png becomes icon-2.png)
 
-### Gap 2: Spacing Accuracy
+Asset added to ManualAsset[] state with status 'valid'
 
-**Root cause:** Spacing extraction relies exclusively on auto-layout properties.
+User can:
+  - Remove any asset (filter by id, recalculate filenames)
+  - Add more assets (repeat the paste flow)
+  - Change nothing and proceed to export
+```
 
-In `flexbox-map.ts` line 43-64:
+### Phase 2: Export + Brief Generation
+
+```
+User clicks "Get Brief":
+  -> exportAssets({
+       shell, token, fileKey, selectedNodeId, projectPath,
+       assets: manualAssets.filter(a => a.status === 'valid'),
+       onProgress
+     })
+
+     1. prepareAssetsDir(shell, projectPath) -> assetsDir
+        [Unchanged: rm -rf + mkdir -p on .shipstudio/assets/]
+
+     2. Preview PNG:
+        fetchImages(shell, token, fileKey, [selectedNodeId], 'png', 2)
+        downloadFile(shell, previewUrl, assetsDir/preview.png)
+        [Unchanged from v1.3]
+
+     3. Batch render by format:
+        PNG assets: fetchImages(shell, token, fileKey, pngNodeIds, 'png', 2)
+        SVG assets: fetchImages(shell, token, fileKey, svgNodeIds, 'svg')
+        [SIMPLIFIED: No more fetchImageFills call]
+        [SIMPLIFIED: No more separate composition PNG batch]
+
+     4. Build download list from render URL responses
+        [Each ManualAsset maps to one download entry]
+
+     5. downloadAllAssets(shell, assetsDir, downloadList, onProgress)
+        [Unchanged: sequential curl downloads]
+
+     -> ExportResult {
+          assetsDir,
+          previewPath,
+          assets: [{ filename, path, nodeId, assetType }],
+          warnings
+        }
+
+  -> generateBrief({
+       extraction: extractLayoutResult,
+       exportResult,
+       projectPath,
+       fileName,
+       figmaUrl,
+       rootNodes
+     })
+
+     1. Build assetNodeMap: nodeId -> filename from exportResult.assets
+        [Unchanged mechanism, simpler data]
+
+     2. Build breadcrumbMap from rootNodes
+        [Unchanged]
+
+     3. Assemble markdown sections:
+        - Metadata [unchanged]
+        - Instructions [unchanged]
+        - Preview [unchanged]
+        - Layout Tree [simplified: no [Illustration] collapse, no compositionNodeIds]
+          Asset cross-references still work: assetNodeMap.get(node.id) for INSTANCE lines
+        - Design Tokens [unchanged]
+        - Components [unchanged]
+        - Assets table [simplified: types are 'Icon' or 'Image', no 'Composition'/'Component']
+
+     -> BriefResult { markdown, charCount, estimatedTokens, stats }
+
+  -> saveBrief(shell, assetsDir, markdown)
+  -> User clicks "Copy Brief" -> copyToClipboard(shell, markdown)
+```
+
+## Detailed File Changes
+
+### Files to DELETE
+
+| File | Lines | Reason |
+|------|-------|--------|
+| `src/assets/identify.ts` | ~307 | Auto-detection heuristics replaced by user-provided list |
+| `src/assets/identify.test.ts` | ~varies | Tests for deleted module |
+| `src/assets/detect-composition.ts` | ~209 | Composition/illustration detection no longer needed |
+| `src/assets/detect-composition.test.ts` | ~varies | Tests for deleted module |
+
+### `src/layout/extract.ts` -- Simplified
+
+Remove these functions entirely:
+- `collectImageFillsFromRawTree()` (lines 51-78) -- was pre-normalization IMAGE fill collection
+- `collectInstancesWithText()` (lines 86-112) -- was for identify.ts heuristic
+
+Remove from `extractLayout()`:
+- Step 4: `rawImageFills` collection loop (lines 174-178)
+- Step 4b: `instancesWithText` collection loop (lines 180-185)
+- Step 7: `rawImageFills` merge into `tokens.imageFills` (lines 198-205)
+
+Remove from `ExtractLayoutResult`:
+- `instancesWithText: Set<string>` field
+
+The function becomes: fetch -> count -> normalize -> collect tokens -> return. Cleaner and faster.
+
+### `src/assets/export.ts` -- Modified Interface
+
 ```typescript
-export function mapToFlexbox(frame: any): AutoLayoutProps {
+// NEW signature
+interface ExportAssetsOptions {
+  shell: Shell;
+  token: string;
+  fileKey: string;
+  selectedNodeId: string;   // For preview PNG
+  projectPath: string;
+  assets: ManualAsset[];    // User-provided asset list (was: rootNodes + imageFills + instancesWithText)
+  onProgress?: (progress: AssetExportProgress) => void;
+}
+```
+
+The function body simplifies from ~120 lines to ~80:
+1. `prepareAssetsDir()` -- unchanged
+2. Preview PNG -- unchanged
+3. Split `assets` by format: `const pngAssets = assets.filter(a => a.format === 'png')`
+4. `fetchImages(shell, token, fileKey, pngNodeIds, 'png', 2)` -- one call
+5. `fetchImages(shell, token, fileKey, svgNodeIds, 'svg')` -- one call
+6. Build download list mapping each asset to its rendered URL
+7. `downloadAllAssets()` -- unchanged
+
+Removed entirely:
+- `identifyAssets()` import and call
+- `detectCompositions()` import and call
+- `fetchImageFills()` call (no more imageRef resolution)
+- Complex download list building with separate SVG/fill/png-render paths
+- `compositionNodeIdSet` tracking
+
+### `src/assets/types.ts` -- Add ManualAsset, Simplify ExportResult
+
+```typescript
+// ADD
+interface ManualAsset {
+  id: string;
+  nodeId: string;
+  nodeName: string;
+  format: 'png' | 'svg';
+  filename: string;
+  status: 'resolving' | 'valid' | 'error';
+  error?: string;
+}
+
+// SIMPLIFY ExportResult.assets type
+interface ExportResult {
+  assetsDir: string;
+  previewPath: string;
+  assets: {
+    filename: string;
+    path: string;
+    nodeId: string;                  // Always present (user provided it)
+    assetType: 'icon' | 'image';    // svg -> icon, png -> image (no 'composition'/'component')
+    // parentInstanceId removed
+  }[];
+  warnings: string[];
+}
+```
+
+`AssetEntry` type can be kept for internal use or removed. It is no longer the input to export.
+
+### `src/assets/resolve.ts` -- NEW
+
+```typescript
+/**
+ * Resolve a Figma node ID to its layer name and type.
+ * Used when the user pastes an asset URL to populate the ManualAsset.
+ */
+export async function resolveNodeName(
+  shell: Shell,
+  token: string,
+  fileKey: string,
+  nodeId: string,
+): Promise<{ nodeName: string; nodeType: string }> {
+  const result = await fetchFileNodes(shell, token, fileKey, nodeId);
   return {
-    gap: frame.itemSpacing ?? 0,
-    padding: {
-      top: frame.paddingTop ?? 0,
-      right: frame.paddingRight ?? 0,
-      bottom: frame.paddingBottom ?? 0,
-      left: frame.paddingLeft ?? 0,
-    },
-    // ...
+    nodeName: result.rootNode.name,
+    nodeType: result.rootNode.type,
   };
 }
 ```
 
-This only captures spacing for frames with `layoutMode !== 'NONE'`. Frames without auto-layout -- and there are many in real Figma files -- have no spacing representation at all.
+Single function, ~15 lines. Uses the existing `fetchFileNodes` from `figma-api.ts`. The full subtree is fetched but only the root node's name is read. Acceptable for the expected 5-20 asset resolution calls.
 
-**What gets missed:**
+### `src/brief/generate.ts` -- Simplified
 
-1. **Non-auto-layout frames** -- Frames using manual positioning (the default in Figma). These have `absoluteBoundingBox` but no `itemSpacing` or `padding*` properties. Spacing between children can be inferred from bounding box arithmetic but currently is not.
+Remove:
+- `compositionNodeIds` set construction in `generateBrief()`
+- `compositionNodeIds` parameter from `buildLayoutTreeSection()` and `renderTree()`
+- The `[Illustration]` collapse block in `renderTree()` (lines 153-161)
+- `'composition' | 'component'` cases in `assetTypeLabel()`
 
-2. **Individual padding on non-auto-layout containers** -- A frame with manually positioned children still has visual padding (space between frame edge and first child). Computable from `absoluteBoundingBox` of parent vs children.
-
-3. **Negative spacing / overlapping** -- Elements that overlap produce negative computed gaps. This is valid (CSS negative margins exist) but needs careful handling.
-
-**What the API provides:**
-- `absoluteBoundingBox: { x, y, width, height }` on every node with layout
-- For auto-layout: `paddingTop/Right/Bottom/Left`, `itemSpacing`, `counterAxisSpacing`
-- For non-auto-layout: only `absoluteBoundingBox` -- spacing must be computed
-
-## Recommended Architecture Changes
-
-### Change 1: Deep Instance Traversal for Asset Detection
-
-**Modify:** `src/assets/identify.ts`
-**Nature:** Extend the INSTANCE branch in `walkTree` to inspect children for IMAGE fills
-
-The key insight: we still want to export the INSTANCE itself as a png-render (for the component preview), AND we want to discover image assets hidden inside it. We do NOT want to export SVG children inside instances (they are part of the component rendering, not standalone assets).
-
-```
-BEFORE:
-  INSTANCE detected -> push png-render -> RETURN (stop)
-
-AFTER:
-  INSTANCE detected -> push png-render -> scan children for IMAGE fills only
-                                          (do NOT export SVGs inside instances)
-```
-
-**Implementation approach:**
-
-Add a new helper function `scanInstanceForImageFills` that recursively walks instance children looking ONLY for nodes with IMAGE fills. This is narrower than the full `walkTree` -- it does not export SVGs, does not check for compositions, does not deduplicate instances. It only finds image assets.
-
+The `assetTypeLabel` function becomes:
 ```typescript
-function scanInstanceForImageFills(
-  node: LayoutNode,
-  imageFillMap: Map<string, string>,
-  matchedNodeIds: Set<string>,
-  entries: AssetEntry[],
-): void {
-  if (hasImageFill(node)) {
-    const imageRef = imageFillMap.get(node.id) ?? getImageRefFromFills(node);
-    if (imageFillMap.has(node.id)) matchedNodeIds.add(node.id);
-    entries.push({
-      nodeId: node.id,
-      nodeName: node.name,
-      exportType: 'png-fill',
-      filename: sanitizeFilename(node.name) + '.png',
-      imageRef,
-    });
-    // Don't return -- the image fill node might have children with more fills
-  }
-  if (node.children) {
-    for (const child of node.children) {
-      scanInstanceForImageFills(child, imageFillMap, matchedNodeIds, entries);
-    }
+function assetTypeLabel(assetType?: 'icon' | 'image'): string {
+  switch (assetType) {
+    case 'icon': return 'Icon';
+    case 'image': return 'Image';
+    default: return 'File';
   }
 }
 ```
 
-Then modify the INSTANCE branch in `walkTree`:
+The layout tree cross-referencing via `assetNodeMap` continues to work: when an INSTANCE node's ID matches a user-provided asset nodeId, the tree line shows `-> filename`. For non-instance nodes that the user exports, the same lookup works if the nodeId appears in the tree traversal.
+
+### `src/views/MainView.tsx` -- Major Rewrite
+
+**New state variables:**
 ```typescript
-if (node.type === 'INSTANCE' && node.componentRef) {
-  const key = instanceDedupKey(node);
-  if (!seenInstances.has(key)) {
-    seenInstances.add(key);
-    entries.push({ /* existing png-render entry */ });
+const [manualAssets, setManualAssets] = useState<ManualAsset[]>([]);
+const [assetUrlInput, setAssetUrlInput] = useState('');
+const [assetFormat, setAssetFormat] = useState<'png' | 'svg'>('png');
+const [addingAsset, setAddingAsset] = useState(false);
+const [assetError, setAssetError] = useState<string | null>(null);
+```
+
+**Flow changes:**
+1. "Get Brief" button split into "Extract" (Phase 1) and "Get Brief" (Phase 2)
+2. After extraction succeeds, the asset list UI appears
+3. "Get Brief" button is enabled only when extraction is complete (asset list can be empty for layout-only briefs, or require at least one asset -- design decision)
+4. `runAssetExport()` no longer auto-fires after extraction
+5. `handleExtract()` stops after setting `extractionResult`
+6. New `handleGetBrief()` function triggers export + brief generation
+
+**New UI sections (between extraction result and brief button):**
+1. Asset URL input with format toggle (PNG/SVG)
+2. "Add Asset" button
+3. Asset list with name, format, filename, remove button
+4. Inline validation messages
+
+**Removed UI elements:**
+- Composition count display (no more compositions)
+- Composition-related warnings filtering
+
+## Patterns to Follow
+
+### Pattern 1: Validate-Then-Add for Asset List
+
+When the user pastes an asset URL, validate immediately and show status before the entry is usable. Create an optimistic entry with `status: 'resolving'`, then update to `'valid'` or `'error'` after the API call completes.
+
+```typescript
+async function handleAddAsset() {
+  const parsed = parseFigmaUrl(assetUrlInput);
+  if (!parsed?.nodeId) {
+    setAssetError('Select a specific element in Figma first');
+    return;
   }
-  // NEW: Also check for image fills ON the instance itself
-  if (hasImageFill(node)) {
-    const imageRef = imageFillMap.get(node.id) ?? getImageRefFromFills(node);
-    if (imageFillMap.has(node.id)) matchedNodeIds.add(node.id);
-    entries.push({
-      nodeId: node.id,
-      nodeName: node.name,
-      exportType: 'png-fill',
-      filename: sanitizeFilename(node.name) + '-bg.png',
-      imageRef,
-    });
+  if (parsed.fileKey !== extractedFileKey) {
+    setAssetError('Asset must be from the same Figma file');
+    return;
   }
-  // NEW: Scan children for image fills (but not SVGs)
-  if (node.children) {
-    for (const child of node.children) {
-      scanInstanceForImageFills(child, imageFillMap, matchedNodeIds, entries);
-    }
+  // Check for duplicate nodeId
+  if (manualAssets.some(a => a.nodeId === parsed.nodeId)) {
+    setAssetError('This element is already in the list');
+    return;
   }
-  return; // Still don't fall through to SVG/RECTANGLE handling
+
+  const tempId = crypto.randomUUID();
+  setManualAssets(prev => [...prev, {
+    id: tempId, nodeId: parsed.nodeId, nodeName: '...',
+    format: assetFormat, filename: '...', status: 'resolving',
+  }]);
+  setAssetUrlInput('');
+  setAssetError(null);
+
+  try {
+    const { nodeName } = await resolveNodeName(shell, token, parsed.fileKey, parsed.nodeId);
+    setManualAssets(prev => recalculateFilenames(
+      prev.map(a => a.id === tempId
+        ? { ...a, nodeName, status: 'valid' as const }
+        : a
+      )
+    ));
+  } catch (err: any) {
+    setManualAssets(prev => prev.map(a => a.id === tempId
+      ? { ...a, status: 'error' as const, error: err?.message || 'Failed to resolve' }
+      : a
+    ));
+  }
 }
 ```
 
-**Prerequisite:** `normalize.ts` must also be modified to include children of INSTANCE nodes in the LayoutNode tree, otherwise `identify.ts` has no children to scan.
+### Pattern 2: Collision Resolution on List Mutation
 
-### Change 2: Normalize Instance Children for Asset Scanning
-
-**Modify:** `src/layout/normalize.ts`
-**Nature:** Remove the early return for INSTANCE nodes, recurse into children
-
-The INSTANCE case currently returns immediately after building `componentRef`. Change it to recurse into children like other container nodes:
+Recalculate filenames whenever the asset list changes (add or remove). The user always sees the exact filenames that will appear in the brief.
 
 ```typescript
-case 'INSTANCE':
-  result.componentRef = buildComponentRef(node, components);
-  // CHANGED: Still mark as instance, but DO recurse into children
-  // so that identify.ts can find image fills inside
-  break; // was: return result;
-```
-
-This means the normalized LayoutNode for an INSTANCE will now have a `children` array alongside its `componentRef`. This is a type-compatible change -- `LayoutNode.children` is already optional.
-
-**Impact assessment:**
-- **Token collection** (`collect.ts`): Will now walk into instance children. This is GOOD -- it discovers image fills inside instances that were previously missed. The `imageFills` array will be more complete.
-- **Brief layout tree** (`generate.ts`): The `renderTree` function already has `if (node.componentRef) return;` at line 163, which prevents rendering instance children in the layout tree. This is correct behavior -- we want the tree to show the instance as a leaf while still allowing asset detection to find fills. **No change needed.**
-- **Composition detection** (`detect-composition.ts`): The `detectInNode` function recurses into children. With instance children now present, it could potentially flag instance internals as compositions. However, the composition check already starts from `root.children` and recurses, and instance internals are typically simple. Low risk, but worth a test.
-- **Deduplication** (`deduplicateChildren` in normalize.ts): Works on direct children of a container. Instance children being present does not change the dedup logic for the instance's siblings.
-
-### Change 3: Instance Background Fills (IMAGE fills on the INSTANCE node itself)
-
-**Already handled by Change 1.** The INSTANCE node's own fills are already captured in normalize.ts (line 127-129). After Change 1, `identify.ts` checks for IMAGE fills on the instance node before the early return.
-
-But there is a subtlety: the INSTANCE node might have an IMAGE fill as a background (e.g., a card component with a background photo). Currently `hasImageFill(node)` is checked only after the INSTANCE branch returns. With Change 1, we check it explicitly inside the INSTANCE branch.
-
-### Change 4: Spacing from Non-Auto-Layout Frames
-
-**Modify:** `src/layout/normalize.ts` (add computed spacing)
-**Nature:** Compute inferred spacing from absoluteBoundingBox when no auto-layout
-
-For non-auto-layout frames (those where `layoutMode` is absent or 'NONE'), compute approximate spacing from bounding boxes:
-
-```typescript
-// After the autoLayout block in normalizeNode:
-if (!result.autoLayout && node.children && Array.isArray(node.children) && node.absoluteBoundingBox) {
-  const inferredSpacing = inferSpacingFromBounds(node, node.children);
-  if (inferredSpacing) {
-    result.inferredSpacing = inferredSpacing;
-  }
+function recalculateFilenames(assets: ManualAsset[]): ManualAsset[] {
+  const seen = new Map<string, number>();
+  return assets.map(asset => {
+    if (asset.status !== 'valid') return asset;
+    const base = sanitizeFilename(asset.nodeName);
+    const ext = asset.format === 'svg' ? '.svg' : '.png';
+    const key = base + ext;
+    const count = seen.get(key) ?? 0;
+    seen.set(key, count + 1);
+    const filename = count === 0 ? key : `${base}-${count + 1}${ext}`;
+    return { ...asset, filename };
+  });
 }
 ```
 
-**New type on LayoutNode:**
-```typescript
-/** Spacing inferred from bounding box positions (non-auto-layout frames) */
-inferredSpacing?: {
-  padding: { top: number; right: number; bottom: number; left: number };
-  /** Median gap between consecutive children along dominant axis */
-  gap?: number;
-  /** Whether children are laid out primarily horizontally or vertically */
-  dominantAxis?: 'horizontal' | 'vertical';
-};
-```
+### Pattern 3: Same-File Enforcement
 
-**Implementation approach:**
+Asset URLs must reference the same Figma file as the page/frame URL. The `fileKey` from `parseFigmaUrl(assetUrl)` must match the `fileKey` from the extraction. This is enforced at add time, not at export time.
 
-A pure function `inferSpacingFromBounds` that:
-1. Gets parent `absoluteBoundingBox`
-2. Gets children `absoluteBoundingBox` values
-3. Computes padding: distance from parent edges to nearest child edges
-4. Determines dominant axis (are children arranged more horizontally or vertically?)
-5. Computes gaps between consecutive children along the dominant axis
-6. Returns median gap as the representative spacing
+Rationale: The Figma render API (`/v1/images/{fileKey}`) is per-file. Cross-file references would need separate API calls and the node IDs would not exist in the extracted layout tree for cross-referencing.
+
+### Pattern 4: Format-Aware API Batching
+
+At export time, batch all PNG node IDs into one `fetchImages()` call and all SVG node IDs into another. Maximum two API calls for user assets (plus one for preview). The Figma render endpoint accepts comma-separated node IDs.
 
 ```typescript
-function inferSpacingFromBounds(
-  parent: any, // raw Figma node with absoluteBoundingBox
-  children: any[], // raw Figma child nodes with absoluteBoundingBox
-): LayoutNode['inferredSpacing'] | null {
-  const pBox = parent.absoluteBoundingBox;
-  if (!pBox || !children.length) return null;
+const pngAssets = validAssets.filter(a => a.format === 'png');
+const svgAssets = validAssets.filter(a => a.format === 'svg');
 
-  // Filter to visible children with bounding boxes
-  const childBoxes = children
-    .filter((c: any) => c.visible !== false && c.absoluteBoundingBox)
-    .map((c: any) => c.absoluteBoundingBox);
-
-  if (childBoxes.length === 0) return null;
-
-  // Compute padding from parent edges to outermost children
-  const minChildX = Math.min(...childBoxes.map((b: any) => b.x));
-  const minChildY = Math.min(...childBoxes.map((b: any) => b.y));
-  const maxChildRight = Math.max(...childBoxes.map((b: any) => b.x + b.width));
-  const maxChildBottom = Math.max(...childBoxes.map((b: any) => b.y + b.height));
-
-  const padding = {
-    top: Math.max(0, Math.round(minChildY - pBox.y)),
-    right: Math.max(0, Math.round((pBox.x + pBox.width) - maxChildRight)),
-    bottom: Math.max(0, Math.round((pBox.y + pBox.height) - maxChildBottom)),
-    left: Math.max(0, Math.round(minChildX - pBox.x)),
-  };
-
-  // Skip if all padding is 0 and only 1 child (nothing interesting to report)
-  if (childBoxes.length === 1) {
-    const hasAnyPadding = padding.top > 0 || padding.right > 0 ||
-                          padding.bottom > 0 || padding.left > 0;
-    if (!hasAnyPadding) return null;
-    return { padding };
-  }
-
-  // Determine dominant axis and compute gaps
-  // Sort by position along each axis, compute gaps, pick axis with less variance
-  const sortedByX = [...childBoxes].sort((a: any, b: any) => a.x - b.x);
-  const sortedByY = [...childBoxes].sort((a: any, b: any) => a.y - b.y);
-
-  const xGaps = computeGaps(sortedByX, 'x', 'width');
-  const yGaps = computeGaps(sortedByY, 'y', 'height');
-
-  // Pick axis: the one with positive gaps and lower variance
-  const result: LayoutNode['inferredSpacing'] = { padding };
-
-  if (xGaps.length > 0 && (yGaps.length === 0 || variance(xGaps) <= variance(yGaps))) {
-    result.dominantAxis = 'horizontal';
-    result.gap = median(xGaps);
-  } else if (yGaps.length > 0) {
-    result.dominantAxis = 'vertical';
-    result.gap = median(yGaps);
-  }
-
-  return result;
-}
+const pngUrls = pngAssets.length > 0
+  ? await fetchImages(shell, token, fileKey, pngAssets.map(a => a.nodeId), 'png', 2)
+  : {};
+const svgUrls = svgAssets.length > 0
+  ? await fetchImages(shell, token, fileKey, svgAssets.map(a => a.nodeId), 'svg')
+  : {};
 ```
-
-**Where this connects to the brief:** The `renderNodeLine` function in `generate.ts` already outputs auto-layout spacing inline. Add a parallel block for `inferredSpacing`:
-
-```typescript
-if (node.inferredSpacing) {
-  const is = node.inferredSpacing;
-  const props: string[] = [];
-  if (is.dominantAxis) props.push(is.dominantAxis === 'horizontal' ? 'row (inferred)' : 'column (inferred)');
-  if (is.gap != null && is.gap > 0) props.push(`gap: ~${is.gap}`);
-  const padding = formatPadding(is.padding);
-  if (padding) props.push(padding);
-  if (props.length > 0) parts.push(`(${props.join(', ')})`);
-}
-```
-
-**Where this connects to token collection:** Add `inferredSpacing` values to the spacing token collection in `collect.ts`, tagged with source `'inferred-padding'` or `'inferred-gap'` to distinguish from auto-layout values.
-
-### Change 5: Plugin Icon (Trivial)
-
-**New file:** Plugin manifest/config update
-**Nature:** Add Figma logo SVG as plugin icon
-
-This is a configuration change, not an architecture change. It involves adding an SVG file and referencing it in the plugin manifest. No pipeline changes.
-
-## Component Boundary Map
-
-### Modified Files
-
-| File | Change | Risk | Dependencies |
-|------|--------|------|--------------|
-| `src/layout/normalize.ts` | Remove early return for INSTANCE, add `inferSpacingFromBounds` | MEDIUM | Changes tree shape visible to all downstream |
-| `src/layout/types.ts` | Add `inferredSpacing` to LayoutNode | LOW | Type-only, additive |
-| `src/assets/identify.ts` | Add `scanInstanceForImageFills`, modify INSTANCE branch | LOW | Self-contained logic |
-| `src/brief/generate.ts` | Render `inferredSpacing` in tree lines | LOW | Additive formatting |
-| `src/tokens/collect.ts` | Collect spacing from `inferredSpacing` | LOW | Additive accumulation |
-
-### Unchanged Files
-
-| File | Why Unchanged |
-|------|---------------|
-| `src/assets/export.ts` | Orchestration logic is asset-type-agnostic. More png-fill entries flow through naturally. |
-| `src/assets/download.ts` | Downloads any URL to any path. No type awareness. |
-| `src/assets/detect-composition.ts` | Composition detection already handles recursion. Instance children do not add new composition candidates (instances are typically simple internally). |
-| `src/assets/sanitize.ts` | Filename sanitization is input-agnostic. |
-| `src/assets/breadcrumb.ts` | Breadcrumbs walk the tree. More children = more breadcrumbs. Works automatically. |
-| `src/figma-api.ts` | No API changes needed. Same endpoints, same data. |
-| `src/views/MainView.tsx` | UI is pipeline-result-agnostic. More assets = higher count in stats. |
-
-### New Files
-
-None. All changes are modifications to existing files. This is intentional -- the v1.2 architecture is well-structured and does not need new modules for these features.
-
-## Data Flow Changes
-
-### Before (v1.2): INSTANCE Node Processing
-
-```
-Figma API Response
-  INSTANCE node (with children, fills)
-    |
-normalizeNode() -> LayoutNode { componentRef, fills, NO children }
-    |
-    +-> collectTokens(): sees componentRef, accumulates component inventory
-    |                     does NOT recurse (no children on LayoutNode)
-    |                     sees fills[] but only for stroke/color tokens
-    |                     IMAGE fills -> imageFills[] (if present on instance)
-    |
-    +-> identifyAssets(): INSTANCE branch -> push png-render -> RETURN
-                          IMAGE fills on instance? NEVER CHECKED
-                          Children with fills? NEVER WALKED
-```
-
-### After (v1.3): INSTANCE Node Processing
-
-```
-Figma API Response
-  INSTANCE node (with children, fills)
-    |
-normalizeNode() -> LayoutNode { componentRef, fills, children[] }
-    |
-    +-> collectTokens(): sees componentRef, accumulates component inventory
-    |                     NOW RECURSES into children
-    |                     IMAGE fills on children -> imageFills[]
-    |
-    +-> identifyAssets(): INSTANCE branch -> push png-render
-    |                     CHECK instance fills for IMAGE -> png-fill
-    |                     SCAN children for IMAGE fills -> png-fill entries
-    |                     RETURN (don't fall through to SVG handling)
-    |
-    +-> brief renderTree(): componentRef check -> RETURN (no children rendered)
-                            Instance still appears as leaf in layout tree
-                            BUT its image assets appear in the Assets table
-```
-
-### Before (v1.2): Non-Auto-Layout Frame Spacing
-
-```
-normalizeNode()
-  Frame with layoutMode === undefined/NONE
-    |
-    autoLayout property: NOT SET (no mapToFlexbox call)
-    |
-    Result: LayoutNode has dimensions but NO spacing information
-    |
-    Brief: "Frame 'Header' 1440x80" -- no gap/padding info
-```
-
-### After (v1.3): Non-Auto-Layout Frame Spacing
-
-```
-normalizeNode()
-  Frame with layoutMode === undefined/NONE
-    |
-    autoLayout: NOT SET
-    inferredSpacing: COMPUTED from absoluteBoundingBox
-    |
-    Result: LayoutNode has dimensions AND inferred spacing
-    |
-    Brief: "Frame 'Header' (row (inferred), gap: ~24, padding: 16 32) 1440x80"
-```
-
-## Build Order (Dependency-Aware)
-
-The changes have clear dependencies. Here is the correct build sequence:
-
-### Phase 1: Instance Children in Layout Tree
-
-**Must come first** -- all other instance-related changes depend on children being present in the LayoutNode tree.
-
-1. Modify `src/layout/types.ts` -- no type changes needed for this step (children already optional on LayoutNode)
-2. Modify `src/layout/normalize.ts` -- change INSTANCE case from `return result` to `break`
-3. Update `src/layout/normalize.test.ts` -- verify INSTANCE nodes now have children
-4. Verify `src/brief/generate.ts` still renders INSTANCE as leaf (existing `componentRef` guard)
-5. Verify `src/assets/detect-composition.ts` does not falsely flag instance internals
-6. Run full test suite -- check for regressions in token collection and brief output
-
-### Phase 2: Deep Asset Detection Inside Instances
-
-**Depends on Phase 1** -- needs children to exist on INSTANCE LayoutNodes.
-
-1. Add `scanInstanceForImageFills` helper to `src/assets/identify.ts`
-2. Modify INSTANCE branch in `walkTree` to also check instance's own fills and scan children
-3. Add asset type `'background'` to distinguish background fills from content images (optional)
-4. Update `src/assets/identify.test.ts` with test cases:
-   - Instance with IMAGE fill on itself (background photo)
-   - Instance with child rectangle that has IMAGE fill (nested logo)
-   - Instance with nested instance that has IMAGE fill (deeply nested)
-   - Instance with only SVG children (should NOT export SVGs)
-5. Verify `src/assets/export.ts` handles the additional png-fill entries (should work without changes)
-6. End-to-end test with real Figma file containing components with images
-
-### Phase 3: Spacing Inference from Bounding Boxes
-
-**Independent of Phases 1-2** -- can be built in parallel.
-
-1. Add `inferredSpacing` type to `src/layout/types.ts`
-2. Add `inferSpacingFromBounds` pure function to `src/layout/normalize.ts` (with helpers: `computeGaps`, `median`, `variance`)
-3. Call `inferSpacingFromBounds` in `normalizeNode` for non-auto-layout frames
-4. Update `src/layout/normalize.test.ts` with test cases:
-   - Frame with 3 horizontally arranged children -> inferred row, gap, padding
-   - Frame with 3 vertically arranged children -> inferred column, gap, padding
-   - Frame with single child -> padding only
-   - Frame with no children -> null
-   - Frame with overlapping children -> handle gracefully
-5. Update `src/tokens/collect.ts` to accumulate spacing from `inferredSpacing`
-6. Update `src/brief/generate.ts` to render `inferredSpacing` in tree lines
-7. Unit test the brief output formatting
-
-### Phase 4: Plugin Icon
-
-**Independent of all other phases.**
-
-1. Add Figma logo SVG to project
-2. Update plugin manifest/config to reference it
-3. Verify icon renders in Ship Studio toolbar
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Over-Traversal of Instance Trees
-**What:** Recursing into every child of every instance for all asset types (SVG, composition, etc.)
-**Why bad:** Instance internals are part of the component rendering. Exporting individual SVG paths from inside a Button component produces garbage. The instance PNG already captures the visual.
-**Instead:** Only scan for IMAGE fills inside instances. SVGs, compositions, and other asset types should NOT be extracted from instance children.
+### Anti-Pattern 1: Keeping Auto-Detection as Fallback
 
-### Anti-Pattern 2: Computed Spacing as Authoritative
-**What:** Treating bounding-box-inferred spacing as precise design intent
-**Why bad:** Manual positioning often has slight pixel variations. A designer might place elements at 23px, 25px, 24px gaps -- the median (24px) is useful guidance but is not the designer's declared value like auto-layout's `itemSpacing: 24`.
-**Instead:** Mark inferred spacing clearly as approximate (`gap: ~24`, tagged as `inferred`) to distinguish from auto-layout's precise values. Use `~` prefix and `(inferred)` label.
+**What:** Keeping identify.ts and detect-composition.ts as optional alongside manual control.
 
-### Anti-Pattern 3: Normalizing Instance Children for the Layout Tree
-**What:** Showing instance child nodes in the brief's layout tree
-**Why bad:** The layout tree is meant to show the designer's component structure. Instance internals are implementation details -- Claude Code should use the component, not recreate its internals.
-**Instead:** Keep the `if (node.componentRef) return;` guard in `renderTree`. Instance children exist in the LayoutNode for asset detection and token collection only, not for layout tree display.
+**Why bad:** Two parallel pipelines double maintenance burden, create ambiguous UX, and undermine the decision that auto-detection was unreliable. If both exist, every bug report requires asking "which path did it take?"
 
-### Anti-Pattern 4: Changing Export Types Based on Instance Context
-**What:** Exporting an IMAGE fill inside an instance differently from an IMAGE fill at the top level
-**Why bad:** An image is an image regardless of where it lives. The download pipeline treats all `png-fill` entries identically.
-**Instead:** Use the same `png-fill` export type for all IMAGE fills. The breadcrumb path naturally indicates the image's location context.
+**Instead:** Delete completely. If future versions want "suggested assets," implement as a pre-population of the manual list for user review -- not a separate pipeline.
+
+### Anti-Pattern 2: Re-fetching the Full Tree for Name Resolution
+
+**What:** Calling `fetchFileNodes` with the full subtree just to read `.name`.
+
+**Why bad (at scale):** For a complex component, this fetches the entire subtree. Wasteful.
+
+**Actually acceptable for v2.0:** Individual node fetches are fast for the expected 5-20 assets. The full tree response for a single icon/image is typically small. Optimize only if profiling shows this is a bottleneck.
+
+**Future optimization if needed:** Cache the raw tree from the extraction and look up names locally. But this is premature for v2.0.
+
+### Anti-Pattern 3: Storing Asset List in Plugin Storage
+
+**What:** Persisting the manual asset list across sessions.
+
+**Why bad:** Asset lists are per-extraction, tied to a specific Figma URL and tree state. Stale references would fail or export wrong content after the Figma file changes.
+
+**Instead:** Asset list is ephemeral React state. Resets on URL change or re-extraction. Simple and correct.
+
+### Anti-Pattern 4: Mixed Asset Type Semantics
+
+**What:** Trying to distinguish "component" from "image" from "composition" in the brief when the user manually chose the format.
+
+**Why bad:** The user explicitly chose PNG or SVG. Adding a third dimension of classification (component vs image vs icon) requires heuristics that are exactly what v2.0 is eliminating.
+
+**Instead:** Asset type is derived purely from format: `svg -> 'Icon'`, `png -> 'Image'`. The user knows what they exported and the brief does not need to guess.
+
+## Cross-Referencing: How User-Provided Node IDs Map to the Layout Tree
+
+This is the most subtle integration point. The brief's layout tree uses `assetNodeMap.get(node.id)` to show `-> filename` inline on tree nodes that have corresponding assets. This works when:
+
+1. **Node is in the normalized tree** (e.g., an INSTANCE, FRAME, or VECTOR node): The `renderTree` traversal visits the node, finds it in `assetNodeMap`, and appends `-> filename`. Works identically to v1.3.
+
+2. **Node is a child of an INSTANCE** (e.g., a photo rectangle inside a card component): The normalized tree treats INSTANCE as a leaf -- its children are not in the traversal. The `assetNodeMap` entry exists but `renderTree` never visits that node ID. The asset will NOT show `-> filename` in the tree.
+
+This is acceptable and arguably better than v1.3: The Assets table already shows every asset with its breadcrumb location. The tree annotation was useful in the auto-detection era to make implicit connections visible. With manual control, the user knows exactly which elements they added.
+
+The breadcrumb lookup for instance-child assets also needs consideration: `buildBreadcrumbMap` only covers nodes in the normalized tree. An instance-child nodeId will not have a breadcrumb entry. The Assets table will show `--` for its Location column.
+
+**Mitigation:** When building the assets table, if a nodeId has no breadcrumb, fall back to showing the parent INSTANCE node's breadcrumb. This requires knowing the parent-child relationship. Two approaches:
+
+1. **Lookup during resolve:** When `resolveNodeName` fetches the node, also check if its parent is in the breadcrumb map. Store the parent breadcrumb on `ManualAsset`.
+2. **Accept `--` for now:** Most user-selected assets will be top-level nodes (icons, sections, images) that ARE in the normalized tree. Instance children are an edge case. Ship with `--` and add parent breadcrumb in a follow-up if users report it as confusing.
+
+**Recommendation:** Accept `--` for v2.0. This is a minor cosmetic issue and the brief is still fully functional.
+
+## Suggested Build Order
+
+Each phase is independently testable. Dependencies flow strictly downward.
+
+### Phase 1: Strip Auto-Detection (foundation cleanup)
+
+**Delete:** `identify.ts`, `identify.test.ts`, `detect-composition.ts`, `detect-composition.test.ts`
+
+**Modify:**
+- `extract.ts`: Remove `collectImageFillsFromRawTree()`, `collectInstancesWithText()`, imageFills merge, `instancesWithText` from return type
+- `export.ts`: Remove `identifyAssets()` and `detectCompositions()` imports. Temporarily stub the function to skip auto-detection (return empty assets, preview only)
+- `brief/generate.ts`: Remove `compositionNodeIds` tracking, `[Illustration]` collapse in `renderTree`, simplify `assetTypeLabel`
+
+**Test updates:** Remove or update tests that reference deleted modules. Existing brief/generate tests that use composition fixtures need updating.
+
+**Why first:** All subsequent work builds on a codebase without dead code. Merge conflicts are minimized by doing deletions first.
+
+### Phase 2: Manual Asset Types + Node Resolution
+
+**Create:** `assets/resolve.ts` with `resolveNodeName()`
+
+**Modify:** `assets/types.ts` to add `ManualAsset` type, simplify `ExportResult.assets`
+
+**Test:** Unit test `resolveNodeName` (mock figma-api). Unit test `ManualAsset` filename derivation with `sanitizeFilename`.
+
+**Why second:** Pure data types and a single API function. No UI. Fully testable in isolation. Required before Phase 3 can accept the new input shape.
+
+### Phase 3: Rebuild Export Pipeline
+
+**Modify:** `assets/export.ts` to accept `ManualAsset[]`
+
+New function body:
+1. `prepareAssetsDir()` -- unchanged
+2. Preview PNG -- unchanged
+3. Split assets by format into PNG and SVG batches
+4. `fetchImages()` per batch
+5. Build download list
+6. `downloadAllAssets()` -- unchanged
+
+**Test:** Unit test with mocked API calls. Verify correct batching (all PNGs in one call, all SVGs in another). Verify filename passthrough from ManualAsset to download list.
+
+**Why third:** Depends on Phase 2 types. The export pipeline must work before the UI can trigger it.
+
+### Phase 4: Brief Generator Updates
+
+**Modify:** `brief/generate.ts` to work with simplified export result
+
+Changes:
+- Remove `compositionNodeIds` parameter threading
+- Simplify `assetTypeLabel` to `'icon' | 'image'`
+- Remove `parentInstanceId` fallback in asset table building
+- Update `BriefInput` type (remove `instancesWithText` concern)
+
+**Test:** Update existing `generate.test.ts` fixtures. Verify layout tree rendering without composition collapse. Verify assets table with new type labels.
+
+**Why fourth:** Depends on Phase 3 (new ExportResult shape). Pure function, fully testable.
+
+### Phase 5: MainView UI Rewrite
+
+**Modify:** `views/MainView.tsx`
+
+- Split single button into two-phase flow (Extract, then Get Brief)
+- Add asset list state management
+- Add asset URL input + format picker + Add button
+- Add asset list display with remove buttons
+- Wire Get Brief to new export pipeline
+- Update progress indicators
+- Remove composition-related UI elements
+
+**Why last:** Depends on all previous phases. The UI wires together resolve.ts (Phase 2), export.ts (Phase 3), and generate.ts (Phase 4). Best done when all pieces are stable and tested.
 
 ## Scalability Considerations
 
-| Concern | Current (v1.2) | After v1.3 |
-|---------|----------------|------------|
-| Asset count | Moderate (instances are 1 asset each) | Higher (images inside instances add entries) |
-| API calls | One batch per asset type | Same -- new image fills are resolved from the same `fetchImageFills` response |
-| Download time | Sequential, ~1s per asset | Linear increase with more assets, but download.ts handles this |
-| Brief size | Proportional to node count | Slightly larger with inferred spacing annotations |
-| Computation | O(n) tree walk | O(n) -- instance children were already in API response, just not walked |
+| Concern | 5 assets | 20 assets | 50+ assets |
+|---------|----------|-----------|------------|
+| Name resolution API calls | 5 serial fetches (~2s) | 20 serial fetches (~8s) | Likely too slow; batch needed |
+| Render API batching | 1-2 calls | 1-2 calls | May hit URL length limits |
+| Download time | ~5s | ~20s | ~50s; approaching 120s timeout |
+| UI list rendering | Trivial | Trivial | May need scroll container |
 
-The `fetchImageFills` API call returns ALL image refs for the file in one response. Adding more `png-fill` entries from instance children does not require additional API calls. The only cost is additional sequential downloads (one `curl` per image), which is bounded by the number of unique `imageRef` values.
-
-## Key Architectural Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| Scan instances for IMAGE fills only | SVGs inside instances are component internals, not standalone assets. Only raster images (photos, logos) are meaningful to extract separately. |
-| Keep instances as leaf nodes in layout tree | The layout tree communicates structure. Instance internals are abstracted away by design. |
-| Infer spacing with explicit approximate markers | Bounding-box math produces useful-but-imprecise values. Honest labeling prevents Claude Code from treating estimates as exact specs. |
-| No new files | The existing module structure handles these features cleanly. Adding modules would be unnecessary complexity. |
-| Phase 1 before Phase 2 | Asset detection can only find instance children if normalize.ts produces them. Token collection also benefits from seeing instance children (finds more imageFills). |
-| Phase 3 independent | Spacing inference has no dependency on instance traversal. Can be built and tested in isolation. |
+For v2.0, 5-20 assets is the realistic range. No optimization needed beyond the basic format batching already planned.
 
 ## Sources
 
-- Figma REST API spec: `@figma/rest-api-spec` (node_modules, InstanceNode type definition) -- HIGH confidence
-- Figma REST API docs: [File Endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- HIGH confidence
-- Figma REST API types: [api_types.ts](https://github.com/figma/rest-api-spec/blob/main/dist/api_types.ts) -- HIGH confidence
-- Figma Plugin API: [fills property](https://www.figma.com/plugin-docs/api/properties/nodes-fills) -- MEDIUM confidence (Plugin API, not REST API, but consistent)
-- Figma Forum: [absoluteBoundingBox spacing](https://forum.figma.com/t/intuition-behind-absoluteboundingbox/3389) -- MEDIUM confidence
-- Figma auto-layout docs: [Guide to auto layout](https://help.figma.com/hc/en-us/articles/360040451373-Guide-to-auto-layout) -- HIGH confidence
-- Codebase analysis: All source files in `src/` -- HIGH confidence (direct code reading)
+- Full codebase analysis of all source files in `src/` -- HIGH confidence
+- Figma REST API endpoints: `/v1/files/{key}/nodes`, `/v1/images/{key}`, `/v1/files/{key}/images` -- HIGH confidence
+- PROJECT.md v2.0 requirements -- HIGH confidence
+- Existing `@figma/rest-api-spec` type definitions in node_modules -- HIGH confidence

@@ -1,122 +1,156 @@
 # Feature Landscape
 
-**Domain:** Figma design extraction -- asset completeness and spacing accuracy (v1.3)
+**Domain:** Manual asset control for Figma design extraction plugin (v2.0)
 **Researched:** 2026-03-01
-**Confidence:** HIGH (based on codebase analysis + Figma REST API spec `@figma/rest-api-spec`)
+**Confidence:** HIGH (codebase analysis + Figma REST API documentation + URL format investigation)
 
 ## Table Stakes
 
-Features users expect for a "bulletproof" asset extraction tool. Missing = Claude Code fabricates replacements or builds with wrong spacing.
+Features users expect for a manual asset selection workflow. Missing any of these makes the feature feel broken or incomplete.
 
-### Asset Detection
-
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| IMAGE fills inside INSTANCE children | Component instances often contain user-uploaded photos (avatars, hero images, product shots). Currently `identify.ts` returns early at INSTANCE nodes (line 76-88) without checking children for IMAGE fills. The orphan imageFills path (line 174) catches some but relies on token collection having walked the instance -- and even then, the fills lack proper tree context. | Medium | Changes to `identify.ts` walkTree: must recurse into INSTANCE children specifically for IMAGE fill detection while still exporting the instance itself as a PNG. Also need `normalize.ts` to actually recurse into INSTANCE children (currently returns early at line 173). | This is the #1 gap. A hero section with a background photo inside a component instance will produce a component PNG render (correct) but NOT export the original high-res photo (incorrect). Claude Code gets a flattened raster of the component instead of the source image. |
-| IMAGE fills on INSTANCE nodes themselves | An INSTANCE frame can have an IMAGE fill set directly on it (background image override). Current code checks INSTANCE type first (line 76) and returns before the IMAGE fill check (line 91). | Low | Move IMAGE fill check before or integrate into INSTANCE handling in `identify.ts`. | Rare but real. Designers sometimes override instance backgrounds with images. |
-| IMAGE fills on FRAME/GROUP nodes | A FRAME used as a container can have an IMAGE fill as its background (e.g., a section with a background photo). Currently handled correctly by the existing `hasImageFill` check -- but only if the FRAME is not inside a composition or instance. | Low | Already works for top-level frames. Need to verify it works for nested frames that aren't inside instances. | Verify existing coverage with test cases. |
-| RECTANGLE nodes with IMAGE fills already exported as PNG | Currently `identify.ts` checks IMAGE fills (line 91) before checking RECTANGLE type (line 125). This is correct -- a RECTANGLE with an IMAGE fill gets `png-fill` not `svg`. | None | Already handled. | Confirmed by code review. |
-
-### Spacing Accuracy
+### Asset Addition via Figma URL
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| Absolute position offsets in layout tree | Absolutely-positioned children currently show `[absolute]` tag but no coordinates. Claude Code needs `top: 24px, left: 16px` to position elements correctly. Figma provides `absoluteBoundingBox` on every node. | Low | Read `absoluteBoundingBox` in `normalize.ts`, compute offset relative to parent's `absoluteBoundingBox`. Store as `{ top, left }` on LayoutNode. Render in `generate.ts` next to `[absolute]`. | Parent's bounding box minus child's bounding box gives the offset. Simple subtraction. Already have `absoluteBoundingBox` being read for width/height. |
-| Non-auto-layout sibling spacing | Frames without auto-layout have no gap/padding properties. Spacing between siblings is implicit in their `absoluteBoundingBox` positions. Claude Code currently gets no spacing information for these layouts. | Medium | Compute spacing between consecutive siblings by comparing their `absoluteBoundingBox` coordinates. Only meaningful for siblings that are visually sequential (same row or same column). | This is the second biggest spacing gap. A manually-laid-out frame with 3 cards spaced 24px apart produces no spacing info in the brief. |
-| Row gap accuracy for wrap layouts | `counterAxisSpacing` is already read in `flexbox-map.ts` (line 60) and included as `rowGap` when `layoutWrap === 'WRAP'`. | None | Already handled. | Confirmed working. |
-| Padding accuracy | All four padding values (top, right, bottom, left) are already read from Figma's `paddingTop/Right/Bottom/Left` in `flexbox-map.ts` (line 49-54). | None | Already handled. | Confirmed working. |
-| Gap (itemSpacing) accuracy | `itemSpacing` already mapped to `gap` in `flexbox-map.ts` (line 48). | None | Already handled. | Confirmed working. Supports negative values per API spec. |
+| Paste a single-node Figma URL to add an asset | This is the core interaction model. Users right-click an element in Figma, "Copy link to selection", paste it into the plugin. The plugin parses it, extracts the node ID, and adds it to the asset list. | Low | Reuses existing `parseFigmaUrl()` from `url-parser.ts` which already handles `?node-id=` extraction. Need to validate the fileKey matches the main design URL's fileKey. | The URL parser already normalizes dash-to-colon format (`0-1` to `0:1`) and handles URL-encoding (`%3A`). No parser changes needed for single-node URLs. |
+| Format picker (PNG or SVG) per asset | Users must choose the export format when adding each asset. Icons/vectors need SVG; photos/illustrations/complex compositions need PNG. Default should be PNG (safest for any node type). SVG only works well for vector-based nodes. | Low | New UI element (dropdown or toggle) alongside the URL input. Maps directly to existing `fetchImages()` which already accepts `format: 'png' \| 'svg'`. | SVG export has constraints: text is outlined by default, 1x scale only. PNG supports scale parameter (use 2x). These constraints should inform the default but not restrict the choice -- users know their designs. |
+| Validate that asset URL belongs to same file | If the user pastes a URL from a different Figma file, the asset cannot be exported in the same API batch. The plugin should reject it immediately with a clear error. | Low | Compare `parsedUrl.fileKey` of the asset URL against the main design URL's fileKey. Instant client-side check, no API call needed. | Critical for avoiding confusing errors later. The Figma images API (`/v1/images/:key`) is scoped to a single file key. |
+| Validate that URL contains a node ID | A Figma URL without `?node-id=` points to an entire file or page. That is not a valid asset target. The plugin should show "Select a specific element in Figma and copy its link" when `nodeId` is null. | Low | Already handled by `parseFigmaUrl()` -- check `result.nodeId !== null`. | File-level URLs are valid for the main design input, but not for individual assets. |
+| Auto-derived filename from Figma layer name | After adding a URL, the plugin needs to resolve the layer name from the Figma API (`/v1/files/:key/nodes?ids=:nodeId`) and use `sanitizeFilename()` to generate the filename. Users should see the derived name (e.g., "hero-image.png") before exporting. | Medium | Requires a lightweight API call to `fetchFileNodes()` for each added asset to get the node name. Could batch these calls or fetch lazily. Reuses existing `sanitizeFilename()` from `assets/sanitize.ts`. | The API call is the same one used for layout extraction but with a single node ID. Response includes the node `name` field. Consider batching: collect URLs first, resolve names in one batch via comma-separated IDs in `/v1/files/:key/nodes?ids=a,b,c`. |
+| Duplicate filename resolution | When two assets derive the same filename (e.g., two layers both named "icon"), the second should become "icon-2.png". | Low | Reuses existing `resolveCollisions()` from `assets/sanitize.ts`. Already handles this exact case with `-2`, `-3` suffixes. | No new code needed for the collision logic itself. Just need to apply it to the manual asset list before export. |
+
+### Asset List Management
+
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Display a list of added assets | Users need to see what they have queued for export. Each row should show: derived filename, format (PNG/SVG), and a remove button. | Low | New React state: `AssetItem[]` where `AssetItem = { nodeId, nodeName, filename, format, figmaUrl }`. Rendered as a simple list in the UI. | Keep it minimal. This is a toolbar-slot plugin with limited vertical space. Each item should be a single compact row. |
+| Remove individual assets from the list | Users must be able to remove mistakenly added assets before exporting. A trash icon or X button per row. | Low | Filter the state array by nodeId. Re-run `resolveCollisions()` on the remaining list to recalculate filenames in case a collision suffix is no longer needed. | Recalculating collisions on remove is important. If "icon.png" and "icon-2.png" exist and user removes "icon.png", "icon-2.png" should NOT be renamed -- keep names stable once shown to the user. Actually, simpler: just keep the derived name as-is on remove. |
+| Clear all assets | A "Clear all" action to start over. Less critical than individual remove but expected for lists with more than 3-4 items. | Low | Reset the asset list state to empty. | Could be a link-style button below the list, not a prominent button. |
+| Prevent duplicate node IDs | If the user pastes the same URL twice, the second add should be rejected with a toast: "This element is already in the list." | Low | Check `assetList.some(a => a.nodeId === newNodeId)` before adding. | Simple dedup by node ID. |
+
+### Export and Brief Integration
+
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Export all listed assets in one batch | The user clicks "Get Brief" and all assets are exported alongside the layout tree and design tokens. The asset export should use the existing `fetchImages()` API for PNG/SVG renders, batching all node IDs into a single API call per format. | Medium | Replaces the current `identifyAssets()` + `detectCompositions()` pipeline. Instead, the manual asset list IS the asset list. Feed it directly into the download pipeline. Group by format: one `fetchImages()` call for all PNGs, one for all SVGs. | The Figma Images API supports comma-separated node IDs in a single call, so batching is free. Current `fetchImages()` in `figma-api.ts` already accepts `nodeIds: string[]`. |
+| Layout tree cross-referencing by node ID | Each exported asset should appear in the layout tree with `-> filename.ext` annotation, exactly as the current system does. This ties the visual hierarchy to the exported files. | Low | The existing brief generator already does this via `assetNodeMap` (maps nodeId to filename). Manual assets provide nodeId directly, so this works without changes to `generate.ts`. | Already built. The manual asset list just needs to provide `nodeId` in the export result. |
+| Full-page preview PNG auto-generated | The preview.png (2x render of the selected frame/page) should remain automatic. Only individual assets are manual. | None | Already exists. No changes needed to preview generation in `exportAssets()`. | This is explicitly in the requirements: "Full-page preview PNG remains auto-generated." |
 
 ## Differentiators
 
-Features that would set the plugin apart from basic extraction. Not expected, but would noticeably improve Claude Code's output accuracy.
+Features that set this workflow apart from auto-detection. Not strictly required, but significantly improve the experience.
 
 | Feature | Value Proposition | Complexity | Dependencies | Notes |
 |---------|-------------------|------------|--------------|-------|
-| Absolute position as CSS inset values | Instead of raw `top/left` offsets, compute `top/right/bottom/left` based on Figma's `constraints` property (which specifies whether a node is pinned to TOP, BOTTOM, LEFT, RIGHT, CENTER, or SCALE). This maps directly to CSS `position: absolute; top: X; right: Y;` | Medium | Read `constraints` from LayoutNode (already captured in `normalize.ts` line 115-117). Combine with `absoluteBoundingBox` of node and parent to compute CSS inset values. | Figma constraints are the closest analog to CSS absolute positioning anchors. A node constrained to TOP+RIGHT should produce `top: X; right: Y;` not `top: X; left: Z;`. |
-| `layoutGrow` (flex: 1) detection | Figma's `layoutGrow: 1` means the child stretches along the primary axis -- equivalent to `flex: 1` or `flex-grow: 1` in CSS. Currently not extracted. | Low | Read `layoutGrow` in `normalize.ts`. Add to LayoutNode type. Render as `flex:1` in brief tree line. | Small change, significant impact. Without it, Claude Code doesn't know which child should stretch to fill available space. |
-| `layoutAlign: STRETCH` detection | When a child in an auto-layout frame has `layoutAlign: 'STRETCH'`, it fills the cross-axis. Equivalent to `align-self: stretch`. Currently not extracted. | Low | Read `layoutAlign` in `normalize.ts`. Add to LayoutNode type. Render as `align-self:stretch` in brief. | Combined with `layoutGrow`, gives Claude Code the complete flex child picture. |
-| Spacing between specific node pairs | For non-auto-layout frames, compute and report the gap between each pair of adjacent visible children. Format as annotations in the layout tree. | High | Requires sorting children by position, detecting row/column groupings, computing gaps. Edge cases with overlapping nodes. | Nice-to-have but complex. The simpler version (absolute position offsets) covers 80% of the need. |
-| PATTERN paint detection | Figma REST API includes a `PatternPaint` type (with `sourceNodeId`, `tileType`, `scalingFactor`). Currently not handled in `collect.ts` or `identify.ts`. Rare in practice. | Low | Add case to `collect.ts` fill processing. | Very rare. Only matters if designers use Figma's pattern fill feature, which is uncommon. |
-| `counterAxisAlignContent: SPACE_BETWEEN` | For wrapped auto-layout frames, this property distributes tracks with space between them (like CSS `align-content: space-between`). Currently not extracted. | Low | Read in `flexbox-map.ts`, add to AutoLayoutProps, render in brief. | Only applies to wrapping layouts with space-between content distribution. |
-| `strokesIncludedInLayout` (box-sizing) | When true, the auto-layout frame behaves like `box-sizing: border-box`. Currently not extracted. Affects spacing calculations when strokes are thick. | Low | Read in `flexbox-map.ts`. Only worth reporting when strokes exist and this is true. | Minor. Only affects spacing when combined with visible strokes. |
+| Inline name editing | Let users rename the derived filename before export. Useful when Figma layer names are generic ("Frame 427") or when the user wants a semantic name ("hero-background.png"). | Low | Add an editable text field to each asset row, pre-filled with the derived name. Override `filename` in the asset entry. Still run through `sanitizeFilename()` on edit. | Nice-to-have. The auto-derived name is usually good enough. If added, should still enforce sanitization rules (lowercase, no spaces, no special chars). |
+| Multi-node URL support | Figma's "Copy link to selection" with multiple elements selected does NOT produce a multi-node URL (it links to the parent frame). However, the Figma REST API `/v1/files/:key/nodes?ids=a,b,c` supports multiple comma-separated IDs. A power-user feature could let users paste comma-separated node IDs or multiple URLs at once. | Medium | Extend the URL parser or add a separate "batch add" input. Parse multiple node IDs, resolve all names in one API call, add all to the list. | LOW PRIORITY. Figma's copy-link UX produces single-node URLs. Multi-select in Figma does not produce a URL the user can copy with multiple node IDs. This would only benefit users who manually construct URLs or use third-party Figma plugins like "Batch Copy Link" or "Copy Node IDs". |
+| Drag-to-reorder asset list | Let users reorder assets. Affects the order in the brief's Assets table. | Low-Medium | React drag-and-drop library or manual implementation. Overkill for a toolbar plugin. | Skip unless users request it. Order in the brief is cosmetic. |
+| Asset preview thumbnails | Show a small thumbnail of each added asset in the list. Would require rendering each node via the API before the user clicks "Get Brief". | High | Extra API call per asset to `fetchImages()` just for thumbnails. Adds latency and API usage. The Figma Images API returns S3 URLs that expire in 30 days, so caching is limited. | Not worth the API cost and complexity. The filename + format indicator gives enough context. |
+| Format auto-suggestion | When the user adds a URL, check the node type via the API and suggest SVG for vectors, PNG for everything else. | Medium | Requires fetching node data on add (which we may already do for the name). Check `node.type` -- if in `['VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'POLYGON', 'ELLIPSE']`, suggest SVG; otherwise default PNG. | Nice-to-have but adds complexity. Default to PNG is fine -- SVG is a deliberate choice by users who know they want vectors. |
+| Persisted asset list | Save the asset list to plugin storage so it survives toolbar close/reopen. | Low | Use existing `storage.write()` / `storage.read()` API. Serialize the asset list. | Only useful if users frequently close and reopen the plugin mid-workflow. Probably not common enough to prioritize for v2.0. |
 
 ## Anti-Features
 
-Features to explicitly NOT build. Would add complexity without improving Claude Code's output.
+Features to explicitly NOT build.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Export every RECTANGLE as SVG | Current code exports all RECTANGLE nodes without IMAGE fills as SVGs (line 125-137 in `identify.ts`). Many RECTANGLEs are just colored divs or background panels that should be CSS, not SVG files. Exporting them bloats the asset list and confuses Claude Code. | Only export RECTANGLE as SVG if it has visible strokes or complex fills (gradient). Simple solid-color rectangles should be CSS `background-color`, which is already in the design tokens. |
-| Compute margins (negative spacing) | Figma has no concept of margins. Trying to infer margins from absolute positions is unreliable and produces values that don't match CSS mental models. | Report absolute position offsets and let Claude Code decide margin vs padding vs positioning. |
-| Deep-recurse instance children for layout tree | Walking into INSTANCE children to show their full subtree would make the layout tree enormous and duplicate the component's internal structure. | Keep instances as leaf nodes in the tree. Only recurse into instance children for IMAGE fill detection (not for layout tree rendering). |
-| Export individual vector children from compositions | When a group is detected as a composition/illustration, exporting its individual VECTOR children defeats the purpose of composition detection. | Keep current behavior: export composition as single PNG. |
-| Pixel-perfect spacing from visual rendering | Using `absoluteRenderBounds` instead of `absoluteBoundingBox` for spacing calculations. Render bounds include drop shadows and thick strokes, which inflates spacing values beyond what the designer intended. | Use `absoluteBoundingBox` for spacing (represents the intended geometry). Use `absoluteRenderBounds` only if implementing visual overlap detection. |
+| Auto-detection fallback | The entire point of v2.0 is replacing unreliable auto-detection. Adding a "also auto-detect" toggle would keep the old complexity alive and confuse users about which assets will be exported. | Remove all auto-detection code: `identify.ts`, `detect-composition.ts`, and their test files. The manual list IS the source of truth. |
+| Drag-and-drop from Figma | Would require a Figma plugin (not REST API) architecture. Ship Studio uses the REST API via shell/curl. There is no browser-to-plugin drag-and-drop channel. | Paste URL is the interaction model. Fast enough for typical workflows (3-10 assets per design). |
+| Asset grouping/folders | Creating folder hierarchies for assets adds complexity with no benefit. Claude Code reads a flat asset directory. | Flat list with clear filenames. The brief's layout tree provides the structural context. |
+| Image fill extraction via imageRef | The old pipeline used `fetchImageFills()` to get original uploaded images by `imageRef`. With manual control, users point at the node they want exported. If they point at a FRAME with an IMAGE fill, they get a PNG render of that frame (which includes the image). If they want the raw uploaded image, they need to point at the specific image-fill node. | Use `fetchImages()` (render endpoint) for all manual assets. Simpler pipeline, one API pattern. Users get what they see in Figma, not a behind-the-scenes image reference. |
+| SVG optimization/minification | Post-processing SVGs (removing metadata, optimizing paths) adds a build dependency and can break SVGs that rely on specific attributes. | Export SVG as Figma renders it. Figma's SVG export is already reasonably clean with `svg_outline_text=true` and `svg_simplify_stroke=true`. |
+| Batch URL paste (v2.0) | Multi-line paste of several URLs at once adds parsing complexity and error handling for mixed valid/invalid URLs. | Single URL input, add one at a time. Fast enough for typical use. Consider for v2.1 if users request it. |
 
 ## Feature Dependencies
 
 ```
-IMAGE fills in instances --> requires walking INSTANCE children in identify.ts
-  (but NOT recursing in normalize.ts layout tree -- only for asset detection)
-
-Absolute position offsets --> requires storing parent absoluteBoundingBox during normalization
-  --> requires absoluteBoundingBox to be available on LayoutNode (already stored as width/height, need x/y too)
-
-layoutGrow detection --> independent (just read property in normalize.ts)
-
-layoutAlign detection --> independent (just read property in normalize.ts)
-
-Constraint-based inset values --> depends on absolute position offsets being implemented first
-  --> requires constraints (already captured on LayoutNode)
-
-RECTANGLE export filtering --> independent change to identify.ts
+Main Design URL (already built)
+  |
+  v
+Asset URL Input + Format Picker
+  |
+  v
+URL Validation (same file, has node ID)
+  |
+  v
+Node Name Resolution (API call)
+  |
+  v
+Asset List State (add, remove, display)
+  |
+  v
+Filename Derivation + Collision Resolution
+  |
+  v
+"Get Brief" Button (already built)
+  |
+  +-- Preview PNG (unchanged, auto-generated)
+  |
+  +-- Manual Assets Export (replaces identify + detect-composition pipeline)
+  |     |
+  |     +-- Batch fetchImages() for PNGs (2x scale)
+  |     +-- Batch fetchImages() for SVGs
+  |     +-- Sequential download (reuse existing download.ts)
+  |
+  +-- Layout Tree Extraction (unchanged)
+  |
+  +-- Brief Generation (minor changes: asset table uses manual list)
+  |
+  v
+Result Card with Copy Brief (unchanged)
 ```
 
 ## MVP Recommendation
 
-Prioritize in this order:
+Prioritize (must-have for v2.0):
 
-1. **IMAGE fills inside INSTANCE children** (table stakes, #1 gap) -- Walk instance children in `identify.ts` to find IMAGE fills, export them alongside the instance PNG render. This is the most impactful single change for asset completeness.
+1. **Asset URL input with format picker** -- The core interaction. URL paste + PNG/SVG toggle.
+2. **URL validation** -- Same file check + node ID required. Prevents confusing errors downstream.
+3. **Node name resolution** -- Fetch layer name from API, derive filename.
+4. **Asset list display with remove** -- Users need to see and manage their queued assets.
+5. **Duplicate prevention** -- Reject same node ID added twice.
+6. **Collision-safe filenames** -- Reuse existing `resolveCollisions()`.
+7. **Batch export via fetchImages()** -- Replace the identify/detect pipeline.
+8. **Layout tree cross-referencing** -- Already works, just needs manual list to provide nodeIds.
+9. **Remove all auto-detection code** -- `identify.ts`, `detect-composition.ts`, and related tests. Clean slate.
 
-2. **Absolute position offsets** (table stakes) -- Store `absoluteBoundingBox` x/y in `normalize.ts`, compute top/left offset relative to parent. Render as `[absolute top:24 left:16]` in the brief layout tree. Critical for Claude Code to position absolute elements correctly.
+Defer to v2.1:
 
-3. **`layoutGrow` + `layoutAlign` detection** (differentiator, low complexity) -- Two small property reads that together give Claude Code the complete flex child behavior picture. Without these, flex layouts that use fill/stretch are under-specified.
+- **Inline name editing**: Users can live with auto-derived names for now.
+- **Multi-node URL support**: Figma does not produce multi-node URLs from its UI. Power-user feature only.
+- **Format auto-suggestion**: Default PNG is safe enough. Users who want SVG know they want SVG.
+- **Persisted asset list**: Low value for a workflow that takes 2-5 minutes total.
 
-4. **RECTANGLE export filtering** (anti-feature fix, low complexity) -- Stop exporting simple colored rectangles as SVG. Only export rectangles that have strokes or non-solid fills.
+## Edge Cases to Handle
 
-5. **Plugin icon** (requirement from PROJECT.md) -- Figma logo SVG in manifest. Trivial.
+| Edge Case | Expected Behavior | Notes |
+|-----------|-------------------|-------|
+| URL from a different Figma file | Reject with error: "This URL is from a different file. Assets must be from the same file as your design." | Compare fileKey values. Instant, no API call. |
+| URL without node-id | Reject with error: "Select a specific element in Figma and copy its link." | Check `parsedUrl.nodeId !== null`. |
+| Node ID that doesn't exist (deleted layer) | The Figma API returns the node data or null. If null, show error: "This element was not found. It may have been deleted." | Detect during name resolution API call. |
+| Instance child node ID (I-prefix, e.g., I5912:74596;5912:74456) | These I-prefix node IDs do NOT work with the `/v1/images` render endpoint (returns null). Show warning: "Instance child elements cannot be exported directly. Select the parent component instead." | Detect by checking if nodeId starts with "I" or contains ";". Alternatively, attempt the render and handle null gracefully. |
+| SVG export of a node with raster images | Figma embeds raster images as base64 data URIs in SVG output. The SVG will be valid but potentially very large. | No special handling needed -- just works, but could warn if SVG file is > 100KB. |
+| Non-renderable node (e.g., a SECTION or CANVAS node) | Figma's images API returns null for nodes that cannot be rendered. | Handle null URL from `fetchImages()` with a warning. |
+| Rate limiting (429) | Figma rate limits at ~30 requests/minute for the images endpoint. With manual assets (typically 3-10), this is unlikely to hit limits. | Existing error handling in `figmaApiCall()` already catches 429s. |
+| Empty asset list at export time | If user clicks "Get Brief" with no assets, the brief should still generate with layout tree + tokens + preview, just with an empty Assets section. | This is valid and useful -- not all designs need individually exported assets. |
 
-Defer:
-- **Spacing between non-auto-layout siblings**: High complexity, moderate value. Absolute position offsets cover the critical path.
-- **Constraint-based inset values**: Medium complexity, moderate value. Can be added after absolute offsets prove useful.
-- **PATTERN paint detection**: Extremely rare in practice.
+## Figma API Constraints Relevant to This Feature
 
-## Failure Modes and Edge Cases
-
-### IMAGE fills in instances
-
-- **Nested instances**: An INSTANCE containing another INSTANCE that has IMAGE fills. Need to decide depth limit (recommend: walk all depths for IMAGE fills only, stop at nested INSTANCE boundaries for everything else).
-- **Overridden fills**: Instance overrides can change a solid fill to an IMAGE fill. The `overrides` array on InstanceNode indicates which fields are overridden, but the actual values are in the children. Must walk the actual children, not rely on component metadata.
-- **Image fill deduplication**: Multiple instances of the same component with different image overrides should export separate images. Current dedup by componentId+variant would collapse them. Solution: for instances with IMAGE fills in children, include the imageRef in the dedup key.
-
-### Absolute position offsets
-
-- **Rotated nodes**: `absoluteBoundingBox` for rotated nodes is the axis-aligned bounding box AFTER rotation, which is larger than the visual element. Offsets computed from these boxes will be wrong. Mitigation: detect rotation (check for `rotation` property) and flag it rather than computing incorrect offsets.
-- **Scroll containers**: Nodes inside scrolling frames may have absoluteBoundingBox positions that extend beyond the visible viewport. Mitigation: clip reported offsets to parent bounds when parent has overflow scrolling.
-- **Nested frames**: Computing offset relative to the immediate parent vs the nearest positioned ancestor. Use immediate parent's absoluteBoundingBox for consistency.
-
-### RECTANGLE filtering
-
-- **Decorative dividers**: A RECTANGLE used as a horizontal line/divider should probably be CSS border, not SVG. But if it has a gradient fill, it might need to be an SVG. Filter by: solid fill only + no strokes = skip SVG export.
-- **Rounded rectangles with complex borders**: These might be CSS-achievable but complex. Keep exporting if cornerRadius + strokes are both present.
+| Constraint | Impact | Source |
+|------------|--------|--------|
+| Images endpoint: max 32 megapixel export | Very large nodes may be downscaled. Unlikely for individual assets but possible for full-page exports. | [Figma REST API docs](https://developers.figma.com/docs/rest-api/file-endpoints/) |
+| Image URLs expire after 30 days | Not relevant -- assets are downloaded immediately to disk. | Figma REST API docs |
+| SVG export: 1x scale only | SVG assets are always 1x. This is fine -- SVGs scale by definition. | [Figma Help Center](https://help.figma.com/hc/en-us/articles/13402894554519-Export-formats-and-settings) |
+| PNG export: scale 0.01 to 4x | Use 2x for manual assets (matches current preview behavior). | Figma REST API docs |
+| I-prefix node IDs: cannot be rendered | Instance children have composite IDs (e.g., `I5912:74596;5912:74456`) that the render endpoint rejects. | [Figma Forum](https://forum.figma.com/ask-the-community-7/can-t-get-node-with-prefix-i-9560) |
+| Figma "Copy link to selection": single node only | When multiple elements are selected in Figma, "Copy link" points to the parent frame, not individual nodes. No multi-node URL is generated by Figma's native UI. | Figma Forum discussion, confirmed via testing |
+| `/v1/files/:key/nodes?ids=a,b,c`: supports batch | Can resolve names for multiple assets in a single API call by comma-separating node IDs. | Figma REST API docs |
 
 ## Sources
 
-- Figma REST API spec: `@figma/rest-api-spec` package (local, v-current) -- HIGH confidence
-- Figma REST API spec on GitHub: [rest-api-spec/dist/api_types.ts](https://github.com/figma/rest-api-spec/blob/main/dist/api_types.ts) -- HIGH confidence
-- Codebase analysis: `src/assets/identify.ts`, `src/layout/normalize.ts`, `src/layout/flexbox-map.ts`, `src/tokens/collect.ts`, `src/brief/generate.ts` -- HIGH confidence (direct code review)
-- Figma Forum on absoluteRenderBounds: [absoluteRenderBounds clipped by Frame](https://forum.figma.com/ask-the-community-7/absoluterenderbounds-clipped-by-the-frame-in-get-file-results-12297) -- MEDIUM confidence
-- Figma Forum on counterAxisSpacing: [Differentiate vertical/horizontal item spacing](https://forum.figma.com/t/solved-differentiate-vertical-horizontal-item-spacing-values-in-rest-api-response-for-wrapping-auto-layout-frames/47830) -- MEDIUM confidence
-- Figma Plugin docs on itemSpacing: [itemSpacing property](https://www.figma.com/plugin-docs/api/properties/nodes-itemspacing/) -- HIGH confidence
-- Figma Plugin docs on counterAxisSpacing: [counterAxisSpacing property](https://www.figma.com/plugin-docs/api/properties/nodes-counteraxisspacing/) -- HIGH confidence
-- Figma Help Center on auto layout: [Guide to auto layout](https://help.figma.com/hc/en-us/articles/360040451373-Guide-to-auto-layout) -- HIGH confidence
+- [Figma REST API - File Endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- HIGH confidence
+- [Figma Export Formats and Settings](https://help.figma.com/hc/en-us/articles/13402894554519-Export-formats-and-settings) -- HIGH confidence
+- [Figma Forum - I-prefix node IDs](https://forum.figma.com/ask-the-community-7/can-t-get-node-with-prefix-i-9560) -- MEDIUM confidence
+- [Figma Forum - Copy link to selection](https://forum.figma.com/suggest-a-feature-11/share-to-selection-links-should-be-consistent-34807) -- MEDIUM confidence
+- Codebase analysis of `url-parser.ts`, `figma-api.ts`, `identify.ts`, `detect-composition.ts`, `sanitize.ts`, `export.ts`, `download.ts`, `generate.ts` -- HIGH confidence

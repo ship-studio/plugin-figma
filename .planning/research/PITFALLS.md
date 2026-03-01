@@ -1,307 +1,317 @@
-# Domain Pitfalls: v1.3 Asset Completeness & Spacing Accuracy
+# Domain Pitfalls: v2.0 Manual Asset Control
 
-**Domain:** Figma design extraction -- instance asset traversal, spacing accuracy, and API reliability
+**Domain:** Replacing automatic asset detection with user-driven asset selection in a Figma plugin
 **Researched:** 2026-03-01
-**Confidence:** HIGH (direct codebase analysis + Figma API documentation + forum reports)
+**Confidence:** HIGH (direct codebase analysis of 325 tests + Figma API documentation + forum reports)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause regressions, incorrect briefs, or broken asset pipelines.
+Mistakes that cause regressions, broken tests, or incorrect briefs.
 
-### Pitfall 1: Instance Traversal Stops Too Early -- Missing Assets Inside Components
+### Pitfall 1: Ripping Out Auto-Detection Code That Other Modules Silently Depend On
 
-**What goes wrong:** The current code treats INSTANCE nodes as leaf nodes (`return; // Don't recurse into instance children` in both `identify.ts` line 88 and `normalize.ts` line 173). This means **every image fill, background image, and nested illustration inside a component instance is invisible to the asset pipeline**. A card component with a hero image, an avatar component with a user photo, a banner with a background image -- none of these inner assets get detected or exported.
+**What goes wrong:** The PROJECT.md says "All automatic asset detection code is removed (detect-composition, identify, SVG dedup, illustration heuristics)." But these modules are imported by other files that survive the migration. Deleting them without updating consumers causes build failures.
 
-**Why it happens:** The REST API *does* return children for INSTANCE nodes in the full file JSON response. The children array is present and populated (confirmed via the `@figma/rest-api-spec` types: InstanceNode extends FrameTraits). The code chose not to recurse into it, treating the entire instance as a single PNG render. This was a valid v1.0 trade-off but is the primary gap for v1.3.
+**Why it happens:** The dependency graph is not obvious from the deletion list:
+- `export.ts` imports `identifyAssets` from `./identify` and `detectCompositions` from `./detect-composition`
+- `brief/generate.ts` imports `buildBreadcrumbMap` from `../assets/breadcrumb` (this one survives, but its tests reference asset types)
+- `brief/types.ts` imports `ExportResult` from `../assets/types` (survives, but the `assetType` union includes `'composition'` and `'component'` which are auto-detection concepts)
+- `brief/generate.ts` uses `compositionNodeIds` set to collapse illustration subtrees in the layout tree -- with manual control, this concept changes entirely
 
 **Consequences:**
-- Hero images inside card instances missing from the brief
-- Background fills (imageRef paints) on nested frames within instances never found by `collectTokens` or `identifyAssets`
-- Claude Code sees the component PNG render but has no individual image assets to place, leading it to fabricate or omit images
-- The `imageFills` array from token collection only finds IMAGE paints on nodes that ARE walked, so instance-internal images never appear
+- TypeScript build errors if imports reference deleted modules
+- Runtime errors if the brief generator still tries to build `compositionNodeIds` from assets that no longer have that classification
+- 325 tests currently pass. Deleting `identify.ts` kills 51 tests in `identify.test.ts`. Deleting `detect-composition.ts` kills 17 tests in `detect-composition.test.ts`. That is 68 tests that must be explicitly removed, not left as dangling failures
+- The `generate.test.ts` (63 tests) references `assetType: 'composition'` and `assetType: 'component'` in test fixtures -- these need updating if the type system changes
 
 **Prevention:**
-1. Modify `walkTree` in `identify.ts` to recurse into INSTANCE children *specifically for image fill detection* while still exporting the instance itself as a PNG render
-2. Keep the instance as a leaf node in the layout tree (for brief clarity) -- the `generate.ts` guard at line 163 (`if (node.componentRef) return;`) must be preserved
-3. Use `imageRef` (file-global key) for image fills found within instance children -- never use child node IDs for rendering (see Pitfall 2)
-4. The instance itself still gets its existing `png-render` entry -- no change to that behavior
+1. Map the FULL import graph before deleting anything. Run `grep -r "from.*identify\|from.*detect-composition" src/` to find all consumers
+2. Delete in order: tests first, then the module, then update consumers
+3. Update `AssetEntry.exportType` and `ExportResult.assetType` types to reflect the new manual-only model (likely just `'png' | 'svg'` instead of `'svg' | 'png-render' | 'png-fill'`)
+4. The `breadcrumb.ts` module is NOT tied to auto-detection -- it walks the layout tree. Keep it if layout tree cross-referencing remains
+5. Update `generate.ts` to stop building `compositionNodeIds` since there are no auto-detected compositions -- all nodes with assets are user-specified
 
-**Detection:** After extraction, compare the count of IMAGE fills found vs. a manual count of nodes with IMAGE-type fills in the raw API response tree. If the raw response has more, the scan missed assets inside instances.
+**Detection:** Run `npx vitest --run` after each module deletion. Zero tolerance for test failures from import errors.
 
-**Phase mapping:** Core work of the asset detection phase. Address first because all other asset improvements build on complete traversal.
+**Phase mapping:** Must be the FIRST phase. If done late, every other change builds on a broken foundation. Alternatively, do it incrementally: hollow out the auto-detection functions first (make them no-ops), then delete them after the new pipeline is working.
 
 ---
 
-### Pitfall 2: Instance Child Node IDs with "I" Prefix Break Image Rendering API
+### Pitfall 2: Breaking the Brief Generator's Layout Tree Cross-Referencing
 
-**What goes wrong:** When you traverse into INSTANCE node children via the REST API response, the child node IDs have a compound format like `I360:21745;1269:159559` (the `I` prefix plus semicolon-separated segments). These IDs reference nodes *within* an instance context, not first-class file nodes. The Figma `GET /v1/files/:key/nodes` endpoint returns empty children for these IDs, and the `GET /v1/images` endpoint returns `null` render URLs for them.
+**What goes wrong:** The current brief generator uses `assetNodeMap` (nodeId -> filename) and `compositionNodeIds` to annotate the layout tree. Instance lines show `-> hero-image.png`, illustration subtrees collapse to `[Illustration] 'Hero' 500x400 -> hero.png`. After removing auto-detection, the cross-referencing mechanism must be rewired to work with user-specified assets.
 
-**Why it happens:** Figma's internal node model distinguishes between a component definition's nodes and an instance's "view" of those nodes. The compound IDs are context-dependent references. The REST API's rendering endpoints work with top-level node IDs only. This is documented in Figma forum threads and confirmed by community testing.
+**Why it happens:** Today, cross-referencing works because `identifyAssets` produces entries with `nodeId` values that match the layout tree's node IDs. The user-specified asset URLs provide node IDs directly. But the mapping logic in `generate.ts` (lines 47-61) builds `assetNodeMap` and `compositionNodeIds` from `exportResult.assets` which currently carry auto-detection metadata (`assetType`, `parentInstanceId`). With manual assets, this metadata must come from the user's input, not from auto-detection.
 
 **Consequences:**
-- Passing `I`-prefixed node IDs to `fetchImages` returns `null` URLs, generating warnings but no downloads
-- The download list inflates with unresolvable entries
-- If SVG export is attempted for vectors inside instances, the API call succeeds but returns nulls
+- If `assetNodeMap` is empty (no node IDs on user-specified assets), the layout tree loses all `-> filename.png` annotations
+- If `compositionNodeIds` is empty, the `[Illustration]` collapse lines disappear -- but they SHOULD disappear since users now choose what to export
+- If `parentInstanceId` is not populated, the breadcrumb fallback in `buildAssetsSection` (line 526) fails and all instance child assets show `--` location
 
 **Prevention:**
-1. For IMAGE fills inside instances: use the `imageRef` approach exclusively. `fetchImageFills` (`GET /v1/files/:key/images`) returns all image fills for the entire file keyed by imageRef -- works regardless of where the image lives
-2. For SVG/vector assets inside instances: do NOT try to extract them individually. The parent instance's PNG render already captures them visually
-3. Never pass compound IDs to `fetchImages`. Add a guard: `if (nodeId.includes(';'))` to filter them before batching
-4. Log filtered IDs at debug level so missing assets can be investigated
+1. User-specified assets MUST carry the node ID extracted from their Figma URL. This node ID is the key to cross-referencing
+2. Drop `compositionNodeIds` entirely from the brief generator. No more `[Illustration]` collapse -- all nodes render normally in the tree
+3. The `assetNodeMap` should be built from user-specified assets: `{ nodeId: filename }` pairs
+4. For assets whose node ID is inside an instance (compound ID with `;`), the breadcrumb lookup will fail on the normalized tree. Accept `--` for location or parse the parent instance ID from the compound node ID format `I{parentId};{childId}`
+5. Write new tests for the brief generator that verify cross-referencing with manually specified assets
 
-**Detection:** Before any `fetchImages` call, count node IDs containing `;`. If any exist, the code is attempting to render instance sublayers directly.
+**Detection:** After migration, generate a brief and verify that the Assets table has correct Location values and the layout tree shows `-> filename` annotations where expected.
 
-**Phase mapping:** Inseparable from Pitfall 1. The traversal strategy and API strategy must be designed together.
+**Phase mapping:** Brief generator updates must happen AFTER the new export pipeline is in place. Depends on the new `ExportResult` shape.
 
 ---
 
-### Pitfall 3: Duplicate Asset Explosion from Instance Traversal
+### Pitfall 3: Multi-Select URL Parsing Is Undocumented and Fragile
 
-**What goes wrong:** Recursing into INSTANCE children for image fills discovers the same IMAGE fill reference across every instance of that component. 20 card instances with the same hero image pattern produce 20 identical `png-fill` entries. But worse: instances of the same component with *different* image overrides must NOT be deduplicated -- they genuinely have different images.
+**What goes wrong:** PROJECT.md says "Support for both single-node URLs and multi-select URLs." Figma does not formally document the URL format for multi-node selection. When a user selects multiple nodes in Figma and copies the link, the URL format may contain comma-separated node IDs, a single node ID (of the last selected), or no node ID at all. The format has changed between Figma versions.
 
-**Why it happens:** Two competing requirements:
-- Same `imageRef` across instances = same image, must deduplicate (download once)
-- Different `imageRef` across instances of same component = different images via overrides, must NOT deduplicate
+**Why it happens:** The current `parseFigmaUrl` (url-parser.ts) handles a single `node-id` parameter, converting dashes to colons and decoding `%3A`. Multi-select URLs observed in the wild have used formats like:
+- `?node-id=123-456,789-012` (comma-separated, dash-encoded)
+- `?node-id=123-456&node-id=789-012` (repeated parameter)
+- `?node-id=123-456` (only one ID even with multi-select)
 
-The existing `instanceDedupKey` (componentId + variant) deduplicates the *instance PNG renders* correctly. But if line 78 skips the instance entirely (`if (!seenInstances.has(key))`) and returns without scanning children, the second instance's overridden images are never discovered.
+There is no authoritative documentation confirming which format is canonical or stable.
 
 **Consequences:**
-- Without imageRef deduplication: 20 identical downloads, `hero-image.png` through `hero-image-19.png`
-- Without scanning deduped instances: overridden images (different photos in different card instances) are lost
+- If the parser only extracts the first `node-id`, multi-select silently drops all but one node
+- If the parser splits on commas, a future Figma URL format change breaks it
+- Users may not realize their multi-select URL only captured one node
 
 **Prevention:**
-1. Deduplicate IMAGE fills by `imageRef` globally: add `seenImageRefs: Set<string>` to walk state
-2. Always scan instance children for IMAGE fills, **even when the instance itself is deduplicated** for PNG render purposes
-3. Structure the INSTANCE branch as: `push png-render if not deduped` -> `always scan children for IMAGE fills regardless of dedup`
-4. The instance's own PNG render is still deduplicated by componentId+variant (existing behavior, unchanged)
+1. DO NOT rely on multi-select URLs as the primary input mechanism. Instead, let users paste one URL per asset. This is reliable, documented, and works with the current parser
+2. If multi-select support is desired, treat it as a convenience: parse comma-separated values from `node-id`, but also support repeated `node-id` parameters
+3. Add validation feedback: "Found N nodes in URL" so the user knows exactly how many nodes were parsed
+4. Flag this as LOW confidence behavior -- multi-select URL format is undocumented and may change
 
-**Detection:** After identification, compare unique `imageRef` count vs. total `png-fill` entries. If entries >> unique imageRefs, deduplication is failing. If unique imageRefs < expected overrides, scanning is incomplete.
+**Detection:** Test with actual Figma multi-select URLs across different Figma plan types and browser versions. The format may vary.
 
-**Phase mapping:** Same phase as Pitfalls 1-2.
+**Phase mapping:** URL parsing changes should be in the same phase as the asset list UI. Keep single-URL-per-asset as the primary flow; multi-select as optional enhancement.
 
 ---
 
-### Pitfall 4: Figma API Rate Limits + 120s Shell Timeout
+### Pitfall 4: Figma API Returns Null for Unrenderable Nodes -- Silent Asset Loss
 
-**What goes wrong:** More detected assets means more API calls and larger batches. Figma's rate limits (November 2025 update: 10-20 req/min for Tier 1 on Starter/Pro plans, up to 100/min on Enterprise) trigger 429 responses with severe retry-after values. Forum reports document lockouts with retry-after headers of ~400,000 seconds (4+ days) after burst patterns of fetching large subtrees followed by dozens of image requests. The 120s shell timeout kills long-running render batches mid-flight.
+**What goes wrong:** When a user pastes a Figma URL for an asset, the node ID might reference a node that is invisible (`visible: false`), has 0% opacity, is a SLICE (export region), or simply does not exist in the file. The Figma `GET /v1/images` endpoint returns `null` for these node IDs instead of an error.
 
-**Why it happens:**
-- The images endpoint processing time scales with node count and complexity
-- CloudFront CDN adds its own rate limiting layer on top of Figma's API limits
-- Current code detects 429 in `figmaApiCall` and throws immediately -- no wait-and-retry
-- `downloadFile` does retry once, but `fetchImages` does not
-- A single batch of 50+ node IDs can take 60+ seconds to render server-side
+**Why it happens:** The API documentation states: "rendering of that specific node has failed... due to the node id not existing, or other reasons such as the node having no renderable components." The current `export.ts` handles this with a warning (`"No render URL for ${entry.filename}"`), but in the auto-detection pipeline, invalid nodes rarely reach this point because the tree walk only finds real, walked nodes.
+
+With manual asset control, the user can paste ANY URL, including:
+- URLs to hidden elements
+- URLs to deleted elements (node no longer exists)
+- URLs from a different file (wrong fileKey -- this would fail at the API level, not the node level)
+- URLs with typos in the node-id
+- URLs to SLICE nodes (export regions that are not visual content)
 
 **Consequences:**
-- 429 errors surface as "Rate limited by Figma API. Try again in a moment." -- no actionable guidance
-- Shell timeout kills large render batches silently
-- Starter plan users (10 req/min) hit limits much sooner
-- After a burst-triggered lockout, the user cannot use the plugin for days
+- User adds 5 assets, 2 fail silently with null render URLs, brief shows 3 assets
+- User does not understand why their asset was not exported
+- If the node existed when the URL was copied but was later deleted/hidden, the failure is confusing
 
 **Prevention:**
-1. Batch node IDs in groups of 20-30 for `fetchImages` calls (forum evidence: >30 IDs per call risks timeouts)
-2. Add 2-second pauses between sequential `fetchImages` calls to stay under rate limits
-3. Add 429 handling with wait-and-retry: wait 60 seconds, retry once. If still 429, show clear error: "Rate limited by Figma. Please wait N minutes before retrying"
-4. Prioritize asset types: preview PNG first, then compositions/components (PNG renders), then image fills, then SVG icons. If rate limited mid-way, user still gets the most valuable assets
-5. Treat 120s shell timeout as hard constraint: proactively split batches >30 IDs into sub-batches of 15-20
-6. Consider that `fetchImageFills` returns ALL file images in one call -- this is efficient, don't split it
+1. Validate node IDs BEFORE export. Use `GET /v1/files/:key/nodes?ids=nodeId` to verify the node exists and has renderable content
+2. Surface clear per-asset error messages: "Node not found", "Node is invisible", "Node cannot be rendered"
+3. Show validation status in the asset list UI: green checkmark for valid, red X for invalid, with error reason
+4. Consider a "preview thumbnail" for each asset in the list (small PNG render) so users can verify they selected the right element
+5. Handle the case where the node ID's fileKey differs from the design URL's fileKey -- this is a cross-file reference that will fail
 
-**Detection:** Log response times from `fetchImages`. >60s means batch too large. 429 means stop immediately.
+**Detection:** After export, count assets with `null` render URLs. If any, surface them prominently in the UI, not buried in warnings.
 
-**Phase mapping:** Dedicated phase or sub-task after asset detection is correct. Separable from detection logic.
+**Phase mapping:** Node validation should happen at "add asset" time, not at export time. This is a UX-critical feature.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 5: Background Fill Images on Frames with Children -- Early Return Loses Child Assets
+### Pitfall 5: Filename Collisions When Users Name Assets From Similar Layers
 
-**What goes wrong:** `walkTree` in `identify.ts` checks for IMAGE fills and returns immediately (line 103: `return;`). A FRAME with a background image AND foreground children (text, buttons, icons) exports the background but never walks the children. All child assets are lost.
+**What goes wrong:** The existing `sanitizeFilename` strips everything non-alphanumeric and lowercases. The `resolveCollisions` function appends `-2`, `-3`, etc. for duplicates. But with user-specified assets, collision scenarios multiply:
+- Two layers both named "Icon" in different frames produce `icon.png` and `icon-2.png`
+- Layers with Unicode names (CJK, emoji, accented characters) sanitize to empty string, falling back to `unnamed.png`. Multiple such layers all become `unnamed.png`, `unnamed-2.png`, etc.
+- Layer names with slashes (`Icon / Arrow Right`) become `icon-arrow-right.png` -- same as a layer named `Icon Arrow Right`
 
-**Why it happens:** The walk treats IMAGE fill detection as terminal. This is correct for leaf nodes (RECTANGLE with image fill) but wrong for containers with both a background fill and children.
+**Why it happens:** Auto-detection produced assets from a single tree walk, so name collisions were limited to siblings in the same design. Manual selection lets users pick nodes from anywhere, increasing collision likelihood. The `sanitizeFilename` regex `[^a-z0-9-]` strips ALL non-ASCII characters.
 
 **Consequences:**
-- Hero section with background photo and foreground CTA: photo exported, CTA icon lost
-- Card with background gradient image and foreground content: background only
+- Confusing filenames that don't match user expectations
+- `unnamed.png`, `unnamed-2.png` for emoji/CJK layer names
+- Brief references filenames that the user cannot identify
 
 **Prevention:**
-1. After detecting an IMAGE fill on a node, check if `node.children` exists and is non-empty. If so, export the fill AND continue recursing into children
-2. Remove the `return` after line 103 for container-type nodes only
-3. The imageRef approach handles the fill; recursion finds additional assets in children
+1. Show the derived filename in the asset list UI before export so users can see what they will get
+2. Allow users to optionally rename assets in the list (override the auto-derived name)
+3. Consider expanding `sanitizeFilename` to handle common Unicode characters (transliteration or at least keeping alphanumeric from other scripts)
+4. For the empty-after-sanitization case, use the parent frame name or node type as fallback instead of `unnamed`
+5. The existing `resolveCollisions` function works correctly for dedup -- no changes needed there
 
-**Detection:** Any FRAME node with IMAGE-type fill AND non-empty `children` array where `walkTree` returns early.
+**Detection:** Test with layer names containing emoji, CJK characters, slashes, dots, and long strings. Verify that filenames are unique and recognizable.
 
-**Phase mapping:** Asset detection phase. Small control flow change in `walkTree`, same function as Pitfall 1 changes.
+**Phase mapping:** Filename sanitization improvements should be in the same phase as the asset list UI. User feedback (showing the derived filename) is the key mitigation.
 
 ---
 
-### Pitfall 6: Token Collection Inflates Counts from Instance Internals
+### Pitfall 6: 120s Shell Timeout When Exporting Many User-Specified Assets
 
-**What goes wrong:** After enabling INSTANCE child traversal in normalize.ts for asset detection, `collect.ts` walks into instance children and discovers fills, strokes, text styles from component internals. A Button component used 20 times inflates its internal color and typography tokens by 20x in the usage counts.
+**What goes wrong:** Users building a comprehensive brief may add 20-30 assets. Each asset requires a Figma API render call (for PNG or SVG) plus a download. The current code batches SVG and PNG renders into separate `fetchImages` calls (one for all SVGs, one for all PNGs), each of which can take significant time. With 30 node IDs in a single batch, the 55-second Figma server-side timeout (documented) may kill the render, and the 120-second shell timeout kills the curl process.
 
-**Why it happens:** Token collection walks the normalized tree. If instances now have children, the walk enters them. Deduplication handles unique values, but usage counts spike because the same color appears once per instance.
+**Why it happens:** `fetchImages` in `figma-api.ts` batches all node IDs into a single API call. The curl command has `--max-time 30` (per download) but the shell timeout is 120s for the overall operation. Large render batches hit Figma's server-side 55s rendering timeout before the shell timeout, returning partial results or errors.
 
 **Consequences:**
-- Color table shows a button-text color with usageCount: 60 instead of 3
-- Typography tokens show inflated counts
-- Brief size increases; may trigger the TOKEN_WARNING_THRESHOLD (12,000 tokens)
+- Large batches return null URLs for some nodes (server-side timeout during rendering)
+- Shell timeout kills the curl process, losing all results from that batch
+- Rate limiting (Tier 1: 10-20 req/min depending on plan) compounds the problem if batches are split into too many small calls
 
 **Prevention:**
-- Option A: Accept inflated counts as technically accurate (the colors ARE used that many times)
-- **Option B (recommended):** Keep token collection's existing behavior -- add explicit guard in `collect.ts` walk: `if (node.componentRef) { /* accumulate component inventory, skip children */ return; }`. This preserves the existing behavior. The guard currently works because children are absent, but after normalization changes it must be explicit
-- Option B is compatible with Pitfall 1's approach: `identify.ts` does its own independent scan of instance children for IMAGE fills, separate from the `collect.ts` walk
+1. Split node IDs into batches of 10-15 per `fetchImages` call (conservative; keeps under 55s server render time)
+2. Separate PNG and SVG batches (already done in current code)
+3. Add 1-2 second delay between batches to avoid rate limiting
+4. Show per-asset progress: "Exporting asset 3/15: hero-image.png"
+5. The current `downloadFile` retry-once logic is adequate for individual downloads
+6. Consider parallel downloads (multiple curl processes) for the download phase (after render URLs are resolved)
 
-**Detection:** Token counts significantly higher than before. Compare brief output before/after the change.
+**Detection:** Monitor response times from `fetchImages`. If any batch takes >30s, it is too large. If 429 errors occur, add longer delays.
 
-**Phase mapping:** Asset detection phase. The guard in `collect.ts` should be added at the same time as the normalize.ts changes.
+**Phase mapping:** Export pipeline phase. The batch size limit should be a constant, easy to tune.
 
 ---
 
-### Pitfall 7: Composition Detection Enters Instance Internals
+### Pitfall 7: Removing Auto-Detection Code Without Updating the Entire Export Pipeline
 
-**What goes wrong:** After instance children become visible, `detect-composition.ts` recurses into them and finds groups of nested vectors that qualify as compositions. These are flagged for separate PNG export even though the parent instance is already exported as PNG.
+**What goes wrong:** The `exportAssets` function in `export.ts` is a tightly orchestrated pipeline: detect compositions -> identify assets -> batch API calls by type (SVG, png-fill, png-render) -> build download list -> sequential download. Removing `detectCompositions` and `identifyAssets` without replacing them with a new asset list source leaves `exportAssets` with no assets to export (empty pipeline).
 
-**Why it happens:** `detectInNode` recurses into all children. If an instance has children with structural complexity (5+ children, depth >= 3) and visual effects, they qualify.
+**Why it happens:** The function is monolithic. Steps 2-4 assume the asset list comes from `identifyAssets`. The download list construction (lines 113-146) routes assets by `exportType` (`svg`, `png-fill`, `png-render`) and calls different API endpoints for each. Manual assets have a simpler model (user chooses PNG or SVG), but the routing logic must be adapted.
 
 **Consequences:**
-- Same visual region exported twice: once as part of the instance PNG, once as a separate composition PNG
-- Wasted API calls and downloads
-- Confusing brief entries (two assets covering the same area)
+- If `identifyAssets` is removed but `exportAssets` still calls it: build error
+- If `identifyAssets` is replaced with an empty stub: zero assets exported, only preview PNG
+- If the routing logic for `png-fill` and `png-render` is removed but some assets need image fill resolution: downloads fail
 
 **Prevention:**
-- Add early return in `detectInNode` for INSTANCE nodes: `if (node.componentRef) return;`
-- Instance internals are covered by the instance's PNG render -- no need for separate composition detection
+1. Redesign `exportAssets` to accept a pre-built asset list instead of deriving it from the tree. The new signature should take `assetEntries: ManualAssetEntry[]` where each entry has `{ nodeId, filename, format: 'png' | 'svg' }`
+2. The preview PNG rendering (step 3a) is independent of auto-detection and must be preserved
+3. Drop the three-way routing (svg/png-fill/png-render). Manual assets are either PNG or SVG. Use `fetchImages` with the appropriate format for each batch
+4. Image fills (`png-fill`) are an auto-detection concept. Manual assets are always rendered via `GET /v1/images` -- the user specifies the node, the API renders it. No need for `fetchImageFills` at all
+5. The `downloadAllAssets` function is generic and survives unchanged
 
-**Detection:** Composition warnings mentioning nodes inside component instances. Duplicate PNG exports for the same visual region.
+**Detection:** After refactoring, verify that the preview PNG is still generated and that each user-specified asset is exported in the correct format.
 
-**Phase mapping:** Asset detection phase. One-line guard.
+**Phase mapping:** Core of the export pipeline refactoring phase. Must happen before any UI work that calls `exportAssets`.
 
 ---
 
-### Pitfall 8: Negative `itemSpacing` Maps to Invalid CSS `gap`
+### Pitfall 8: Test Cascade -- 68+ Tests Reference Deleted Modules, 63+ Tests Reference Changed Types
 
-**What goes wrong:** Figma allows negative `itemSpacing` in auto-layout frames for overlapping effects (avatar stacks, stacked cards). `mapToFlexbox` passes it directly: `gap: frame.itemSpacing ?? 0`. CSS `gap` does not accept negative values. The brief outputs `gap: -8` which is invalid CSS.
+**What goes wrong:** Deleting `identify.ts` and `detect-composition.ts` immediately breaks 68 tests. But the damage is wider: `generate.test.ts` (63 tests) uses `makeExportResult()` fixtures with `assetType: 'composition'` and `assetType: 'component'`. If the `ExportResult` type changes, these fixtures need updating. The `normalize.test.ts` (82 tests) is safe since it does not reference the asset pipeline.
 
-**Why it happens:** Figma's auto-layout is a superset of CSS flexbox in this area. The API documentation explicitly states `itemSpacing` "can be negative." The mapping function has no validation.
+**Why it happens:** The test suite was built incrementally across v1.0-v1.3, with each milestone adding tests for the features it introduced. The tests are well-structured but tightly coupled to the current type definitions.
 
 **Consequences:**
-- Brief shows invalid CSS
-- Claude Code either ignores it or attempts negative margins (possibly correct but fragile)
-- Additional edge case: Figma has a bug where negative gap with zero-width child elements silently resets to 0
+- Bulk test failures make it hard to distinguish regression from intentional deletion
+- If tests are deleted carelessly, coverage for surviving code (brief generator, sanitizer, breadcrumb) is lost
+- The brief generator tests are the most valuable (63 tests) -- they validate the core deliverable. Losing them during migration would be a critical regression
 
 **Prevention:**
-1. Detect negative `itemSpacing` and emit as annotation: `gap: 0` with `[overlap: -8px]` note
-2. In spacing tokens, skip negative values or flag as "overlap" type
-3. Add a brief annotation: "This frame uses overlapping elements. Use CSS negative margins to achieve this effect."
+1. **Do not delete tests and modules in the same commit.** First: delete the module tests (identify.test.ts, detect-composition.test.ts). Second: delete the modules. Third: update consuming code and its tests
+2. Keep a running `npx vitest --run` between each step -- maintain green at every step
+3. For `generate.test.ts`, update the `makeExportResult` helper to use the new type shape. Most tests verify brief structure, not asset type labels -- they will pass with minimal fixture changes
+4. Write NEW tests for the manual asset flow before deleting old tests for the auto-detection flow
 
-**Detection:** Any `autoLayout.gap < 0` after `mapToFlexbox`.
+**Detection:** Run `npx vitest --run` after every file change. The test count should decrease intentionally (from 325 down to ~240-250 after removing auto-detection tests) and then increase as new manual control tests are added.
 
-**Phase mapping:** Spacing accuracy phase.
+**Phase mapping:** Test management spans every phase. Each phase should end with all tests passing.
 
 ---
 
-### Pitfall 9: `SPACE_BETWEEN` Reports `itemSpacing: 0` -- Visual Gap Invisible
+### Pitfall 9: Node IDs From Different Files -- Cross-File URLs
 
-**What goes wrong:** Auto-layout frames with `primaryAxisAlignItems: SPACE_BETWEEN` report `itemSpacing: 0`. The actual visual spacing is computed dynamically at render time. The brief shows `gap: 0, justify: space-between`.
+**What goes wrong:** Users paste a Figma URL for the design page (e.g., file key `ABC123`) and then paste asset URLs from a different file (e.g., file key `XYZ789`). The `parseFigmaUrl` function extracts the file key from each URL independently. If the export pipeline uses the design page's file key to render all assets, assets from other files will fail with null render URLs or 404 errors.
 
-**Why it happens:** `space-between` is a distribution mode, not a fixed gap. The API correctly reports `itemSpacing: 0`.
+**Why it happens:** The current flow uses a single `fileKey` from the design URL for all API calls. Auto-detection only finds assets within the fetched tree, so cross-file references never occurred. With manual URLs, users can paste from any Figma file.
 
 **Consequences:**
-- This IS correct CSS mapping. `justify-content: space-between` with `gap: 0` produces the right result in CSS
-- No bug, but could be confusing if not understood
+- Node ID from file B does not exist in file A -- `fetchImages` returns null
+- Error message is generic ("No render URL for asset.png") -- user does not understand the problem
+- If the user has multiple Figma files open, this is an easy mistake to make
 
 **Prevention:**
-1. Recognize this as **correct behavior**. No code change needed
-2. Optionally compute effective spacing as a comment: `justify: space-between (~24px at 1200px width)` -- but this is fragile and changes with container width
+1. Parse the file key from each asset URL and compare it to the design page's file key
+2. Reject (or warn) when file keys do not match: "This asset is from a different Figma file. Assets must be from the same file as your design."
+3. Alternatively, support cross-file assets by making separate `fetchImages` calls per file key -- but this significantly complicates the pipeline and is likely not worth it for v2.0
+4. Display the file key mismatch in the asset list UI at add time, not at export time
 
-**Detection:** `primaryAxisAlignItems === 'SPACE_BETWEEN'` + `itemSpacing === 0`. Not a bug.
+**Detection:** At "add asset" time, compare `parsedAssetUrl.fileKey` against `designUrl.fileKey`. Mismatch = immediate user feedback.
 
-**Phase mapping:** Spacing accuracy phase. Awareness only.
+**Phase mapping:** URL validation in the asset list UI phase. Simple string comparison, high impact.
 
 ---
 
-### Pitfall 10: Absolute-Positioned Children Don't Participate in Parent Spacing
+### Pitfall 10: The `MainView.tsx` State Machine Grows Unmanageably
 
-**What goes wrong:** Elements with `layoutPositioning: 'ABSOLUTE'` within auto-layout frames are removed from flow. They don't receive `gap` spacing. The brief shows `gap: 16` but an absolute badge/overlay is unaffected.
+**What goes wrong:** `MainView.tsx` is already 673 lines with 15+ state variables managing URL input, validation, extraction, asset export, brief generation, and results display. Adding an asset list (add, remove, validate, show status per asset) could push it past 1000 lines with 20+ state variables and deeply nested callbacks.
 
-**Why it happens:** By design in both Figma and CSS. Absolute-positioned elements are outside normal flow.
-
-**Consequences:**
-- Claude Code might apply gap to all children including absolute ones
-- If many children are absolute, the gap value is misleading
-
-**Prevention:**
-1. Current `[absolute]` annotation in the layout tree is already sufficient
-2. Ensure absolute-positioned children include position information from `absoluteBoundingBox` relative to parent
-
-**Detection:** Count children with `positioning === 'ABSOLUTE'` in auto-layout frames.
-
-**Phase mapping:** Spacing accuracy phase. Current handling is close.
-
----
-
-### Pitfall 11: Spacing Only From Auto-Layout -- Manual Layouts Have No Spacing Data
-
-**What goes wrong:** `collectTokens` only captures spacing from `autoLayout.padding` and `autoLayout.gap`. Frames without auto-layout produce zero spacing tokens. Designs mixing auto-layout and manual positioning have partial spacing data.
-
-**Why it happens:** Figma stores spacing as auto-layout properties only. Manually positioned elements have `absoluteBoundingBox` coordinates but no explicit spacing.
+**Why it happens:** The component was designed for a linear flow: paste URL -> extract -> export -> brief -> copy. Manual asset control adds a second input loop (paste asset URL -> validate -> add to list -> repeat) that runs in parallel with the main flow. This creates a state explosion.
 
 **Consequences:**
-- Partial spacing data for mixed designs
-- Claude Code guesses spacing in manual-layout areas
+- State bugs: stale closures in callbacks, race conditions between validation and export
+- Difficult to reason about which state resets are needed when the user changes the design URL (currently 12 state resets in `handleUrlChange`)
+- Testing the component becomes impractical without refactoring
 
 **Prevention:**
-1. Accept this limitation explicitly in the brief
-2. Optionally compute "implied padding" for manual-layout containers using `absoluteBoundingBox` math (frame edge to nearest child edge)
-3. Do NOT try to infer gap between manually positioned siblings -- heuristics are wrong more often than right
+1. Extract the asset list into a separate component (`AssetList.tsx`) with its own state management
+2. Use `useReducer` instead of multiple `useState` calls for the main flow state machine
+3. Keep `MainView.tsx` as the orchestrator that passes data between the URL input, asset list, and results sections
+4. The asset list component manages its own add/remove/validate lifecycle, emitting an `assets: ManualAssetEntry[]` array to the parent
 
-**Detection:** Count FRAME/GROUP nodes with children but no `autoLayout`. If significant, flag spacing data as incomplete.
+**Detection:** If `MainView.tsx` exceeds 800 lines or 18 state variables, it needs refactoring.
 
-**Phase mapping:** Spacing accuracy phase. Limitation to document.
+**Phase mapping:** UI phase. Should be designed before implementation begins.
 
 ---
 
 ## Minor Pitfalls
 
-### Pitfall 12: `absoluteBoundingBox` vs. `absoluteRenderBounds` for Position/Spacing
+### Pitfall 11: Stale Asset URLs After Design Changes
 
-**What goes wrong:** If computing spacing from element positions, `absoluteBoundingBox` gives geometric bounds while `absoluteRenderBounds` includes shadows and thick strokes. Using the wrong one produces spacing that doesn't match the design.
+**What goes wrong:** A user adds assets, then modifies the Figma design (renames layers, deletes elements, restructures frames). The asset URLs still point to the old node IDs. If a node was deleted, the export fails. If renamed, the auto-derived filename is stale.
 
-**Prevention:** Use `absoluteBoundingBox` for spacing calculations. Designers set spacing based on frame edges, not shadow edges. Current code already uses `absoluteBoundingBox` for width/height.
+**Prevention:** Re-validate asset URLs at export time, not just at add time. Show a "re-validate" button or auto-validate when the user clicks "Get Brief." Accept that this is inherent to the workflow -- users must re-add assets after major design changes.
 
-**Phase mapping:** Spacing accuracy phase, if manual spacing computation is added.
-
----
-
-### Pitfall 13: `absoluteBoundingBox` Null on Hidden Nodes
-
-**What goes wrong:** Hidden nodes (`visible: false`) may have `absoluteBoundingBox: null`. Computing spacing with null boxes causes runtime errors.
-
-**Prevention:** Filter to visible nodes with non-null `absoluteBoundingBox` before computing spacing. Already handled in normalize.ts for width/height (line 87).
-
-**Phase mapping:** Spacing accuracy phase.
+**Phase mapping:** Export phase. Add a validation pass before rendering.
 
 ---
 
-### Pitfall 14: Inferred Spacing on Rotated Frames
+### Pitfall 12: SVG Export of Complex Nodes Produces Unexpectedly Large Files
 
-**What goes wrong:** A rotated frame has an `absoluteBoundingBox` representing the axis-aligned box AFTER rotation, which is larger than the visual frame. Computing spacing from this inflated box produces incorrect values.
+**What goes wrong:** When a user selects a complex frame (with many nested layers) and chooses SVG format, the Figma `GET /v1/images` endpoint renders the ENTIRE subtree as SVG. A frame with 200 children produces a massive SVG file that Claude Code cannot effectively use.
 
-**Prevention:** Check for `node.rotation` -- if non-zero, skip inferred spacing. Rotated frames are uncommon in layout containers.
+**Prevention:** Warn users when their selected node has many children: "This element has complex content. PNG may be more appropriate than SVG." Only suggest SVG for simple vector shapes (VECTOR, ELLIPSE, STAR, etc.).
 
-**Phase mapping:** Spacing accuracy phase.
+**Phase mapping:** Asset list UI phase. Optional enhancement.
 
 ---
 
-### Pitfall 15: Plugin Icon Confusion with Asset Pipeline
+### Pitfall 13: `imageRef`-Based Export No Longer Exists -- Image Fill Nodes Must Use Render API
 
-**What goes wrong:** Adding a Figma logo SVG to the plugin UI is unrelated to asset extraction but could create import/naming confusion if implemented carelessly in the same milestone.
+**What goes wrong:** The auto-detection pipeline used `fetchImageFills` (GET /v1/files/:key/images) to resolve `imageRef` values for nodes with IMAGE fills. This returned S3 URLs for the original uploaded images. With manual control, users paste the URL of the node containing the image fill, but the code tries to use `fetchImages` (render endpoint) instead. The render endpoint works -- it renders the node as PNG -- but the output is the rendered appearance (with any masks, blend modes, or sizing applied) rather than the raw source image.
 
-**Prevention:** Keep as static SVG or inline JSX, completely separate from `assets/` module. Implement last.
+**Why it happens:** The manual control model collapses three auto-detection export types (`svg`, `png-fill`, `png-render`) into two user-chosen formats (`svg`, `png`). Both use `fetchImages`. For nodes with IMAGE fills, this produces the rendered appearance, which is actually what users want (they see the design, they want that appearance).
 
-**Phase mapping:** Final polish phase, independent.
+**Prevention:** This is actually NOT a pitfall -- it is the correct behavior. The render API produces what the user sees in Figma, which is what they want to export. The `fetchImageFills` approach was needed for auto-detection because it found image references without knowing which nodes they were on. With manual control, the user points at a specific node and the render API captures it perfectly. No action needed -- just awareness that the export mechanism changes from imageRef resolution to direct rendering.
+
+**Detection:** Compare auto-detected image fill export vs. manual node render for the same element. If they differ (e.g., the render includes a mask that the raw image did not), the render is actually more accurate.
+
+**Phase mapping:** Awareness only. No code change needed.
+
+---
+
+### Pitfall 14: The "Also saved to .shipstudio/assets/brief.md" Path May Become Stale
+
+**What goes wrong:** The `MainView.tsx` results section hardcodes the text "Also saved to .shipstudio/assets/brief.md". If the asset directory or brief filename changes during the v2.0 refactoring, this UI text becomes misleading.
+
+**Prevention:** Derive the display path from `exportResult.assetsDir` instead of hardcoding it. Or remove the display text entirely since the primary output is clipboard copy.
+
+**Phase mapping:** UI cleanup phase. Trivial fix.
 
 ---
 
@@ -309,51 +319,61 @@ The existing `instanceDedupKey` (componentId + variant) deduplicates the *instan
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Instance children for asset detection | **Pitfalls 1, 2, 3** (traversal + API + dedup form a tightly coupled chain) | Design complete strategy first: walk into instances only for IMAGE fills, use imageRef (not node rendering), deduplicate by imageRef globally, always scan deduped instances for overridden images |
-| Instance children for asset detection | **Pitfall 5** (background fills on frames with children) | Fix early-return in `walkTree` simultaneously -- same function, same control flow changes |
-| Instance children for asset detection | **Pitfalls 6, 7** (token inflation + composition false positives) | Add explicit `componentRef` guards in `collect.ts` and `detect-composition.ts` to preserve existing behavior |
-| API batch optimization | **Pitfall 4** (rate limits + timeout) | Batch node IDs in groups of 20-30, add 2s pauses between calls, handle 429 with wait-and-retry, split batches proactively for 120s timeout |
-| Spacing accuracy | **Pitfalls 8, 9, 10, 11** | Negative gap (Pitfall 8) is the only required code change. Others are documentation or awareness. Decide upfront which edge cases need code vs. annotations |
-| Spacing inference (if attempted) | **Pitfalls 12, 13, 14** | Use `absoluteBoundingBox`, filter hidden nodes, skip rotated frames |
-| Plugin icon | **Pitfall 15** | Implement last, keep separate from extraction code |
+| Code removal (auto-detection) | **Pitfalls 1, 7, 8** (import graph, pipeline dependency, test cascade) | Map imports first, delete incrementally, maintain green tests at every step |
+| URL parsing for assets | **Pitfalls 3, 9** (multi-select ambiguity, cross-file URLs) | One URL per asset as primary flow; validate fileKey match at add time |
+| Asset list UI | **Pitfalls 5, 10, 12** (filename collisions, state complexity, SVG warnings) | Extract to separate component; show derived filenames in UI; warn on complex SVG |
+| Node validation | **Pitfall 4** (unrenderable nodes) | Validate at add time, not export time; show per-asset status |
+| Export pipeline refactoring | **Pitfalls 6, 7, 13** (shell timeout, pipeline rewrite, imageRef removal) | Accept new asset list as input; batch 10-15 per API call; use render API for all assets |
+| Brief generator updates | **Pitfall 2** (cross-referencing) | Wire up nodeId from user-specified assets; drop compositionNodeIds; update test fixtures |
+| Results UX | **Pitfall 14** (stale path text) | Derive from exportResult or remove |
 
 ---
 
 ## Key Integration Risk
 
-**Pitfalls 1-4 form a tightly coupled chain.** You cannot fix instance traversal (Pitfall 1) without immediately encountering the I-prefix problem (Pitfall 2) and the duplication explosion (Pitfall 3), which then pushes into API rate limit territory (Pitfall 4). These must be addressed as a single design decision.
+**The deletion order matters more than the implementation order.** The biggest risk is not in building new features but in surgically removing old code without breaking the 257+ tests that should survive (325 total minus ~68 auto-detection tests).
 
-**Recommended strategy (before writing any code):**
-1. Walk into instance children **only to find IMAGE fills** via `imageRef` -- never try to render instance sublayers
-2. Do NOT export individual SVGs or sub-components from within instances -- the instance PNG render covers them
-3. Always scan instance children for IMAGE fills, even for deduped instances (to catch image overrides)
-4. Deduplicate by `imageRef` using a single `Set<string>` across the entire tree walk
-5. The instance itself still gets a `png-render` entry (unchanged existing behavior)
-6. Add guards in `collect.ts` and `detect-composition.ts` to prevent entering instance subtrees
-7. Batch API calls with 20-30 node limit, 2s pauses, 429 retry logic
+**Recommended safe deletion strategy:**
 
-This avoids the I-prefix problem entirely, captures missing image fills via the file-global imageRef mechanism, handles image overrides correctly, and controls API usage.
+1. **FIRST: Make auto-detection a no-op.** Change `identifyAssets` to return `[]` and `detectCompositions` to return `{ compositionNodeIds: new Set(), warnings: [] }`. Run tests -- only `identify.test.ts` and `detect-composition.test.ts` should fail (68 tests). All other tests (257) should pass because they use mock data, not the actual identification functions.
+
+2. **SECOND: Delete the test files.** Remove `identify.test.ts` and `detect-composition.test.ts`. Run tests -- 257 tests should pass.
+
+3. **THIRD: Build the new pipeline alongside the old one.** Create `exportManualAssets` as a new function. Wire it into `MainView.tsx` behind a feature flag or conditional. Get the new flow working end-to-end with new tests.
+
+4. **FOURTH: Remove old modules.** Delete `identify.ts`, `detect-composition.ts`, and the no-op stubs in `export.ts`. Update imports. Run tests -- should be green.
+
+5. **FIFTH: Update brief generator.** Remove `compositionNodeIds` handling, update `assetNodeMap` construction, update test fixtures in `generate.test.ts`.
+
+This staged approach ensures that at no point are you fighting both build errors AND logic errors simultaneously.
 
 ---
 
 ## Sources
 
-**HIGH confidence (official documentation + direct codebase analysis):**
-- [Figma REST API Rate Limits](https://developers.figma.com/docs/rest-api/rate-limits/) -- Tier-based limits, per-minute quotas
-- [Figma REST API Endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- Images endpoint, file nodes, depth parameter
-- [Figma rest-api-spec TypeScript types](https://github.com/figma/rest-api-spec/blob/main/dist/api_types.ts) -- InstanceNode extends FrameTraits (has children), ImagePaint.imageRef, HasLayoutTrait (itemSpacing "can be negative")
-- [Figma Guide to Auto Layout](https://help.figma.com/hc/en-us/articles/360040451373-Guide-to-auto-layout) -- Negative spacing, absolute positioning, SPACE_BETWEEN
-- Codebase: `src/assets/identify.ts`, `src/assets/detect-composition.ts`, `src/assets/export.ts`, `src/assets/download.ts`, `src/layout/normalize.ts`, `src/layout/flexbox-map.ts`, `src/layout/types.ts`, `src/tokens/collect.ts`, `src/brief/generate.ts`, `src/figma-api.ts`
+**HIGH confidence (direct codebase analysis):**
+- `src/assets/export.ts` -- import graph: `identifyAssets`, `detectCompositions`, `fetchImages`, `fetchImageFills`
+- `src/assets/identify.ts` -- 51 tests in `identify.test.ts`, imported by `export.ts`
+- `src/assets/detect-composition.ts` -- 17 tests in `detect-composition.test.ts`, imported by `export.ts`
+- `src/brief/generate.ts` -- 63 tests, imports `buildBreadcrumbMap`, uses `compositionNodeIds` and `assetNodeMap`
+- `src/brief/types.ts` -- `BriefInput` depends on `ExportResult` from `../assets/types`
+- `src/url-parser.ts` -- single `node-id` extraction, dash-to-colon conversion
+- `src/views/MainView.tsx` -- 673 lines, 15+ state variables, single-flow architecture
+- Test suite: 325 tests across 9 files, all passing as of 2026-03-01
 
-**MEDIUM confidence (community reports, consistent across multiple sources):**
-- [Figma Forum: Images API 429 + CloudFront](https://forum.figma.com/report-a-problem-6/rest-api-rate-limit-images-api-returns-429-after-10-requests-cloudfront-49021) -- Multi-day lockouts from burst patterns, ~400,000s retry-after values
-- [Figma Forum: Node IDs with I Prefix](https://forum.figma.com/ask-the-community-7/can-t-get-node-with-prefix-i-9560) -- Instance sublayer IDs return empty children, null render URLs
-- [Figma Forum: Component Instance Children](https://forum.figma.com/ask-the-community-7/can-t-get-file-nodes-of-component-instance-children-19465) -- Confirmed limitation with instance sublayer access
-- [Figma Forum: Negative Gap Bug](https://forum.figma.com/report-a-problem-6/auto-layout-bug-negative-gap-with-zero-width-element-falls-back-to-zero-42350) -- Zero-width elements reset negative gap to 0
-- [Figma Forum: absoluteBoundingBox vs absoluteRenderBounds](https://forum.figma.com/ask-the-community-7/in-api-response-render-bound-bounding-box-but-no-difference-is-seen-in-figma-10161) -- Geometric vs visual bounds difference
-- [Figma Forum: counterAxisSpacing auto value](https://forum.figma.com/ask-the-community-7/counteraxisspacing-and-auto-value-24483) -- null syncs with itemSpacing
+**HIGH confidence (official Figma documentation):**
+- [Figma REST API Images Endpoint](https://developers.figma.com/docs/rest-api/file-endpoints/) -- `ids` is comma-separated, null for unrenderable nodes, svg/png format options
+- [Figma REST API Rate Limits](https://developers.figma.com/docs/rest-api/rate-limits/) -- Tier 1 (10-20 req/min), 55s server-side render timeout, batching recommendations
+
+**MEDIUM confidence (community reports, undocumented behavior):**
+- [Figma Forum: Images API 429 + CloudFront](https://forum.figma.com/report-a-problem-6/rest-api-rate-limit-images-api-returns-429-after-10-requests-cloudfront-49021) -- rate limit lockouts from burst patterns
+- [Figma Forum: Export filenames not sanitized](https://forum.figma.com/t/figma-export-filenames-are-not-sanitized/37273) -- invisible Unicode characters in layer names pass through to filenames
+- [Figma Forum: Node URL format](https://forum.figma.com/ask-the-community-7/how-to-generate-url-to-specific-node-31893) -- node-id parameter with URL encoding
+
+**LOW confidence (no official documentation):**
+- Multi-select URL format (comma-separated `node-id` values) -- observed in the wild but undocumented, may change between Figma versions
 
 ---
 
-*Pitfalls research for: Ship Studio Figma Plugin v1.3 (Asset Completeness, Spacing Accuracy, Plugin Icon)*
+*Pitfalls research for: Ship Studio Figma Plugin v2.0 (Manual Asset Control)*
 *Researched: 2026-03-01*

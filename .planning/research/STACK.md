@@ -1,297 +1,219 @@
 # Technology Stack
 
-**Project:** Ship Studio Figma Plugin v1.3 -- Asset Completeness & Spacing Accuracy
+**Project:** Ship Studio Figma Plugin v2.0 -- Manual Asset Control
 **Researched:** 2026-03-01
 
 ## Executive Summary
 
-No new libraries are needed. The existing stack (`@figma/rest-api-spec`, `curl` via `shell.exec`, TypeScript, Vitest) already provides everything required for v1.3. The gaps are in **how the existing Figma REST API response is used**, not in what tools are available.
+No new npm dependencies are needed. The v2.0 manual asset control features are entirely achievable with the existing stack: React 18 (host-provided), TypeScript 5.x, Vite, Vitest, `@figma/rest-api-spec`, and `curl` via `shell.exec`.
 
-Three specific code-level changes are needed:
+The three capability gaps -- multi-select URL parsing, asset list management UI, and filename conflict resolution -- are all small enough to implement as plain TypeScript functions and React state. Adding a library for any of these would be over-engineering.
 
-1. **Recurse into INSTANCE children for IMAGE fill detection** -- the REST API already returns children on INSTANCE nodes (confirmed: `InstanceNode` extends `FrameTraits` which includes `HasChildrenTrait`), but `identify.ts` and `normalize.ts` both treat INSTANCE as a leaf node and skip children entirely.
+What changes is **how the existing tools are used**, not **which tools are available**.
 
-2. **Detect IMAGE fills on ALL node types, including inside component instances** -- currently only nodes the walker reaches have their fills checked. Since INSTANCE children are skipped, IMAGE fills inside component instances are invisible to both `identifyAssets` and `collectTokens`.
-
-3. **Capture missing auto-layout child properties** (`layoutAlign`, `layoutGrow`) that affect spacing accuracy -- these exist in the API response but are not extracted during normalization.
-
-## Recommended Stack (No Changes from v1.2)
+## Recommended Stack (No Changes from v1.3)
 
 ### Core Framework (unchanged)
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
 | TypeScript | 5.x | Type safety | Already in use |
-| React 18 | (host-provided) | Plugin UI | Ship Studio provides React |
-| Vite | (starter config) | Build | Already in use |
-| Vitest | existing | Testing | Already in use |
+| React 18 | (host-provided) | Plugin UI | Ship Studio provides React; useState + useCallback sufficient for asset list state |
+| Vite | 6.x | Build | Already in use |
+| Vitest | latest | Testing | Already in use |
 
 ### Figma API (unchanged)
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| `@figma/rest-api-spec` | ^0.36.0 | Type definitions | Already provides `InstanceNode`, `ImagePaint`, all `HasFramePropertiesTrait` types |
-| `curl` via `shell.exec` | N/A | HTTP requests | Already the API access pattern |
+| `@figma/rest-api-spec` | latest | Type definitions | Already provides `GetFileNodesResponse`, `Node` types with `name` field |
+| `curl` via `shell.exec` | N/A | HTTP requests | Already the API access pattern for all Figma endpoints |
 
 ### No New Dependencies
 
-The milestone requirements are solved entirely by using existing API fields more thoroughly, not by adding libraries.
+Every v2.0 requirement maps to existing capabilities:
 
-## Figma REST API Fields: What We Need and What We Have
+| Requirement | Solved By | Why No Library Needed |
+|-------------|-----------|----------------------|
+| Multi-node URL parsing | Extend `parseFigmaUrl()` in `url-parser.ts` | Comma-split on a query parameter -- 3 lines of code |
+| Node name resolution | Existing `fetchFileNodes()` (already calls `/v1/files/:key/nodes?ids=`) | API accepts comma-separated IDs, response includes `document.name` per node |
+| Asset list state | React `useState<AssetItem[]>` + `useCallback` | List of <20 items; no virtualization or complex state management needed |
+| Filename sanitization | Existing `sanitizeFilename()` in `sanitize.ts` | Already converts Figma layer names to filesystem-safe strings |
+| Filename collision resolution | Existing `resolveCollisions()` in `sanitize.ts` | Already appends `-2`, `-3` suffixes; fully tested |
+| Asset download | Existing `downloadFile()` and `downloadAllAssets()` | No changes to download pipeline |
+| Preview PNG | Existing `fetchImages()` with format='png', scale=2 | No changes |
+| Format picker (PNG/SVG) | HTML `<select>` element | Two options, no component library needed |
 
-### 1. Complete Asset Detection: IMAGE Fills Inside Component Instances
+## What Changes (Code, Not Dependencies)
 
-**The problem in the current code:**
+### 1. URL Parser: Support Multiple Node IDs
 
-`identify.ts` line 76-88:
+**Current behavior:** `parseFigmaUrl()` returns a single `nodeId: string | null`.
+
+**Figma URL reality:**
+- Single selection: `?node-id=123-456`
+- Multi-selection: Not natively supported by Figma's "Copy link" feature. Figma generates one link per selected element, not a comma-separated list.
+
+**Implication for v2.0:** Users will paste one URL at a time to add assets. Each URL has one `node-id`. The parser does NOT need multi-node support in a single URL. The "multi-select" feature is the asset LIST (add multiple URLs over time), not multiple node IDs in one URL.
+
+**Evidence:** Figma's "Copy link to selection" (Cmd+L) generates a link to the single focused node. Multi-Link Copy and Batch Copy Link community plugins exist precisely because Figma does NOT support multi-node URLs natively. The REST API's `/v1/files/:key/nodes?ids=` endpoint does accept comma-separated IDs, but this is for the API, not for URLs the user copies from Figma.
+
+**No parser changes needed.** The existing single-nodeId parser is correct for user-pasted URLs.
+
+**Confidence:** HIGH -- verified through Figma forum discussions, community plugin existence patterns, and manual URL testing knowledge.
+
+### 2. Node Name Fetching
+
+**Need:** When a user pastes a Figma URL for an asset, we need the layer name to auto-derive the filename.
+
+**Existing capability:** `fetchFileNodes()` in `figma-api.ts` already calls `GET /v1/files/:key/nodes?ids=X` and returns `{ rootNode, components, styles }`. The `rootNode` is the full `Node` type from `@figma/rest-api-spec`, which includes a `name: string` field (part of `IsLayerTrait` inherited by all visual nodes).
+
+**Integration:** Create a lightweight wrapper:
 ```typescript
-// INSTANCE nodes -> export as PNG, deduplicated by component+variant
-if (node.type === 'INSTANCE' && node.componentRef) {
-    // ... creates png-render entry ...
-    return; // Don't recurse into instance children  <-- THE GAP
+async function fetchNodeName(shell: Shell, token: string, fileKey: string, nodeId: string): Promise<string> {
+  const { rootNode } = await fetchFileNodes(shell, token, fileKey, nodeId);
+  return rootNode.name;
 }
 ```
 
-`normalize.ts` line 170-173:
-```typescript
-case 'INSTANCE':
-    result.componentRef = buildComponentRef(node, components);
-    // Do NOT recurse into children -- instances are leaf nodes  <-- THE GAP
-    return result;
-```
+This can be batched if needed -- the `/nodes` endpoint accepts comma-separated IDs: `?ids=1:2,3:4`. But since users add assets one at a time (paste URL, see name, confirm), individual fetches are fine.
 
-**What the API actually provides (verified from `@figma/rest-api-spec`):**
+**Confidence:** HIGH -- verified from `@figma/rest-api-spec` types (local), `GetFileNodesResponse.nodes[id].document` is type `Node` which extends `IsLayerTrait` with `name: string`.
+
+### 3. Asset List State Management
+
+**Pattern:** Simple React state array. No Redux, Zustand, or external state management.
 
 ```typescript
-// node_modules/@figma/rest-api-spec/dist/api_types.ts line 1110-1142:
-export type InstanceNode = {
-  type: 'INSTANCE'
-  componentId: string
-  componentProperties?: { [key: string]: ComponentProperty }
-  overrides: Overrides[]
-} & FrameTraits
-
-// FrameTraits (line 804-819):
-// = IsLayerTrait & HasChildrenTrait & HasLayoutTrait &
-//   HasFramePropertiesTrait & HasGeometryTrait & ...
-
-// HasChildrenTrait (line 165-169):
-export type HasChildrenTrait = {
-  children: SubcanvasNode[]  // INSTANCE nodes DO have children in the response
+interface ManualAsset {
+  id: string;          // Unique ID for React keys (crypto.randomUUID or counter)
+  nodeId: string;      // Figma node ID (e.g., "123:456")
+  nodeName: string;    // Layer name from Figma API (e.g., "Hero Image")
+  format: 'png' | 'svg';  // User-selected export format
+  filename: string;    // Auto-derived: sanitizeFilename(nodeName) + extension
 }
 
-// HasGeometryTrait (line 504) includes MinimalFillsTrait:
-export type MinimalFillsTrait = {
-  fills: Paint[]  // INSTANCE nodes DO have fills
-}
+const [assets, setAssets] = useState<ManualAsset[]>([]);
 ```
 
-**Key insight:** The Figma REST API returns the **full subtree** of INSTANCE nodes, including all children with their fills, strokes, and effects. The data is already there in the API response -- the code just stops walking before it reaches it.
+**Operations (all trivial with useState):**
+- **Add:** `setAssets(prev => [...prev, newAsset])`
+- **Remove:** `setAssets(prev => prev.filter(a => a.id !== id))`
+- **Change format:** `setAssets(prev => prev.map(a => a.id === id ? { ...a, format, filename: sanitizeFilename(a.nodeName) + (format === 'svg' ? '.svg' : '.png') } : a))`
 
-**What IMAGE fills look like in the response:**
+**Why not useReducer:** Three operations, all simple transforms. useState is clearer.
+
+**Why not external state lib:** The asset list is local to one view, never shared across components, and is discarded after export. External state management would add complexity for zero benefit.
+
+**Confidence:** HIGH -- standard React patterns, no novel requirements.
+
+### 4. Filename Derivation and Conflict Resolution
+
+**Existing utilities already solve this:**
+
+1. `sanitizeFilename(layerName)` in `src/assets/sanitize.ts` -- converts "Icon / Arrow Right" to "icon-arrow-right"
+2. `resolveCollisions(entries)` in `src/assets/sanitize.ts` -- appends `-2`, `-3` for duplicate filenames
+
+**Integration for v2.0:** When the user adds an asset, auto-derive the filename:
+```typescript
+const baseName = sanitizeFilename(nodeName);
+const filename = `${baseName}.${format === 'svg' ? 'svg' : 'png'}`;
+```
+
+Run `resolveCollisions()` at export time (not on add) to handle the case where multiple assets resolve to the same sanitized name. This matches the existing pattern in `identifyAssets()`.
+
+**Confidence:** HIGH -- functions exist, are tested (10 tests for sanitize, 5 for collisions), and handle all edge cases.
+
+### 5. Simplified Export Pipeline
+
+**What changes in `export.ts`:**
+
+The current `exportAssets()` function does:
+1. Clean/create assets directory
+2. Detect compositions via `detectCompositions()` -- **REMOVED in v2.0**
+3. Identify assets via `identifyAssets()` -- **REMOVED in v2.0**
+4. Batch API calls for render URLs (SVG, PNG, image fills)
+5. Build download list
+6. Sequential download
+
+In v2.0, steps 2-3 are replaced by the user-provided `ManualAsset[]` list. Steps 4-6 remain the same with minor adaptation:
 
 ```typescript
-// ImagePaint type from @figma/rest-api-spec:
-export type ImagePaint = {
-  type: 'IMAGE'
-  scaleMode: 'FILL' | 'FIT' | 'TILE' | 'STRETCH'
-  imageRef: string           // Key for resolving via GET /v1/files/:key/images
-  imageTransform?: Transform
-  scalingFactor?: number
-  filters?: ImageFilters
-  rotation?: number
-  gifRef?: string
-} & BasePaint
+// v2.0: User provides the asset list directly
+// No identifyAssets(), no detectCompositions()
+// Just batch the user's assets by format and download
 ```
 
-IMAGE fills can appear on any node type: FRAME (background images), RECTANGLE (image containers), ELLIPSE (circular avatars), INSTANCE (component-level backgrounds), and even GROUP nodes.
+The existing `fetchImages()` and `downloadFile()` functions are used as-is. The only difference is the source of the download list (user-curated vs auto-detected).
 
-**Resolution needed:** After exporting the INSTANCE itself as `png-render`, walk its children looking ONLY for `fills[].type === 'IMAGE'` nodes. Export those as separate `png-fill` entries. Do not export child vectors/shapes as separate SVGs (they belong to the component render).
+**Confidence:** HIGH -- the download pipeline is format-agnostic; it doesn't care where the asset list came from.
 
-**Confidence:** HIGH -- verified from `@figma/rest-api-spec` type definitions installed locally at `node_modules/@figma/rest-api-spec/dist/api_types.ts`.
+### 6. Layout Tree Cross-Referencing
 
-### 2. IMAGE Fill Detection on FRAME Backgrounds
+**Current:** `buildTreeLines()` in `generate.ts` checks `exportResult.assets` for matching `nodeId` to show `-> filename.png` in the layout tree.
 
-**Current behavior:** `identify.ts` checks `hasImageFill(node)` at line 91 for any node the walker reaches. This correctly catches RECTANGLE and FRAME nodes with IMAGE fills at the top level.
+**v2.0:** Same pattern, different source. The `ManualAsset[]` list maps `nodeId -> filename`. The brief generator receives the export result with the same `{ nodeId, filename }` structure. No changes needed to the cross-referencing logic in `generate.ts`.
 
-**Gap:** The `collectTokens` walk in `collect.ts` (line 312) recurses into children of all LayoutNode types. But since `normalizeNode` returns INSTANCE as a leaf (no children), any IMAGE fills inside instances are never collected as `ImageFillRef` entries for the token system either.
+**Confidence:** HIGH -- the brief generator already handles arbitrary `nodeId -> filename` mappings.
 
-**Both pipelines miss the same data:** `identifyAssets` and `collectTokens` both skip INSTANCE internals.
+## Figma REST API: Endpoints Used (No New Endpoints)
 
-**Resolution:** A single new function that walks the raw Figma API response (before normalization) to find all `fills[].type === 'IMAGE'` nodes anywhere in the tree, including inside INSTANCE subtrees. This produces a comprehensive `ImageFillRef[]` list that feeds into both `identifyAssets` (for asset export) and `collectTokens` (for the design tokens section of the brief).
+| Endpoint | Used For | v2.0 Change |
+|----------|----------|-------------|
+| `GET /v1/files/:key?depth=1` | Validate file access, get file name | None |
+| `GET /v1/files/:key/nodes?ids=X` | Fetch node subtree (for layout extraction) | Also used to fetch node name for asset URL validation |
+| `GET /v1/files/:key` | Fetch full file (page-level extraction) | None |
+| `GET /v1/images/:key?ids=X&format=png&scale=2` | Render nodes as PNG | Same -- user-specified PNG assets |
+| `GET /v1/images/:key?ids=X&format=svg` | Export SVGs | Same -- user-specified SVG assets |
+| `GET /v1/files/:key/images` | Resolve imageRef to download URLs | May be unused if no auto-detected image fills |
+| `GET /v1/me` | Validate personal access token | None |
 
-**Confidence:** HIGH -- verified by reading source code of both pipelines.
-
-### 3. The Image Fills Resolution API (Already Used Correctly)
-
-The existing `fetchImageFills` in `figma-api.ts` calls `GET /v1/files/:key/images` which returns ALL image fill URLs for the entire file as a map of `imageRef -> downloadURL`. This endpoint is already called when any `png-fill` entries exist. No changes needed here -- the resolution step is correct, we just need to collect more `imageRef` values to resolve.
-
-**Confidence:** HIGH.
-
-### 4. Spacing Accuracy: What Auto-Layout Properties Exist
-
-**Already extracted correctly (no changes needed):**
-
-| Figma Property | CSS Equivalent | Where Extracted | Status |
-|----------------|---------------|-----------------|--------|
-| `paddingTop` | `padding-top` | `flexbox-map.ts:49` | OK |
-| `paddingRight` | `padding-right` | `flexbox-map.ts:50` | OK |
-| `paddingBottom` | `padding-bottom` | `flexbox-map.ts:51` | OK |
-| `paddingLeft` | `padding-left` | `flexbox-map.ts:52` | OK |
-| `itemSpacing` | `gap` | `flexbox-map.ts:48` | OK |
-| `counterAxisSpacing` | `row-gap` (wrapping) | `flexbox-map.ts:60` | OK |
-| `layoutMode` | `flex-direction` | `flexbox-map.ts:45` | OK |
-| `primaryAxisAlignItems` | `justify-content` | `flexbox-map.ts:46` | OK |
-| `counterAxisAlignItems` | `align-items` | `flexbox-map.ts:47` | OK |
-| `layoutWrap` | `flex-wrap` | `flexbox-map.ts:55` | OK |
-
-### 5. Spacing Properties NOT Yet Extracted (Need Adding)
-
-| Figma Property | CSS Equivalent | Type Definition Location | Impact on Spacing |
-|----------------|---------------|--------------------------|-------------------|
-| `layoutAlign` | `align-self: stretch` | `HasLayoutTrait` (child property) | HIGH -- without this, Claude Code uses fixed width for children that should stretch to fill parent. Common in cards, sections, form fields. |
-| `layoutGrow` | `flex-grow: 1` | `HasLayoutTrait` (child property) | HIGH -- without this, Claude Code uses fixed height/width for children that should flex to fill remaining space. Common in content areas, spacers. |
-| `strokesIncludedInLayout` | `box-sizing: border-box` | `HasFramePropertiesTrait` | MEDIUM -- when true, strokes are inside the bounding box. When false (default), strokes add to element size. Affects spacing by up to 2x stroke weight. |
-| `individualStrokeWeights` | `border-top/right/bottom/left-width` | `IndividualStrokesTrait` | LOW -- only matters when strokes differ per side (e.g., bottom-border-only dividers). Currently only uniform `strokeWeight` is captured. |
-| `counterAxisAlignContent` | `align-content: space-between` | `HasFramePropertiesTrait` | LOW -- only applies to wrapping auto-layout frames. Affects distribution of wrapped tracks. |
-
-**Exact property paths from `@figma/rest-api-spec`:**
-
-```typescript
-// HasLayoutTrait (line 172+):
-layoutAlign?: 'INHERIT' | 'STRETCH' | 'MIN' | 'CENTER' | 'MAX'
-layoutGrow?: 0 | 1
-
-// HasFramePropertiesTrait (line 358+):
-strokesIncludedInLayout?: boolean
-counterAxisAlignContent?: 'AUTO' | 'SPACE_BETWEEN'
-
-// IndividualStrokesTrait:
-individualStrokeWeights?: {
-  top: number
-  right: number
-  bottom: number
-  left: number
-}
-```
-
-**Confidence:** HIGH -- all verified from locally installed `@figma/rest-api-spec`.
-
-### 6. Spacing for Non-Auto-Layout Frames
-
-**Current behavior:** Non-auto-layout frames produce no `autoLayout` property. Their children are listed with dimensions but no spacing context.
-
-**What the API provides:** `absoluteBoundingBox = { x, y, width, height }` on every node.
-
-**Derived spacing (no new API calls):**
-```
-padding-top    = firstChild.y - parent.y
-padding-left   = firstChild.x - parent.x
-gap (vertical) = nextChild.y - (prevChild.y + prevChild.height)
-```
-
-**Recommendation: Skip for v1.3.** This adds heuristic complexity (detecting whether children are linearly arranged, handling overlapping nodes, rotated elements). Most modern Figma designs use auto-layout. The `layoutAlign` and `layoutGrow` properties (item 5 above) will have far more impact on spacing accuracy than inferring spacing from absolute positions.
-
-**Confidence:** MEDIUM on the skip recommendation -- if user testing reveals many non-auto-layout spacing issues, this should be revisited.
-
-## Integration Points with Existing Pipeline
-
-### Change 1: Collect IMAGE Fills from Inside INSTANCE Subtrees
-
-**Best approach:** Add a new function (e.g., `collectAllImageFills`) that walks the **raw Figma API response** before normalization. This function recursively traverses all nodes including INSTANCE children, collecting every `fills[].type === 'IMAGE'` it finds as an `ImageFillRef`.
-
-**Where to add:** New utility, called from `extractLayout` in `src/layout/extract.ts` after the API response is received but before `normalizeTree` is called. The resulting `ImageFillRef[]` replaces (or supplements) what `collectTokens` currently finds.
-
-**Why not modify normalize.ts:** The normalization contract (INSTANCE = leaf) is used by brief generation, layout tree rendering, and composition detection. Changing it has a wide blast radius. A separate pre-normalization walk is safer.
-
-**Files affected:**
-- New: `src/assets/collect-image-fills.ts` (or similar)
-- Modified: `src/layout/extract.ts` (call the new function, pass results through)
-- Modified: `src/assets/export.ts` (receives more complete `imageFills` list)
-
-### Change 2: Walk INSTANCE Children in Asset Identification
-
-**File:** `src/assets/identify.ts`
-**Current:** Lines 76-88 return early on INSTANCE.
-**Needed:** After creating the `png-render` entry for the INSTANCE, continue walking its children looking ONLY for IMAGE fills. Do NOT export child vectors/shapes as separate SVGs.
-
-**Implementation sketch:**
-```typescript
-if (node.type === 'INSTANCE' && node.componentRef) {
-    const key = instanceDedupKey(node);
-    if (!seenInstances.has(key)) {
-        seenInstances.add(key);
-        entries.push({ /* png-render entry */ });
-    }
-    // NEW: scan instance children for IMAGE fills only
-    if (node.children) {
-        walkForImageFills(node, imageFillMap, matchedNodeIds, entries);
-    }
-    return;
-}
-```
-
-### Change 3: Add layoutAlign and layoutGrow to Normalization
-
-**File:** `src/layout/normalize.ts`
-**Add after line 107 (positioning):**
-```typescript
-if ('layoutAlign' in node && node.layoutAlign != null && node.layoutAlign !== 'INHERIT') {
-    result.layoutAlign = node.layoutAlign;
-}
-if ('layoutGrow' in node && node.layoutGrow != null && node.layoutGrow !== 0) {
-    result.layoutGrow = node.layoutGrow;
-}
-```
-
-**File:** `src/layout/types.ts`
-**Add to LayoutNode interface:**
-```typescript
-layoutAlign?: 'STRETCH' | 'MIN' | 'CENTER' | 'MAX';
-layoutGrow?: 0 | 1;
-```
-
-### Change 4: Surface New Properties in Brief
-
-**File:** `src/brief/generate.ts`
-**In `buildInlineStyles`:** Add `layoutAlign: STRETCH` as `{align-self:stretch}` and `layoutGrow: 1` as `{flex-grow:1}`.
-
-### Change 5 (Optional): strokesIncludedInLayout
-
-**File:** `src/layout/flexbox-map.ts`
-**Add to AutoLayoutProps output:**
-```typescript
-if (frame.strokesIncludedInLayout) {
-    result.boxSizing = 'border-box';
-}
-```
-
-**File:** `src/layout/types.ts` -- add `boxSizing?: 'border-box'` to `AutoLayoutProps`.
-
-## Existing API Endpoints (No Changes Needed)
-
-| Endpoint | Used For | Already Implemented |
-|----------|----------|---------------------|
-| `GET /v1/files/:key/nodes?ids=X` | Fetch node subtree (includes INSTANCE children) | `fetchFileNodes` in `figma-api.ts` |
-| `GET /v1/files/:key` | Fetch full file | `fetchFullFile` in `figma-api.ts` |
-| `GET /v1/images/:key?ids=X&format=png&scale=2` | Render nodes as PNG | `fetchImages` in `figma-api.ts` |
-| `GET /v1/images/:key?ids=X&format=svg` | Export SVGs | `fetchImages` in `figma-api.ts` |
-| `GET /v1/files/:key/images` | Resolve imageRef to download URLs | `fetchImageFills` in `figma-api.ts` |
+**Note on image fills:** The `GET /v1/files/:key/images` endpoint (image fill resolution) may not be needed in v2.0. In v1.x, it resolves `imageRef` values from auto-detected IMAGE fills. In v2.0, users specify assets by node ID and format. For PNG assets, we render via `GET /v1/images/:key?ids=X&format=png` (node render, not fill resolution). The image fills endpoint is only needed if we want to support "export the original uploaded image" vs "export a rendered snapshot" -- this is a UX decision, not a stack decision.
 
 ## What NOT to Add
 
-- **No new npm packages.** `@figma/rest-api-spec` already has all needed types.
-- **No new API endpoints.** The five endpoints above cover everything.
-- **No Figma Plugin API.** Ship Studio plugins run outside Figma via shell.
-- **No image processing.** Assets download as-is from Figma CDN.
-- **No non-auto-layout spacing inference for v1.3.** Focus on getting auto-layout spacing right first.
+| Category | What | Why Not |
+|----------|------|---------|
+| State management | Redux, Zustand, Jotai | Overkill for a single list of <20 items in one component |
+| UI component library | Radix, shadcn, Headless UI | Plugin uses Ship Studio theme system; adding a component library creates style conflicts and increases bundle size |
+| Form library | React Hook Form, Formik | One text input and one select per asset add; no validation complexity |
+| Drag-and-drop | react-beautiful-dnd, dnd-kit | Asset order doesn't matter for export; alphabetical or insertion order is fine |
+| UUID generation | uuid package | `crypto.randomUUID()` is available in all modern JS runtimes, or use a simple counter |
+| URL validation | url-parse, valid-url | `parseFigmaUrl()` already validates Figma URLs with a regex |
+| List virtualization | react-window, react-virtuoso | Asset list will have <20 items; rendering all is fine |
+| CSS-in-JS | styled-components, emotion | Plugin uses inline styles + Ship Studio CSS variables; consistent with existing codebase |
+
+## Existing Utilities to Reuse
+
+| Utility | Location | Reuse For |
+|---------|----------|-----------|
+| `parseFigmaUrl()` | `src/url-parser.ts` | Validate pasted asset URLs, extract fileKey + nodeId |
+| `sanitizeFilename()` | `src/assets/sanitize.ts` | Convert layer names to filenames |
+| `resolveCollisions()` | `src/assets/sanitize.ts` | Handle duplicate filenames at export time |
+| `fetchFileNodes()` | `src/figma-api.ts` | Fetch node name for auto-derived filename |
+| `fetchImages()` | `src/figma-api.ts` | Render PNG/SVG for user-specified nodes |
+| `downloadFile()` | `src/assets/download.ts` | Download rendered assets to disk |
+| `downloadAllAssets()` | `src/assets/download.ts` | Sequential download with progress |
+| `prepareAssetsDir()` | `src/assets/download.ts` | Clean/create assets directory |
+| `generateBrief()` | `src/brief/generate.ts` | Assemble markdown brief (receives export result) |
+
+## Code to Remove
+
+The v2.0 milestone explicitly removes all auto-detection code. These files/functions become dead code:
+
+| File | What | Why Remove |
+|------|------|------------|
+| `src/assets/identify.ts` | Auto-detection of exportable assets | Replaced by user-curated list |
+| `src/assets/identify.test.ts` | Tests for auto-detection | Dead code |
+| `src/assets/detect-composition.ts` | Vector-only group / composition detection | Replaced by user-curated list |
+| `src/assets/detect-composition.test.ts` | Tests for composition detection | Dead code |
+| `src/assets/breadcrumb.ts` | Layout tree breadcrumb for auto-detected assets | May still be useful if kept; evaluate during implementation |
+| `src/assets/breadcrumb.test.ts` | Tests for breadcrumb | Depends on breadcrumb decision |
+
+**Net effect:** Significant codebase simplification. The `identify.ts` walkTree function (247 lines) and `detect-composition.ts` are the most complex parts of the asset pipeline. Removing them reduces maintenance burden and eliminates entire categories of bugs (false positive/negative detection, dedup edge cases, composition heuristic failures).
 
 ## Sources
 
-- [`@figma/rest-api-spec` types (local)](https://github.com/figma/rest-api-spec/blob/main/dist/api_types.ts) -- verified InstanceNode extends FrameTraits with HasChildrenTrait and MinimalFillsTrait (HIGH confidence)
-- [Figma REST API file endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- depth parameter, image fills endpoint, subtree response structure (HIGH confidence)
-- [Figma REST API introduction](https://developers.figma.com/docs/rest-api/) -- full subtree returned in response including INSTANCE children (HIGH confidence)
-- [Figma forum: component instance children](https://forum.figma.com/ask-the-community-7/can-t-get-file-nodes-of-component-instance-children-19465) -- confirms children present but with "I"-prefixed node IDs (MEDIUM confidence)
-- [Figma forum: imageRef resolution](https://forum.figma.com/t/can-i-get-images-using-imageref/14448) -- imageRef resolved via GET image fills endpoint (HIGH confidence)
-- [Figma Plugin API: layoutAlign](https://www.figma.com/plugin-docs/api/properties/nodes-layoutalign/) -- child alignment in auto-layout (HIGH confidence)
-- [Figma Plugin API: layoutGrow](https://www.figma.com/plugin-docs/api/properties/nodes-layoutgrow/) -- child flex-grow in auto-layout (HIGH confidence)
-- [Figma Plugin API: strokesIncludedInLayout](https://developers.figma.com/docs/plugins/api/properties/nodes-strokesincludedinlayout/) -- box-sizing behavior (HIGH confidence)
-- Local codebase: `src/assets/identify.ts`, `src/layout/normalize.ts`, `src/layout/flexbox-map.ts`, `src/tokens/collect.ts`, `src/layout/types.ts` -- verified current behavior and exact line-level gaps (HIGH confidence)
+- [`@figma/rest-api-spec` types (local)](https://github.com/figma/rest-api-spec) -- `GetFileNodesResponse.nodes[id].document` is type `Node` extending `IsLayerTrait` with `name: string`; verified locally at `node_modules/@figma/rest-api-spec/dist/api_types.ts` (HIGH confidence)
+- [Figma REST API file endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- `/v1/files/:key/nodes` accepts comma-separated IDs in `ids` parameter (HIGH confidence)
+- [Figma forum: copy link to selection](https://forum.figma.com/suggest-a-feature-11/share-to-selection-links-should-be-consistent-34807) -- Cmd+L generates link to single focused node, not multi-node URL (MEDIUM confidence)
+- [Multi-Link Copy Figma plugin](https://www.figma.com/community/plugin/1423324569458473026/multi-link-copy) -- existence of this plugin confirms Figma lacks native multi-node URL support (MEDIUM confidence)
+- Local codebase: `src/url-parser.ts`, `src/assets/sanitize.ts`, `src/assets/export.ts`, `src/figma-api.ts`, `src/views/MainView.tsx` -- verified existing utility functions, API wrappers, and UI patterns (HIGH confidence)
