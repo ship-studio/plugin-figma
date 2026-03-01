@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Asset Completeness & Polish
-status: active
-last_updated: "2026-03-01"
+status: unknown
+last_updated: "2026-03-01T09:14:49.316Z"
 progress:
-  total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 12 of 14 (Instance Asset Detection) -- first of 3 v1.3 phases
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-01 -- Roadmap created for v1.3
+Plan: 1 of 2
+Status: Plan 01 complete, Plan 02 pending
+Last activity: 2026-03-01 -- Completed 12-01-PLAN.md (instance asset detection core)
 
-Progress: [░░░░░░░░░░] 0% (v1.3)
+Progress: [█░░░░░░░░░] 17% (v1.3 -- 1/6 plans)
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3)
 | 8. UX Flow Simplification | 1/1 | 32min | 32min |
 
 *Updated after each plan completion*
+| Phase 12 P01 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,12 @@ Recent decisions affecting current work:
 - Instance sublayer node IDs (I-prefix) return null from Figma images API -- must use imageRef hash instead (research finding)
 - Use absoluteBoundingBox (not absoluteRenderBounds) for spacing inference -- represents layout intent, not visual bounds (research finding)
 - Assets written to OS temp dir via `mktemp -d` (post-v1.2)
+- Instance own IMAGE fill (ASSET-06) takes priority over child recursion -- early return prevents both png-fill and png-render
+- imageRef dedup is global across all walkTree calls to prevent duplicate exports across instances
+- Rectangle filtering only in main tree walk, not inside instance children (ASSET-07)
+- [Phase 12]: Instance own IMAGE fill (ASSET-06) takes priority over child recursion
+- [Phase 12]: imageRef dedup is global across all walkTree calls to prevent duplicate exports
+- [Phase 12]: Rectangle filtering only in main tree walk, not inside instance children
 
 ### Pending Todos
 
@@ -70,5 +77,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Created v1.3 roadmap (phases 12-14).
-Next: `/gsd:plan-phase 12` to plan Instance Asset Detection.
+Stopped at: Completed 12-01-PLAN.md (instance asset detection core -- identify.ts).
+Next: `/gsd:execute-phase 12` to execute Plan 02 (token collection and brief generation integration).

@@ -9,9 +9,9 @@ Requirements for v1.3 Asset Completeness & Polish. Each maps to roadmap phases.
 
 ### Asset Detection
 
-- [ ] **ASSET-05**: Plugin detects and exports IMAGE fills inside component instance children (hero images, avatars, product photos nested in components)
-- [ ] **ASSET-06**: Plugin detects and exports IMAGE fills on INSTANCE nodes themselves (background image overrides)
-- [ ] **ASSET-07**: Plugin skips exporting simple solid-color RECTANGLE nodes as SVG (only exports rectangles with strokes or complex fills)
+- [x] **ASSET-05**: Plugin detects and exports IMAGE fills inside component instance children (hero images, avatars, product photos nested in components)
+- [x] **ASSET-06**: Plugin detects and exports IMAGE fills on INSTANCE nodes themselves (background image overrides)
+- [x] **ASSET-07**: Plugin skips exporting simple solid-color RECTANGLE nodes as SVG (only exports rectangles with strokes or complex fills)
 
 ### Spacing & Layout
 
@@ -96,9 +96,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-04 | Phase 7 | Complete |
 | UX-01 | Phase 6 | Complete |
 | UX-02 | Phase 8 | Complete |
-| ASSET-05 | Phase 12 | Pending |
-| ASSET-06 | Phase 12 | Pending |
-| ASSET-07 | Phase 12 | Pending |
+| ASSET-05 | Phase 12 | Complete |
+| ASSET-06 | Phase 12 | Complete |
+| ASSET-07 | Phase 12 | Complete |
 | SPACE-01 | Phase 13 | Pending |
 | SPACE-02 | Phase 13 | Pending |
 | SPACE-03 | Phase 13 | Pending |
