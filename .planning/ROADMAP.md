@@ -98,7 +98,7 @@ Plans:
   1. Given a `ManualAsset[]` list, the plugin makes one `fetchImages` call per format (one for all PNGs, one for all SVGs) and downloads every asset to disk
   2. Preview PNG is still auto-generated alongside the manual assets
   3. Assets that fail to render (Figma returns null URL) produce per-asset warnings without blocking the rest of the export
-**Plans**: TBD
+**Plans**: 1 plan
 
 ### Phase 18: Brief Generator Updates
 **Goal**: The generated brief correctly maps every manually-added asset to its position in the layout tree
@@ -108,7 +108,9 @@ Plans:
   1. Each asset in the brief's Assets table shows its location in the layout tree (derived from the asset's node ID matching a tree node)
   2. Asset type labels are simplified to "Icon" (SVG) and "Image" (PNG) with no composition/illustration terminology
   3. Instance-child node IDs that cannot be located in the tree show a dash for location (graceful degradation)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 18-01-PLAN.md -- Add manual asset cross-referencing tests and verify clean type labels
 
 ### Phase 19: Asset List UI & Integration
 **Goal**: Users can build, review, edit, and export an asset list through a complete end-to-end workflow
