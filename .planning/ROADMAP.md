@@ -119,7 +119,9 @@ Plans:
   2. The brief instructs Claude Code to create visible colored placeholder boxes (not invisible divs) for each missing asset, sized to match the design
   3. Each placeholder has a unique, human-readable reference name (e.g., `[asset-ref-1: hero background]`) that appears both in the placeholder box and in the brief's placeholder summary
   4. Users can reference placeholders in follow-up prompts (e.g., "Replace asset-ref-1 with this file") and Claude Code knows exactly which element to update
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 23-01-PLAN.md — Add placeholder section to brief and update instructions to use placeholder system
 
 ## Progress
 
