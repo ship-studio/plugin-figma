@@ -1019,3 +1019,244 @@ describe('normalizeNode style enrichment', () => {
     expect(result!.isMask).toBeUndefined();
   });
 });
+
+// ────────────────────────────────────────────────────────────────────
+// Flex-child & Absolute Offset Tests (Phase 13)
+// ────────────────────────────────────────────────────────────────────
+
+describe('normalizeNode flex-child properties', () => {
+  const emptyComponents: Record<string, any> = {};
+
+  it('captures layoutGrow: 1 as layoutGrow === 1', () => {
+    const input = {
+      id: 'flex:1', name: 'Stretchy', type: 'FRAME',
+      layoutGrow: 1,
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.layoutGrow).toBe(1);
+  });
+
+  it('does not store layoutGrow: 0 (default, noise reduction)', () => {
+    const input = {
+      id: 'flex:2', name: 'Fixed', type: 'FRAME',
+      layoutGrow: 0,
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.layoutGrow).toBeUndefined();
+  });
+
+  it('does not store layoutGrow when property is absent', () => {
+    const input = {
+      id: 'flex:3', name: 'NoGrow', type: 'FRAME',
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.layoutGrow).toBeUndefined();
+  });
+
+  it('captures layoutAlign: STRETCH as layoutAlign === STRETCH', () => {
+    const input = {
+      id: 'flex:4', name: 'StretchChild', type: 'FRAME',
+      layoutAlign: 'STRETCH',
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.layoutAlign).toBe('STRETCH');
+  });
+
+  it('does not store layoutAlign: INHERIT (default, noise reduction)', () => {
+    const input = {
+      id: 'flex:5', name: 'InheritChild', type: 'FRAME',
+      layoutAlign: 'INHERIT',
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.layoutAlign).toBeUndefined();
+  });
+
+  it('does not store layoutAlign: MIN (not actionable)', () => {
+    const input = {
+      id: 'flex:6', name: 'MinChild', type: 'FRAME',
+      layoutAlign: 'MIN',
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.layoutAlign).toBeUndefined();
+  });
+
+  it('does not store layoutAlign when property is absent', () => {
+    const input = {
+      id: 'flex:7', name: 'NoAlign', type: 'FRAME',
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    const result = normalizeNode(input, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    expect(result!.layoutAlign).toBeUndefined();
+  });
+});
+
+describe('normalizeNode absolute offset computation', () => {
+  const emptyComponents: Record<string, any> = {};
+
+  it('computes absoluteOffset for ABSOLUTE child relative to parent bbox', () => {
+    const parent = {
+      id: 'off:1', name: 'Parent', type: 'FRAME',
+      absoluteBoundingBox: { x: 100, y: 50, width: 400, height: 300 },
+      children: [
+        {
+          id: 'off:2', name: 'Badge', type: 'FRAME',
+          layoutPositioning: 'ABSOLUTE',
+          absoluteBoundingBox: { x: 150, y: 80, width: 50, height: 50 },
+          children: [],
+        },
+      ],
+    };
+    const result = normalizeNode(parent, emptyComponents, 0);
+    expect(result).not.toBeNull();
+    const badge = result!.children![0];
+    expect(badge.absoluteOffset).toEqual({ top: 30, left: 50 });
+  });
+
+  it('rounds fractional coordinates to integers', () => {
+    const parent = {
+      id: 'off:3', name: 'Parent', type: 'FRAME',
+      absoluteBoundingBox: { x: 100.2, y: 50.7, width: 400, height: 300 },
+      children: [
+        {
+          id: 'off:4', name: 'Badge', type: 'FRAME',
+          layoutPositioning: 'ABSOLUTE',
+          absoluteBoundingBox: { x: 150.8, y: 80.3, width: 50, height: 50 },
+          children: [],
+        },
+      ],
+    };
+    const result = normalizeNode(parent, emptyComponents, 0);
+    const badge = result!.children![0];
+    expect(badge.absoluteOffset).toEqual({ top: 30, left: 51 });
+  });
+
+  it('does not set absoluteOffset when parent has no bbox (null)', () => {
+    const parent = {
+      id: 'off:5', name: 'Parent', type: 'FRAME',
+      absoluteBoundingBox: null,
+      children: [
+        {
+          id: 'off:6', name: 'Badge', type: 'FRAME',
+          layoutPositioning: 'ABSOLUTE',
+          absoluteBoundingBox: { x: 150, y: 80, width: 50, height: 50 },
+          children: [],
+        },
+      ],
+    };
+    const result = normalizeNode(parent, emptyComponents, 0);
+    const badge = result!.children![0];
+    expect(badge.absoluteOffset).toBeUndefined();
+  });
+
+  it('does not set absoluteOffset when child has no absoluteBoundingBox (hidden)', () => {
+    const parent = {
+      id: 'off:7', name: 'Parent', type: 'FRAME',
+      absoluteBoundingBox: { x: 100, y: 50, width: 400, height: 300 },
+      children: [
+        {
+          id: 'off:8', name: 'Badge', type: 'FRAME',
+          layoutPositioning: 'ABSOLUTE',
+          visible: false,
+          children: [],
+        },
+      ],
+    };
+    const result = normalizeNode(parent, emptyComponents, 0);
+    const badge = result!.children![0];
+    expect(badge.absoluteOffset).toBeUndefined();
+  });
+
+  it('does not set absoluteOffset for AUTO positioning even with parent bbox', () => {
+    const parent = {
+      id: 'off:9', name: 'Parent', type: 'FRAME',
+      absoluteBoundingBox: { x: 100, y: 50, width: 400, height: 300 },
+      children: [
+        {
+          id: 'off:10', name: 'Flow', type: 'FRAME',
+          layoutPositioning: 'AUTO',
+          absoluteBoundingBox: { x: 150, y: 80, width: 200, height: 100 },
+          children: [],
+        },
+      ],
+    };
+    const result = normalizeNode(parent, emptyComponents, 0);
+    const flow = result!.children![0];
+    expect(flow.absoluteOffset).toBeUndefined();
+  });
+
+  it('normalizeNode parentBBox parameter is optional (backward compat)', () => {
+    const node = {
+      id: 'off:11', name: 'Root', type: 'FRAME',
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+      children: [],
+    };
+    // Calling without 4th arg should work fine
+    const result = normalizeNode(node, emptyComponents, 0);
+    expect(result).not.toBeNull();
+  });
+
+  it('recursive children receive parent absoluteBoundingBox as parentBBox', () => {
+    // Nested: Grandparent > Parent > AbsoluteChild
+    // AbsoluteChild offset should be relative to Parent, not Grandparent
+    const grandparent = {
+      id: 'off:12', name: 'Grandparent', type: 'FRAME',
+      absoluteBoundingBox: { x: 0, y: 0, width: 800, height: 600 },
+      children: [
+        {
+          id: 'off:13', name: 'Parent', type: 'FRAME',
+          absoluteBoundingBox: { x: 200, y: 100, width: 400, height: 300 },
+          children: [
+            {
+              id: 'off:14', name: 'AbsChild', type: 'FRAME',
+              layoutPositioning: 'ABSOLUTE',
+              absoluteBoundingBox: { x: 220, y: 120, width: 50, height: 50 },
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+    const result = normalizeNode(grandparent, emptyComponents, 0);
+    const parent = result!.children![0];
+    const absChild = parent.children![0];
+    // Offset relative to Parent (200,100): 220-200=20, 120-100=20
+    expect(absChild.absoluteOffset).toEqual({ top: 20, left: 20 });
+  });
+});
+
+describe('normalizeTree parentBBox handling', () => {
+  it('passes null as parentBBox for root nodes (no parent)', () => {
+    // Root node that is ABSOLUTE shouldn't get absoluteOffset
+    const roots = [
+      {
+        id: 'tree:1', name: 'Root', type: 'FRAME',
+        layoutPositioning: 'ABSOLUTE',
+        absoluteBoundingBox: { x: 50, y: 50, width: 200, height: 100 },
+        children: [],
+      },
+    ];
+    const result = normalizeTree(roots, {});
+    expect(result.rootNodes[0].positioning).toBe('ABSOLUTE');
+    expect(result.rootNodes[0].absoluteOffset).toBeUndefined();
+  });
+});

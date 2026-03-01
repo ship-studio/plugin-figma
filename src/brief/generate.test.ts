@@ -857,4 +857,107 @@ describe('generateBrief', () => {
       expect(result.markdown).not.toContain('## Design Tokens');
     });
   });
+
+  // ── Spacing & flex-child brief output (Phase 13) ────────────────
+
+  describe('spacing and flex-child brief output', () => {
+    it('renders absolute offset after [absolute] tag', () => {
+      const input = makeInput({
+        extraction: makeExtraction([{
+          id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+          children: [{
+            id: '1:2', name: 'Badge', type: 'FRAME', visible: true,
+            width: 50, height: 50,
+            positioning: 'ABSOLUTE',
+            absoluteOffset: { top: 16, left: 24 },
+          }],
+        }]),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('[absolute] top:16 left:24');
+    });
+
+    it('renders [absolute] without offset when absoluteOffset is missing (existing behavior)', () => {
+      const input = makeInput({
+        extraction: makeExtraction([{
+          id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+          children: [{
+            id: '1:2', name: 'Overlay', type: 'FRAME', visible: true,
+            width: 50, height: 50,
+            positioning: 'ABSOLUTE',
+          }],
+        }]),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('[absolute]');
+      expect(result.markdown).not.toContain('top:');
+    });
+
+    it('renders flex-grow:1 in inline styles when layoutGrow is 1', () => {
+      const input = makeInput({
+        extraction: makeExtraction([{
+          id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+          children: [{
+            id: '1:2', name: 'Title', type: 'TEXT', visible: true,
+            width: 800, height: 60,
+            textContent: 'Title',
+            textStyle: { fontFamily: 'Inter', fontSize: 48, fontWeight: 700 },
+            layoutGrow: 1,
+          }],
+        }]),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('flex-grow:1');
+    });
+
+    it('renders align-self:stretch in inline styles when layoutAlign is STRETCH', () => {
+      const input = makeInput({
+        extraction: makeExtraction([{
+          id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+          children: [{
+            id: '1:2', name: 'Content Row', type: 'FRAME', visible: true,
+            width: 800, height: 400,
+            layoutAlign: 'STRETCH',
+            children: [],
+          }],
+        }]),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('align-self:stretch');
+    });
+
+    it('renders both flex-grow:1 and align-self:stretch when both present', () => {
+      const input = makeInput({
+        extraction: makeExtraction([{
+          id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+          children: [{
+            id: '1:2', name: 'Expanding', type: 'FRAME', visible: true,
+            width: 800, height: 400,
+            layoutGrow: 1,
+            layoutAlign: 'STRETCH',
+            children: [],
+          }],
+        }]),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('flex-grow:1');
+      expect(result.markdown).toContain('align-self:stretch');
+    });
+
+    it('does not render flex-grow or align-self when properties are absent', () => {
+      const input = makeInput({
+        extraction: makeExtraction([{
+          id: '1:1', name: 'Root', type: 'FRAME', visible: true,
+          children: [{
+            id: '1:2', name: 'Plain', type: 'FRAME', visible: true,
+            width: 200, height: 100,
+            children: [],
+          }],
+        }]),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).not.toContain('flex-grow');
+      expect(result.markdown).not.toContain('align-self');
+    });
+  });
 });
