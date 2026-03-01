@@ -174,4 +174,4 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 24. Detection Foundation | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 25. Pipeline Integration & Zero-Asset Warning | v2.2 | 1/1 | Complete | 2026-03-01 |
 | 26. MainView Rewiring & Cleanup | 1/1 | Complete    | 2026-03-01 | - |
-| 27. Results Modal | 1/1 | Complete   | 2026-03-01 | - |
+| 27. Results Modal | 1/1 | Complete    | 2026-03-01 | - |
