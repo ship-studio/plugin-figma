@@ -121,7 +121,7 @@ function buildInstructionsSection(mode?: 'best' | 'pixel' | 'inspiration', inspi
 
   // Shared base rules (all modes)
   const sharedBefore = 'Read this brief fully. Study the preview image, layout tree, and design tokens before writing any code.';
-  const sharedDuring = 'Use only the assets listed in the Assets section below. If an asset is missing, ask the user rather than substituting or fabricating a replacement.';
+  const sharedDuring = 'The Assets section below is the complete manifest of provided files. Use only these assets -- every visual element NOT listed there should be built with CSS or HTML, not with image files. If you need an asset that is not listed, ask the user rather than substituting or fabricating a replacement.';
   const sharedAfter = 'Compare your result against the preview image and verify that layout, spacing, colors, and typography match the design tokens.';
 
   if (effectiveMode === 'best') {
@@ -530,7 +530,7 @@ function buildAssetsSection(
   if (previewPath) {
     const relPreview = toRelativePath(previewPath, projectPath);
     const filename = relPreview.split('/').pop() ?? relPreview;
-    rows.push(`| ${filename} | Preview | -- | ${relPreview} |`);
+    rows.push(`| ${filename} | Preview | Full-page preview screenshot | ${relPreview} |`);
   }
 
   for (const asset of assets) {
@@ -542,16 +542,34 @@ function buildAssetsSection(
     if (asset.nodeId) {
       location = breadcrumbMap.get(asset.nodeId) || (asset.parentInstanceId ? (breadcrumbMap.get(asset.parentInstanceId) || '--') : '--');
     }
-    rows.push(`| ${asset.filename} | ${typeLabel} | ${location} | ${relPath} |`);
+    const usage = deriveUsageContext(asset.assetType, location);
+    rows.push(`| ${asset.filename} | ${typeLabel} | ${usage} | ${relPath} |`);
   }
 
   return [
     '## Assets',
     '',
-    '| File | Type | Location | Path |',
-    '|------|------|----------|------|',
+    '| File | Type | Usage | Path |',
+    '|------|------|-------|------|',
     ...rows,
   ].join('\n');
+}
+
+/**
+ * Derive a human-readable usage context for an asset row.
+ * Combines the asset type with its breadcrumb location.
+ */
+function deriveUsageContext(assetType: 'icon' | 'image' | undefined, location: string): string {
+  const hasLocation = location !== '--' && location !== '';
+
+  switch (assetType) {
+    case 'icon':
+      return hasLocation ? `Icon in ${location}` : 'Icon';
+    case 'image':
+      return hasLocation ? `Image in ${location}` : 'Image';
+    default:
+      return hasLocation ? `Asset in ${location}` : 'Asset';
+  }
 }
 
 /**
