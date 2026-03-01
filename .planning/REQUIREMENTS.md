@@ -3,9 +3,30 @@
 **Defined:** 2026-02-28
 **Core Value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately
 
-## v1.1 Requirements
+## v1.3 Requirements
 
-Requirements for v1.1 milestone. Each maps to roadmap phases.
+Requirements for v1.3 Asset Completeness & Polish. Each maps to roadmap phases.
+
+### Asset Detection
+
+- [ ] **ASSET-05**: Plugin detects and exports IMAGE fills inside component instance children (hero images, avatars, product photos nested in components)
+- [ ] **ASSET-06**: Plugin detects and exports IMAGE fills on INSTANCE nodes themselves (background image overrides)
+- [ ] **ASSET-07**: Plugin skips exporting simple solid-color RECTANGLE nodes as SVG (only exports rectangles with strokes or complex fills)
+
+### Spacing & Layout
+
+- [ ] **SPACE-01**: Brief includes absolute position offsets (top/left relative to parent) for absolutely-positioned elements
+- [ ] **SPACE-02**: Brief includes flex-grow: 1 when a flex child has layoutGrow: 1
+- [ ] **SPACE-03**: Brief includes align-self: stretch when a flex child has layoutAlign: STRETCH
+
+### Polish
+
+- [ ] **POLISH-01**: Plugin displays Figma logo SVG as its icon in the Ship Studio toolbar
+
+## v1.1 Requirements (Complete)
+
+<details>
+<summary>All 9 requirements complete</summary>
 
 ### Brief Instructions
 
@@ -25,36 +46,40 @@ Requirements for v1.1 milestone. Each maps to roadmap phases.
 - [x] **UX-01**: Plugin uses human-friendly terminology throughout (no "Extraction Scope", "Single Node", "auto-layout frames")
 - [x] **UX-02**: Plugin flow is simplified with fewer visible steps
 
-## v2 Requirements
+</details>
 
-Deferred to future release. Tracked but not in current roadmap.
+## Future Requirements
 
-### Asset Refinement
+Deferred to future milestones. Tracked but not in current roadmap.
 
-- **ASSET-05**: Progressive asset disclosure in results UI -- group by type (icons, illustrations, photos)
-- **ASSET-06**: Collapsible tree preview in results screen
+### Spacing (Advanced)
 
-### Brief Enhancements
+- **SPACE-F01**: Brief includes spacing between non-auto-layout siblings (inferred from bounding box positions)
+- **SPACE-F02**: Brief includes constraint-based CSS inset values (top/right/bottom/left from Figma constraints)
 
-- **INST-04**: Executable verification loop -- checklist tied to actual extracted tokens and assets
+### UI Enhancements
 
-### UX Polish
-
+- **ASSET-08**: Progressive asset disclosure in results UI — group by type (icons, illustrations, photos)
+- **ASSET-09**: Collapsible tree preview in results screen
 - **UX-03**: Advanced options behind progressive disclosure toggle for power users
+
+### Brief Quality
+
+- **INST-04**: Executable verification loop — checklist tied to actual extracted tokens and assets
+- **BRIEF-F01**: Text alignment in brief (textAlignHorizontal from Figma)
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
+| Deep-recurse instance children for layout tree | Would make layout tree enormous and duplicate component internals. Only recurse for IMAGE fill detection. |
+| Export individual vectors from compositions | Defeats the purpose of composition detection. Keep single PNG export. |
+| Margin inference from bounding boxes | Figma has no margin concept. Unreliable and doesn't match CSS mental models. |
+| Pixel-perfect spacing from visual rendering | absoluteRenderBounds includes shadows/strokes, inflating spacing beyond design intent. Use absoluteBoundingBox. |
+| Non-auto-layout sibling spacing | High complexity, medium value. Absolute position offsets cover the critical path for v1.3. |
 | Code generation with framework targets | Plugin prepares context; Claude Code generates code in project context |
-| Automatic component detection from structure | Over/under-detects without designer naming intent from Figma |
 | Real-time design sync | Polling/webhook complexity not justified for per-session use case |
 | Multi-file batch extraction | Scope explosion; extract one frame at a time |
-| W3C DTCG token format export | Deferred to v2+ |
-| Visual annotations / Dev Mode data | Deferred to v2+ |
-| Brief templates / customization | Deferred to v2+ |
-| SVGO optimization | Evaluate only if raw SVG quality is insufficient |
-| Zod runtime validation | Decide later based on API error noise |
 
 ## Traceability
 
@@ -71,12 +96,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-04 | Phase 7 | Complete |
 | UX-01 | Phase 6 | Complete |
 | UX-02 | Phase 8 | Complete |
+| ASSET-05 | TBD | Pending |
+| ASSET-06 | TBD | Pending |
+| ASSET-07 | TBD | Pending |
+| SPACE-01 | TBD | Pending |
+| SPACE-02 | TBD | Pending |
+| SPACE-03 | TBD | Pending |
+| POLISH-01 | TBD | Pending |
 
 **Coverage:**
-- v1.1 requirements: 9 total
-- Mapped to phases: 9
-- Unmapped: 0
+- v1.3 requirements: 7 total
+- Mapped to phases: 0
+- Unmapped: 7 (pending roadmap creation)
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after roadmap creation*
+*Last updated: 2026-03-01 after v1.3 requirements definition*
