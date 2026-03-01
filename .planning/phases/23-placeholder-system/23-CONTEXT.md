@@ -15,7 +15,7 @@ The brief instructs Claude Code to create visible, named placeholder boxes for a
 
 ### Placeholder Appearance
 - Dashed border box style -- transparent/light background with a dashed colored border and centered label
-- Distinct accent color (muted purple or blue) so placeholders stand out from typical design colors
+- Color should fit the site's context -- Claude Code picks an appropriate muted color that's visible but doesn't clash with the design
 - Label shows reference name plus original dimensions: "[hero-bg] 1200x600"
 - Placeholder boxes should be sized to match the design's intended dimensions from Figma
 
