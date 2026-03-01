@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Manual Asset Control
-status: executing
-last_updated: "2026-03-01T15:03:45Z"
+milestone: v2.1
+milestone_name: Brief Modes & Placeholders
+status: defining_requirements
+last_updated: "2026-03-01T16:00:00Z"
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,22 +18,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v2.0 Manual Asset Control -- Phase 19: Asset List UI Integration
+**Current focus:** v2.1 Brief Modes & Placeholders — Defining requirements
 
 ## Current Position
 
-Phase: 19 of 19 (Asset List UI Integration) -- fifth of 5 v2.0 phases
-Plan: 1 of 2 COMPLETE
-Status: Executing Phase 19
-Last activity: 2026-03-01 -- Executed 19-01 (AssetListPanel component and CSS)
-
-Progress: [#########.] 90% (4.5/5 phases)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-01 — Milestone v2.1 started
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 5)
-- v2.0 average: ~2.6 min/plan
+- Total plans completed: 28 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 8)
 - Total execution time: ~6.7 hours across 5 milestones
 
 ## Accumulated Context
@@ -42,24 +39,9 @@ Progress: [#########.] 90% (4.5/5 phases)
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
-Key v2.0 decisions:
-- Manual asset control over auto-detection (reliability over speed)
-- Remove all auto-detection code first (strict dependency -- clean base for new pipeline)
-- Auto-derive filenames from Figma layer names, auto-number duplicates
-- Layout tree cross-referencing by user-provided node IDs
-- I-prefix node IDs cannot be rendered -- detect at add-time and warn user
-- Export pipeline accepts ManualAsset[] instead of auto-detecting
-- Node validation at add-time, not export-time
-- Removed instancesWithText from ExtractLayoutResult (only consumer was deleted identifyAssets)
-- Kept breadcrumb.ts and AssetEntry type for downstream Phases 16-18
-- resolveNode returns error ManualAsset rather than throwing (graceful degradation)
-- lookupUrl tries raw, encoded, and decoded nodeId variants for Figma API response map lookup
-- Format batching: one fetchImages call per non-empty partition (PNG at 2x, SVG without scale)
-- Per-asset failures produce warnings without throwing, allowing other assets to succeed
-- No generate.ts changes needed for Phase 18 -- existing code already handles manual asset cross-referencing correctly
-- Test fixtures must use non-generic names to avoid breadcrumb GENERIC_NAME_PATTERN skipping
-- useRef Set for in-flight tracking to prevent duplicate add race condition in AssetListPanel
-- Controlled component pattern for AssetListPanel matching existing Modal.tsx convention
+Key v2.1 decisions so far:
+- Brief-driven placeholder detection (Claude Code compares preview vs assets, no plugin-side detection)
+- Three brief modes instead of one-size-fits-all instructions
 
 ### Pending Todos
 
@@ -67,10 +49,10 @@ None.
 
 ### Blockers/Concerns
 
-- MainView.tsx is 673 lines -- extract asset list into separate component during Phase 19
+None.
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 19-01-PLAN.md (AssetListPanel component and CSS)
-Next: Execute 19-02-PLAN.md (MainView wiring)
+Stopped at: Defining v2.1 requirements
+Next: Complete requirements → roadmap → plan phases
