@@ -1,202 +1,297 @@
 # Technology Stack
 
-**Project:** Ship Studio Figma Plugin
-**Researched:** 2026-02-28
-**Overall Confidence:** HIGH
+**Project:** Ship Studio Figma Plugin v1.3 -- Asset Completeness & Spacing Accuracy
+**Researched:** 2026-03-01
 
-## Critical Constraint
+## Executive Summary
 
-This plugin runs inside Ship Studio (a Tauri-based desktop app). It **cannot make direct HTTP requests** (no `fetch`, no `axios`, no Node.js `http`). All network calls go through `shell.exec` + `curl`. This eliminates standard Figma API client libraries as runtime dependencies -- they all use built-in HTTP clients internally. We use Figma's official types for type safety, but build our own thin curl-based API layer.
+No new libraries are needed. The existing stack (`@figma/rest-api-spec`, `curl` via `shell.exec`, TypeScript, Vitest) already provides everything required for v1.3. The gaps are in **how the existing Figma REST API response is used**, not in what tools are available.
 
-## Recommended Stack
+Three specific code-level changes are needed:
 
-### Core Framework (Inherited from Ship Studio Plugin Starter)
+1. **Recurse into INSTANCE children for IMAGE fill detection** -- the REST API already returns children on INSTANCE nodes (confirmed: `InstanceNode` extends `FrameTraits` which includes `HasChildrenTrait`), but `identify.ts` and `normalize.ts` both treat INSTANCE as a leaf node and skip children entirely.
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| React | (host-provided) | UI framework | Ship Studio provides React as a shared host instance; plugins do not bundle their own React | HIGH |
-| TypeScript | 5.x | Type safety | Required for consuming `@figma/rest-api-spec` types; catches Figma API response shape errors at compile time | HIGH |
-| Vite | (starter config) | Build tool | Ship Studio plugin starter uses Vite to produce `dist/index.js`; do not change | HIGH |
+2. **Detect IMAGE fills on ALL node types, including inside component instances** -- currently only nodes the walker reaches have their fills checked. Since INSTANCE children are skipped, IMAGE fills inside component instances are invisible to both `identifyAssets` and `collectTokens`.
 
-These are not choices -- they are constraints from the Ship Studio plugin starter template. Do not deviate.
+3. **Capture missing auto-layout child properties** (`layoutAlign`, `layoutGrow`) that affect spacing accuracy -- these exist in the API response but are not extracted during normalization.
 
-### Figma API Types
+## Recommended Stack (No Changes from v1.2)
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| `@figma/rest-api-spec` | ^0.36.0 | TypeScript types for all Figma REST API responses, parameters, and node types | Official package from Figma. Zero dependencies. Actively maintained (last published Jan 2026). Provides `GetFileResponse`, `GetFileNodesResponse`, `GetImagesResponse`, and all node type discriminated unions. Far superior to hand-typing API responses. | HIGH |
+### Core Framework (unchanged)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| TypeScript | 5.x | Type safety | Already in use |
+| React 18 | (host-provided) | Plugin UI | Ship Studio provides React |
+| Vite | (starter config) | Build | Already in use |
+| Vitest | existing | Testing | Already in use |
 
-This is the single most important dependency for this project. It gives us type-safe access to:
-- All node types (FRAME, TEXT, COMPONENT, INSTANCE, VECTOR, etc.) with their full property sets
-- Auto-layout properties (`layoutMode`, `primaryAxisAlignItems`, `counterAxisAlignItems`, `layoutSizingHorizontal`, `layoutSizingVertical`, `itemSpacing`, `paddingLeft/Right/Top/Bottom`)
-- Paint types (SOLID, GRADIENT_LINEAR, IMAGE, etc.)
-- TypeStyle (font family, size, weight, line height, letter spacing, text alignment)
-- Effect types (DROP_SHADOW, INNER_SHADOW, LAYER_BLUR, BACKGROUND_BLUR)
-- Response shapes for every endpoint
+### Figma API (unchanged)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `@figma/rest-api-spec` | ^0.36.0 | Type definitions | Already provides `InstanceNode`, `ImagePaint`, all `HasFramePropertiesTrait` types |
+| `curl` via `shell.exec` | N/A | HTTP requests | Already the API access pattern |
 
-### API Layer (Custom -- No Client Library)
+### No New Dependencies
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| `shell.exec` + `curl` | (Ship Studio API) | HTTP requests to Figma REST API | The only way to make network requests from a Ship Studio plugin. curl is available on macOS (and Linux). All API calls go through this path. | HIGH |
+The milestone requirements are solved entirely by using existing API fields more thoroughly, not by adding libraries.
 
-**Why not use `figma-api` or `figma-js`?**
-- `figma-api` (v2.1.2-beta) depends on axios and makes HTTP requests internally. Since we cannot use direct HTTP, wrapping it would require monkey-patching its transport -- fragile and pointless.
-- `figma-js` (v1.16.1-0) is effectively abandoned (last real release Aug 2022). Also uses its own HTTP client.
-- Both libraries are thin wrappers around REST endpoints. Building a curl-based wrapper with `@figma/rest-api-spec` types gives us the same type safety with full control over the transport.
+## Figma REST API Fields: What We Need and What We Have
 
-### Data Processing
+### 1. Complete Asset Detection: IMAGE Fills Inside Component Instances
 
-| Library | Version | Purpose | Why | Confidence |
-|---------|---------|---------|-----|------------|
-| No external parsing libraries | -- | Figma node tree processing | The Figma node tree is already JSON from the REST API. Parsing it is straightforward recursive tree traversal. Adding a library for this adds bundle weight without value. Write utility functions that recursively walk the tree, extracting layout/style/component data into a structured brief format. | HIGH |
+**The problem in the current code:**
 
-### Validation (Optional but Recommended)
-
-| Library | Version | Purpose | Why | Confidence |
-|---------|---------|---------|-----|------------|
-| `zod` | ^4.3.6 | Runtime validation of Figma API responses | Validates that curl responses are actually valid JSON and match expected shapes before processing. Catches malformed responses, auth errors, and API changes gracefully. Zod 4 is 57% smaller than v3 with 14x faster string parsing. At ~2KB gzipped (`@zod/mini`), the bundle cost is minimal. | MEDIUM |
-
-**Rationale for MEDIUM confidence:** Zod is genuinely useful for validating curl output (which comes back as raw strings), but you could also get by with simple try/catch on JSON.parse + type assertions. If bundle size is critical, skip Zod and use manual validation. The `@figma/rest-api-spec` types provide compile-time safety; Zod adds runtime safety.
-
-### SVG Optimization (Deferred)
-
-| Library | Version | Purpose | Why | Confidence |
-|---------|---------|---------|-----|------------|
-| `svgo` | ^4.0.0 | Optimize exported SVG assets | SVGs from Figma's image export endpoint contain redundant metadata. SVGO strips it down. However, this is a build-time/processing concern, not a core extraction concern. **Defer to a later phase** -- extract raw SVGs first, optimize later. | LOW |
-
-**Rationale for LOW confidence:** SVGO runs in Node.js. The plugin runs in a browser-like Tauri webview. Using SVGO would require running it via `shell.exec` (e.g., `npx svgo`), which adds complexity. Evaluate whether raw SVGs are good enough before adding this dependency.
-
-## Figma REST API Endpoints Used
-
-These are the specific endpoints the plugin will call, in order of priority:
-
-### Tier 1: Core Extraction
-
-| Endpoint | Tier | Purpose | Rate Limit (Pro) |
-|----------|------|---------|-----------------|
-| `GET /v1/files/:key/nodes?ids=X` | Tier 2 | Fetch specific node subtrees for extraction | 50/min |
-| `GET /v1/images/:key?ids=X&format=png` | Tier 2 | Render selected frames as PNG | 50/min |
-| `GET /v1/images/:key?ids=X&format=svg` | Tier 2 | Export SVG assets from vector nodes | 50/min |
-
-### Tier 2: File Structure
-
-| Endpoint | Tier | Purpose | Rate Limit (Pro) |
-|----------|------|---------|-----------------|
-| `GET /v1/files/:key?depth=1` | Tier 1 | Get page list and top-level structure | 15/min |
-| `GET /v1/files/:key/images` | Tier 2 | Get image fill download URLs | 50/min |
-
-### Tier 3: Enterprise-Only (Out of Scope)
-
-| Endpoint | Tier | Purpose | Why Skip |
-|----------|------|---------|----------|
-| `GET /v1/files/:key/variables/local` | Tier 2 | Figma Variables (design tokens) | Enterprise-only. Extract tokens from node styles instead. |
-
-**Key constraint:** The Variables REST API requires Enterprise organization membership. Since this plugin targets all Figma users, we extract design tokens from node style properties (fills, effects, text styles) rather than the Variables endpoint. This covers 90%+ of use cases.
-
-## Authentication
-
-| Aspect | Value | Notes |
-|--------|-------|-------|
-| Method | Personal Access Token (PAT) | Simpler than OAuth; sufficient for read-only |
-| Header | `X-Figma-Token: <token>` | Passed via curl `-H` flag |
-| Required Scopes | `file_content:read` | Covers GET files, GET file nodes, GET images |
-| Token Expiry | Max 90 days | Users must regenerate periodically |
-| Storage | Ship Studio plugin storage | Persisted per-project via plugin API |
-
-## Figma URL Parsing
-
-Figma URLs follow multiple formats that must be parsed to extract `file_key` and `node_id`:
-
-```
-https://www.figma.com/design/<file_key>/<file_name>?node-id=<node_id>
-https://www.figma.com/file/<file_key>/<file_name>?node-id=<node_id>
-https://www.figma.com/proto/<file_key>/...
-https://www.figma.com/board/<file_key>/...
-```
-
-**Recommended regex** (handles both old `file/` and new `design/` format):
+`identify.ts` line 76-88:
 ```typescript
-const FIGMA_URL_RE = /https:\/\/[\w.-]*\.?figma\.com\/(file|design|proto|board)\/([0-9a-zA-Z]{22,128})(?:\/[^?]*)?(?:\?.*node-id=([^&]*))?/;
-// Groups: [1] = type, [2] = file_key, [3] = node_id (optional, URL-encoded)
+// INSTANCE nodes -> export as PNG, deduplicated by component+variant
+if (node.type === 'INSTANCE' && node.componentRef) {
+    // ... creates png-render entry ...
+    return; // Don't recurse into instance children  <-- THE GAP
+}
 ```
 
-Node IDs in URLs are URL-encoded (e.g., `1%3A2` for `1:2`). Decode with `decodeURIComponent()`.
-
-## Rate Limit Handling Strategy
-
-| Concern | Strategy |
-|---------|----------|
-| 429 responses | Read `Retry-After` header, wait, retry |
-| Batching image exports | Request multiple node IDs in a single `GET /v1/images/:key?ids=A,B,C` call |
-| Large files | Use `depth` parameter to limit response size; use `ids` parameter to fetch only needed nodes |
-| Shell timeout | Ship Studio has 120s shell timeout; large files may approach this. Use node-specific endpoints, not full file fetch |
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Figma Types | `@figma/rest-api-spec` | `figma-api` types | `figma-api` re-exports `@figma/rest-api-spec` types anyway, plus bundles axios we cannot use |
-| Figma Client | Custom curl wrapper | `figma-api` / `figma-js` | Cannot use HTTP clients in Ship Studio plugins; must use `shell.exec` + `curl` |
-| Figma Client | Custom curl wrapper | `@zemd/figma-rest-api` | Uses `fetch` internally; same transport problem |
-| Validation | `zod` (or none) | `io-ts` / `ajv` | Zod has the best TypeScript DX and smallest bundle via `@zod/mini` |
-| SVG Processing | Defer (raw SVGs) | `svgo` | Adds complexity via `shell.exec`; evaluate if needed later |
-| Node Tree Parsing | Custom utilities | FigmaToCode's approach | FigmaToCode uses a Plugin API (not REST API) intermediate layer; not applicable to REST API consumption |
-
-## Installation
-
-```bash
-# Types only (zero runtime dependencies)
-npm install -D @figma/rest-api-spec
-
-# Optional: runtime validation
-npm install zod
-# OR for minimal bundle:
-npm install @zod/mini
+`normalize.ts` line 170-173:
+```typescript
+case 'INSTANCE':
+    result.componentRef = buildComponentRef(node, components);
+    // Do NOT recurse into children -- instances are leaf nodes  <-- THE GAP
+    return result;
 ```
 
-That is the entire dependency list. Everything else is custom code.
+**What the API actually provides (verified from `@figma/rest-api-spec`):**
 
-## Key Auto-Layout to CSS Mapping Reference
+```typescript
+// node_modules/@figma/rest-api-spec/dist/api_types.ts line 1110-1142:
+export type InstanceNode = {
+  type: 'INSTANCE'
+  componentId: string
+  componentProperties?: { [key: string]: ComponentProperty }
+  overrides: Overrides[]
+} & FrameTraits
 
-This mapping is essential for the node tree parser:
+// FrameTraits (line 804-819):
+// = IsLayerTrait & HasChildrenTrait & HasLayoutTrait &
+//   HasFramePropertiesTrait & HasGeometryTrait & ...
 
-| Figma Property | CSS Equivalent | Values |
-|----------------|---------------|--------|
-| `layoutMode: "HORIZONTAL"` | `flex-direction: row` | |
-| `layoutMode: "VERTICAL"` | `flex-direction: column` | |
-| `primaryAxisAlignItems: "MIN"` | `justify-content: flex-start` | |
-| `primaryAxisAlignItems: "CENTER"` | `justify-content: center` | |
-| `primaryAxisAlignItems: "MAX"` | `justify-content: flex-end` | |
-| `primaryAxisAlignItems: "SPACE_BETWEEN"` | `justify-content: space-between` | |
-| `counterAxisAlignItems: "MIN"` | `align-items: flex-start` | |
-| `counterAxisAlignItems: "CENTER"` | `align-items: center` | |
-| `counterAxisAlignItems: "MAX"` | `align-items: flex-end` | |
-| `counterAxisAlignItems: "BASELINE"` | `align-items: baseline` | |
-| `layoutSizingHorizontal: "FIXED"` | `width: <absoluteBoundingBox.width>px` | |
-| `layoutSizingHorizontal: "HUG"` | `width: fit-content` | |
-| `layoutSizingHorizontal: "FILL"` | `flex: 1` / `width: 100%` | |
-| `itemSpacing` | `gap` | |
-| `paddingLeft/Right/Top/Bottom` | `padding` | |
-| `layoutWrap: "WRAP"` | `flex-wrap: wrap` | |
+// HasChildrenTrait (line 165-169):
+export type HasChildrenTrait = {
+  children: SubcanvasNode[]  // INSTANCE nodes DO have children in the response
+}
+
+// HasGeometryTrait (line 504) includes MinimalFillsTrait:
+export type MinimalFillsTrait = {
+  fills: Paint[]  // INSTANCE nodes DO have fills
+}
+```
+
+**Key insight:** The Figma REST API returns the **full subtree** of INSTANCE nodes, including all children with their fills, strokes, and effects. The data is already there in the API response -- the code just stops walking before it reaches it.
+
+**What IMAGE fills look like in the response:**
+
+```typescript
+// ImagePaint type from @figma/rest-api-spec:
+export type ImagePaint = {
+  type: 'IMAGE'
+  scaleMode: 'FILL' | 'FIT' | 'TILE' | 'STRETCH'
+  imageRef: string           // Key for resolving via GET /v1/files/:key/images
+  imageTransform?: Transform
+  scalingFactor?: number
+  filters?: ImageFilters
+  rotation?: number
+  gifRef?: string
+} & BasePaint
+```
+
+IMAGE fills can appear on any node type: FRAME (background images), RECTANGLE (image containers), ELLIPSE (circular avatars), INSTANCE (component-level backgrounds), and even GROUP nodes.
+
+**Resolution needed:** After exporting the INSTANCE itself as `png-render`, walk its children looking ONLY for `fills[].type === 'IMAGE'` nodes. Export those as separate `png-fill` entries. Do not export child vectors/shapes as separate SVGs (they belong to the component render).
+
+**Confidence:** HIGH -- verified from `@figma/rest-api-spec` type definitions installed locally at `node_modules/@figma/rest-api-spec/dist/api_types.ts`.
+
+### 2. IMAGE Fill Detection on FRAME Backgrounds
+
+**Current behavior:** `identify.ts` checks `hasImageFill(node)` at line 91 for any node the walker reaches. This correctly catches RECTANGLE and FRAME nodes with IMAGE fills at the top level.
+
+**Gap:** The `collectTokens` walk in `collect.ts` (line 312) recurses into children of all LayoutNode types. But since `normalizeNode` returns INSTANCE as a leaf (no children), any IMAGE fills inside instances are never collected as `ImageFillRef` entries for the token system either.
+
+**Both pipelines miss the same data:** `identifyAssets` and `collectTokens` both skip INSTANCE internals.
+
+**Resolution:** A single new function that walks the raw Figma API response (before normalization) to find all `fills[].type === 'IMAGE'` nodes anywhere in the tree, including inside INSTANCE subtrees. This produces a comprehensive `ImageFillRef[]` list that feeds into both `identifyAssets` (for asset export) and `collectTokens` (for the design tokens section of the brief).
+
+**Confidence:** HIGH -- verified by reading source code of both pipelines.
+
+### 3. The Image Fills Resolution API (Already Used Correctly)
+
+The existing `fetchImageFills` in `figma-api.ts` calls `GET /v1/files/:key/images` which returns ALL image fill URLs for the entire file as a map of `imageRef -> downloadURL`. This endpoint is already called when any `png-fill` entries exist. No changes needed here -- the resolution step is correct, we just need to collect more `imageRef` values to resolve.
+
+**Confidence:** HIGH.
+
+### 4. Spacing Accuracy: What Auto-Layout Properties Exist
+
+**Already extracted correctly (no changes needed):**
+
+| Figma Property | CSS Equivalent | Where Extracted | Status |
+|----------------|---------------|-----------------|--------|
+| `paddingTop` | `padding-top` | `flexbox-map.ts:49` | OK |
+| `paddingRight` | `padding-right` | `flexbox-map.ts:50` | OK |
+| `paddingBottom` | `padding-bottom` | `flexbox-map.ts:51` | OK |
+| `paddingLeft` | `padding-left` | `flexbox-map.ts:52` | OK |
+| `itemSpacing` | `gap` | `flexbox-map.ts:48` | OK |
+| `counterAxisSpacing` | `row-gap` (wrapping) | `flexbox-map.ts:60` | OK |
+| `layoutMode` | `flex-direction` | `flexbox-map.ts:45` | OK |
+| `primaryAxisAlignItems` | `justify-content` | `flexbox-map.ts:46` | OK |
+| `counterAxisAlignItems` | `align-items` | `flexbox-map.ts:47` | OK |
+| `layoutWrap` | `flex-wrap` | `flexbox-map.ts:55` | OK |
+
+### 5. Spacing Properties NOT Yet Extracted (Need Adding)
+
+| Figma Property | CSS Equivalent | Type Definition Location | Impact on Spacing |
+|----------------|---------------|--------------------------|-------------------|
+| `layoutAlign` | `align-self: stretch` | `HasLayoutTrait` (child property) | HIGH -- without this, Claude Code uses fixed width for children that should stretch to fill parent. Common in cards, sections, form fields. |
+| `layoutGrow` | `flex-grow: 1` | `HasLayoutTrait` (child property) | HIGH -- without this, Claude Code uses fixed height/width for children that should flex to fill remaining space. Common in content areas, spacers. |
+| `strokesIncludedInLayout` | `box-sizing: border-box` | `HasFramePropertiesTrait` | MEDIUM -- when true, strokes are inside the bounding box. When false (default), strokes add to element size. Affects spacing by up to 2x stroke weight. |
+| `individualStrokeWeights` | `border-top/right/bottom/left-width` | `IndividualStrokesTrait` | LOW -- only matters when strokes differ per side (e.g., bottom-border-only dividers). Currently only uniform `strokeWeight` is captured. |
+| `counterAxisAlignContent` | `align-content: space-between` | `HasFramePropertiesTrait` | LOW -- only applies to wrapping auto-layout frames. Affects distribution of wrapped tracks. |
+
+**Exact property paths from `@figma/rest-api-spec`:**
+
+```typescript
+// HasLayoutTrait (line 172+):
+layoutAlign?: 'INHERIT' | 'STRETCH' | 'MIN' | 'CENTER' | 'MAX'
+layoutGrow?: 0 | 1
+
+// HasFramePropertiesTrait (line 358+):
+strokesIncludedInLayout?: boolean
+counterAxisAlignContent?: 'AUTO' | 'SPACE_BETWEEN'
+
+// IndividualStrokesTrait:
+individualStrokeWeights?: {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+```
+
+**Confidence:** HIGH -- all verified from locally installed `@figma/rest-api-spec`.
+
+### 6. Spacing for Non-Auto-Layout Frames
+
+**Current behavior:** Non-auto-layout frames produce no `autoLayout` property. Their children are listed with dimensions but no spacing context.
+
+**What the API provides:** `absoluteBoundingBox = { x, y, width, height }` on every node.
+
+**Derived spacing (no new API calls):**
+```
+padding-top    = firstChild.y - parent.y
+padding-left   = firstChild.x - parent.x
+gap (vertical) = nextChild.y - (prevChild.y + prevChild.height)
+```
+
+**Recommendation: Skip for v1.3.** This adds heuristic complexity (detecting whether children are linearly arranged, handling overlapping nodes, rotated elements). Most modern Figma designs use auto-layout. The `layoutAlign` and `layoutGrow` properties (item 5 above) will have far more impact on spacing accuracy than inferring spacing from absolute positions.
+
+**Confidence:** MEDIUM on the skip recommendation -- if user testing reveals many non-auto-layout spacing issues, this should be revisited.
+
+## Integration Points with Existing Pipeline
+
+### Change 1: Collect IMAGE Fills from Inside INSTANCE Subtrees
+
+**Best approach:** Add a new function (e.g., `collectAllImageFills`) that walks the **raw Figma API response** before normalization. This function recursively traverses all nodes including INSTANCE children, collecting every `fills[].type === 'IMAGE'` it finds as an `ImageFillRef`.
+
+**Where to add:** New utility, called from `extractLayout` in `src/layout/extract.ts` after the API response is received but before `normalizeTree` is called. The resulting `ImageFillRef[]` replaces (or supplements) what `collectTokens` currently finds.
+
+**Why not modify normalize.ts:** The normalization contract (INSTANCE = leaf) is used by brief generation, layout tree rendering, and composition detection. Changing it has a wide blast radius. A separate pre-normalization walk is safer.
+
+**Files affected:**
+- New: `src/assets/collect-image-fills.ts` (or similar)
+- Modified: `src/layout/extract.ts` (call the new function, pass results through)
+- Modified: `src/assets/export.ts` (receives more complete `imageFills` list)
+
+### Change 2: Walk INSTANCE Children in Asset Identification
+
+**File:** `src/assets/identify.ts`
+**Current:** Lines 76-88 return early on INSTANCE.
+**Needed:** After creating the `png-render` entry for the INSTANCE, continue walking its children looking ONLY for IMAGE fills. Do NOT export child vectors/shapes as separate SVGs.
+
+**Implementation sketch:**
+```typescript
+if (node.type === 'INSTANCE' && node.componentRef) {
+    const key = instanceDedupKey(node);
+    if (!seenInstances.has(key)) {
+        seenInstances.add(key);
+        entries.push({ /* png-render entry */ });
+    }
+    // NEW: scan instance children for IMAGE fills only
+    if (node.children) {
+        walkForImageFills(node, imageFillMap, matchedNodeIds, entries);
+    }
+    return;
+}
+```
+
+### Change 3: Add layoutAlign and layoutGrow to Normalization
+
+**File:** `src/layout/normalize.ts`
+**Add after line 107 (positioning):**
+```typescript
+if ('layoutAlign' in node && node.layoutAlign != null && node.layoutAlign !== 'INHERIT') {
+    result.layoutAlign = node.layoutAlign;
+}
+if ('layoutGrow' in node && node.layoutGrow != null && node.layoutGrow !== 0) {
+    result.layoutGrow = node.layoutGrow;
+}
+```
+
+**File:** `src/layout/types.ts`
+**Add to LayoutNode interface:**
+```typescript
+layoutAlign?: 'STRETCH' | 'MIN' | 'CENTER' | 'MAX';
+layoutGrow?: 0 | 1;
+```
+
+### Change 4: Surface New Properties in Brief
+
+**File:** `src/brief/generate.ts`
+**In `buildInlineStyles`:** Add `layoutAlign: STRETCH` as `{align-self:stretch}` and `layoutGrow: 1` as `{flex-grow:1}`.
+
+### Change 5 (Optional): strokesIncludedInLayout
+
+**File:** `src/layout/flexbox-map.ts`
+**Add to AutoLayoutProps output:**
+```typescript
+if (frame.strokesIncludedInLayout) {
+    result.boxSizing = 'border-box';
+}
+```
+
+**File:** `src/layout/types.ts` -- add `boxSizing?: 'border-box'` to `AutoLayoutProps`.
+
+## Existing API Endpoints (No Changes Needed)
+
+| Endpoint | Used For | Already Implemented |
+|----------|----------|---------------------|
+| `GET /v1/files/:key/nodes?ids=X` | Fetch node subtree (includes INSTANCE children) | `fetchFileNodes` in `figma-api.ts` |
+| `GET /v1/files/:key` | Fetch full file | `fetchFullFile` in `figma-api.ts` |
+| `GET /v1/images/:key?ids=X&format=png&scale=2` | Render nodes as PNG | `fetchImages` in `figma-api.ts` |
+| `GET /v1/images/:key?ids=X&format=svg` | Export SVGs | `fetchImages` in `figma-api.ts` |
+| `GET /v1/files/:key/images` | Resolve imageRef to download URLs | `fetchImageFills` in `figma-api.ts` |
+
+## What NOT to Add
+
+- **No new npm packages.** `@figma/rest-api-spec` already has all needed types.
+- **No new API endpoints.** The five endpoints above cover everything.
+- **No Figma Plugin API.** Ship Studio plugins run outside Figma via shell.
+- **No image processing.** Assets download as-is from Figma CDN.
+- **No non-auto-layout spacing inference for v1.3.** Focus on getting auto-layout spacing right first.
 
 ## Sources
 
-- [Figma REST API Documentation](https://developers.figma.com/docs/rest-api/) -- HIGH confidence
-- [Figma REST API File Endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- HIGH confidence
-- [Figma REST API Rate Limits](https://developers.figma.com/docs/rest-api/rate-limits/) -- HIGH confidence
-- [Figma REST API Scopes](https://developers.figma.com/docs/rest-api/scopes/) -- HIGH confidence
-- [Figma REST API Authentication](https://developers.figma.com/docs/rest-api/authentication/) -- HIGH confidence
-- [Figma REST API Variables Endpoints](https://developers.figma.com/docs/rest-api/variables-endpoints/) -- HIGH confidence (Enterprise restriction verified)
-- [Figma REST API File Node Types](https://developers.figma.com/docs/rest-api/file-node-types/) -- HIGH confidence
-- [Figma REST API File Property Types](https://developers.figma.com/docs/rest-api/file-property-types/) -- HIGH confidence
-- [Figma REST API Changelog](https://developers.figma.com/docs/rest-api/changelog/) -- HIGH confidence
-- [@figma/rest-api-spec on npm](https://www.npmjs.com/package/@figma/rest-api-spec) -- HIGH confidence (v0.36.0, published 2026-01-21)
-- [@figma/rest-api-spec on GitHub](https://github.com/figma/rest-api-spec) -- HIGH confidence
-- [figma-api on npm](https://www.npmjs.com/package/figma-api) -- MEDIUM confidence (v2.1.2-beta, actively maintained but uses axios)
-- [figma-js on npm](https://www.npmjs.com/package/figma-js) -- HIGH confidence (v1.16.1-0, effectively abandoned since Aug 2022)
-- [Figma-Context-MCP](https://github.com/GLips/Figma-Context-MCP) -- MEDIUM confidence (architecture reference for node tree simplification)
-- [FigmaToCode](https://github.com/bernaferrari/FigmaToCode) -- MEDIUM confidence (architecture reference for Figma-to-CSS conversion)
-- [Figma URL parsing patterns](https://community.latenode.com/t/validate-figma-url-and-extract-file-node-ids-using-regex/20893) -- MEDIUM confidence
-- [Zod v4](https://zod.dev/) -- HIGH confidence (v4.3.6 verified via npm)
-- [SVGO](https://svgo.dev/) -- MEDIUM confidence (v4.0.0, may not be needed)
+- [`@figma/rest-api-spec` types (local)](https://github.com/figma/rest-api-spec/blob/main/dist/api_types.ts) -- verified InstanceNode extends FrameTraits with HasChildrenTrait and MinimalFillsTrait (HIGH confidence)
+- [Figma REST API file endpoints](https://developers.figma.com/docs/rest-api/file-endpoints/) -- depth parameter, image fills endpoint, subtree response structure (HIGH confidence)
+- [Figma REST API introduction](https://developers.figma.com/docs/rest-api/) -- full subtree returned in response including INSTANCE children (HIGH confidence)
+- [Figma forum: component instance children](https://forum.figma.com/ask-the-community-7/can-t-get-file-nodes-of-component-instance-children-19465) -- confirms children present but with "I"-prefixed node IDs (MEDIUM confidence)
+- [Figma forum: imageRef resolution](https://forum.figma.com/t/can-i-get-images-using-imageref/14448) -- imageRef resolved via GET image fills endpoint (HIGH confidence)
+- [Figma Plugin API: layoutAlign](https://www.figma.com/plugin-docs/api/properties/nodes-layoutalign/) -- child alignment in auto-layout (HIGH confidence)
+- [Figma Plugin API: layoutGrow](https://www.figma.com/plugin-docs/api/properties/nodes-layoutgrow/) -- child flex-grow in auto-layout (HIGH confidence)
+- [Figma Plugin API: strokesIncludedInLayout](https://developers.figma.com/docs/plugins/api/properties/nodes-strokesincludedinlayout/) -- box-sizing behavior (HIGH confidence)
+- Local codebase: `src/assets/identify.ts`, `src/layout/normalize.ts`, `src/layout/flexbox-map.ts`, `src/tokens/collect.ts`, `src/layout/types.ts` -- verified current behavior and exact line-level gaps (HIGH confidence)

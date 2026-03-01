@@ -21,7 +21,7 @@ Requirements for v1.3 Asset Completeness & Polish. Each maps to roadmap phases.
 
 ### Polish
 
-- [ ] **POLISH-01**: Plugin displays Figma logo SVG as its icon in the Ship Studio toolbar
+- [x] **POLISH-01**: Plugin displays Figma logo SVG as its icon in the Ship Studio toolbar
 
 ## v1.1 Requirements (Complete)
 
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SPACE-01 | Phase 13 | Complete |
 | SPACE-02 | Phase 13 | Complete |
 | SPACE-03 | Phase 13 | Complete |
-| POLISH-01 | Phase 14 | Pending |
+| POLISH-01 | Phase 14 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 7 total

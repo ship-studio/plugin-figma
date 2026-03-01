@@ -5,7 +5,7 @@
 - ✅ **v1.0 Ship Studio Figma Plugin** -- Phases 1-5 (shipped 2026-02-28)
 - ✅ **v1.1 Brief Quality & UX** -- Phases 6-8 (shipped 2026-02-28)
 - ✅ **v1.2 Brief Quality Overhaul** -- Phases 9-11 (shipped 2026-03-01, outside GSD workflow)
-- 🚧 **v1.3 Asset Completeness & Polish** -- Phases 12-14 (in progress)
+- ✅ **v1.3 Asset Completeness & Polish** -- Phases 12-14 (shipped 2026-03-01)
 
 ## Phases
 
@@ -46,7 +46,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 - [x] **Phase 12: Instance Asset Detection** - Recurse into component instances to find and export all IMAGE fills; filter out noise SVGs (completed 2026-03-01)
 - [x] **Phase 13: Spacing & Layout Accuracy** - Extract absolute positioning, flex-grow, and align-self so spacing in the brief matches Figma (completed 2026-03-01)
-- [ ] **Phase 14: Plugin Icon** - Display Figma logo SVG in Ship Studio toolbar
+- [x] **Phase 14: Plugin Icon** - Display Figma logo SVG in Ship Studio toolbar (completed 2026-03-01)
 
 ## Phase Details
 
@@ -168,7 +168,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 14-01-PLAN.md -- Replace generic grid icon with Figma logo SVG in toolbar button
+- [x] 14-01-PLAN.md -- Replace generic grid icon with Figma logo SVG in toolbar button
 
 ## Progress
 
@@ -190,4 +190,4 @@ Phases execute in numeric order: 12 -> 12.x -> 13 -> 13.x -> 14
 | 11. UI Fixes | v1.2 | N/A | Complete | 2026-03-01 |
 | 12. Instance Asset Detection | v1.3 | 2/2 | Complete | 2026-03-01 |
 | 13. Spacing & Layout Accuracy | v1.3 | 1/1 | Complete | 2026-03-01 |
-| 14. Plugin Icon | v1.3 | 0/1 | Not started | - |
+| 14. Plugin Icon | v1.3 | 1/1 | Complete | 2026-03-01 |
