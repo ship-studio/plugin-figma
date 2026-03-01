@@ -45,7 +45,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 **Milestone Goal:** Make asset detection bulletproof -- every visible asset in a Figma design gets exported -- and tighten spacing accuracy so Claude Code builds match the design on first attempt.
 
 - [x] **Phase 12: Instance Asset Detection** - Recurse into component instances to find and export all IMAGE fills; filter out noise SVGs (completed 2026-03-01)
-- [ ] **Phase 13: Spacing & Layout Accuracy** - Extract absolute positioning, flex-grow, and align-self so spacing in the brief matches Figma
+- [x] **Phase 13: Spacing & Layout Accuracy** - Extract absolute positioning, flex-grow, and align-self so spacing in the brief matches Figma (completed 2026-03-01)
 - [ ] **Phase 14: Plugin Icon** - Display Figma logo SVG in Ship Studio toolbar
 
 ## Phase Details
@@ -189,5 +189,5 @@ Phases execute in numeric order: 12 -> 12.x -> 13 -> 13.x -> 14
 | 10. Layout Tree Quality | v1.2 | N/A | Complete | 2026-03-01 |
 | 11. UI Fixes | v1.2 | N/A | Complete | 2026-03-01 |
 | 12. Instance Asset Detection | v1.3 | 2/2 | Complete | 2026-03-01 |
-| 13. Spacing & Layout Accuracy | v1.3 | 0/1 | Not started | - |
+| 13. Spacing & Layout Accuracy | 1/1 | Complete   | 2026-03-01 | - |
 | 14. Plugin Icon | v1.3 | 0/TBD | Not started | - |

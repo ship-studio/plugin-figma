@@ -15,9 +15,9 @@ Requirements for v1.3 Asset Completeness & Polish. Each maps to roadmap phases.
 
 ### Spacing & Layout
 
-- [ ] **SPACE-01**: Brief includes absolute position offsets (top/left relative to parent) for absolutely-positioned elements
-- [ ] **SPACE-02**: Brief includes flex-grow: 1 when a flex child has layoutGrow: 1
-- [ ] **SPACE-03**: Brief includes align-self: stretch when a flex child has layoutAlign: STRETCH
+- [x] **SPACE-01**: Brief includes absolute position offsets (top/left relative to parent) for absolutely-positioned elements
+- [x] **SPACE-02**: Brief includes flex-grow: 1 when a flex child has layoutGrow: 1
+- [x] **SPACE-03**: Brief includes align-self: stretch when a flex child has layoutAlign: STRETCH
 
 ### Polish
 
@@ -99,9 +99,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-05 | Phase 12 | Complete |
 | ASSET-06 | Phase 12 | Complete |
 | ASSET-07 | Phase 12 | Complete |
-| SPACE-01 | Phase 13 | Pending |
-| SPACE-02 | Phase 13 | Pending |
-| SPACE-03 | Phase 13 | Pending |
+| SPACE-01 | Phase 13 | Complete |
+| SPACE-02 | Phase 13 | Complete |
+| SPACE-03 | Phase 13 | Complete |
 | POLISH-01 | Phase 14 | Pending |
 
 **Coverage:**

@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Asset Completeness & Polish
-status: unknown
-last_updated: "2026-03-01T09:25:41.809Z"
+status: in-progress
+last_updated: "2026-03-01T09:44:36Z"
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 7
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Turn any Figma design into a structured, complete design brief that gives Claude Code everything it needs to build the component accurately.
-**Current focus:** v1.3 Asset Completeness & Polish -- Phase 12: Instance Asset Detection
+**Current focus:** v1.3 Asset Completeness & Polish -- Phase 13: Spacing & Layout Accuracy
 
 ## Current Position
 
-Phase: 12 of 14 (Instance Asset Detection) -- first of 3 v1.3 phases
-Plan: 2 of 2 (COMPLETE)
-Status: Phase 12 complete -- all plans executed
-Last activity: 2026-03-01 -- Completed 12-02-PLAN.md (pipeline integration)
+Phase: 13 of 14 (Spacing & Layout Accuracy) -- second of 3 v1.3 phases
+Plan: 1 of 1 (COMPLETE)
+Status: Phase 13 complete -- all plans executed
+Last activity: 2026-03-01 -- Completed 13-01-PLAN.md (spacing & flex-child properties)
 
-Progress: [███░░░░░░░] 33% (v1.3 -- 2/6 plans)
+Progress: [█████░░░░░] 50% (v1.3 -- 3/6 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17 (v1.0: 11, v1.1: 5, v1.3: 1)
+- Total plans completed: 18 (v1.0: 11, v1.1: 5, v1.3: 2)
 - Average duration: ~30 min (v1.0), ~9 min (v1.1)
 - Total execution time: ~6.4 hours
 
@@ -47,6 +47,7 @@ Progress: [███░░░░░░░] 33% (v1.3 -- 2/6 plans)
 *Updated after each plan completion*
 | Phase 12 P01 | 3min | 2 tasks | 2 files |
 | Phase 12 P02 | 4min | 2 tasks | 7 files |
+| Phase 13 P01 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - [Phase 12]: collectImageFillsFromRawTree runs before normalization to capture instance children IMAGE fills
 - [Phase 12]: parentInstanceId threads through full export pipeline for layout tree cross-referencing
 - [Phase 12]: Breadcrumb fallback: direct nodeId -> parentInstanceId -> '--' for instance child images
+- [Phase 13]: Only store layoutGrow when 1, layoutAlign when STRETCH -- noise reduction for brief conciseness
+- [Phase 13]: Use absoluteBoundingBox for offset computation, round to integers
+- [Phase 13]: Thread parentBBox through recursive normalizeNode for relative offset calculation
 
 ### Pending Todos
 
@@ -81,5 +85,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 12-02-PLAN.md (pipeline integration -- Phase 12 fully complete).
-Next: Phase 13 (next v1.3 phase) or `/gsd:execute-phase 13`.
+Stopped at: Completed 13-01-PLAN.md (spacing & flex-child properties -- Phase 13 fully complete).
+Next: Phase 14 (next v1.3 phase) or `/gsd:execute-phase 14`.
