@@ -210,27 +210,27 @@ describe('generateBrief', () => {
       expect(instructionsIdx).toBeLessThan(previewIdx);
     });
 
-    it('"Before building" stage mentions planning approach and asking clarifying questions', () => {
+    it('"Before building" stage mentions studying the brief before writing code', () => {
       const result = generateBrief(makeInput());
-      expect(result.markdown).toMatch(/Before building.*plan/i);
-      expect(result.markdown).toMatch(/Before building.*clarifying questions/i);
+      expect(result.markdown).toMatch(/Before building.*Read this brief/i);
+      expect(result.markdown).toMatch(/Before building.*before writing any code/i);
     });
 
-    it('"During building" stage references the Assets section and includes "if an asset is missing, ask" directive', () => {
+    it('"During building" stage references the Assets section as complete manifest with CSS/HTML directive', () => {
       const result = generateBrief(makeInput());
       expect(result.markdown).toMatch(/During building.*Assets section/);
-      expect(result.markdown).toMatch(/asset is missing, ask/i);
+      expect(result.markdown).toMatch(/complete manifest of provided files/i);
+      expect(result.markdown).toMatch(/built with CSS or HTML/i);
       // Must warn against substituting/fabricating (negative instruction)
       const duringLine = result.markdown.split('\n').find(l => l.includes('During building'));
       expect(duringLine).toBeDefined();
       expect(duringLine).toMatch(/rather than substituting or fabricating/i);
     });
 
-    it('"After building" stage references the Preview image and verifying tokens/assets', () => {
+    it('"After building" stage references the preview image and verifying tokens', () => {
       const result = generateBrief(makeInput());
-      expect(result.markdown).toMatch(/After building.*Preview/);
+      expect(result.markdown).toMatch(/After building.*preview image/i);
       expect(result.markdown).toMatch(/After building.*token/i);
-      expect(result.markdown).toMatch(/After building.*asset/i);
     });
 
     it('instructions are static: same content regardless of input data', () => {
@@ -610,15 +610,15 @@ describe('generateBrief', () => {
   // ── Assets section ──────────────────────────────────────────────
 
   describe('assets section', () => {
-    it('renders 4-column assets table header', () => {
+    it('renders 4-column assets table header with Usage column', () => {
       const result = generateBrief(makeInput());
       expect(result.markdown).toContain('## Assets');
-      expect(result.markdown).toContain('| File | Type | Location | Path |');
+      expect(result.markdown).toContain('| File | Type | Usage | Path |');
     });
 
-    it('renders preview row with -- location', () => {
+    it('renders preview row with "Full-page preview screenshot" usage', () => {
       const result = generateBrief(makeInput());
-      expect(result.markdown).toContain('| preview.png | Preview | -- | .shipstudio/assets/preview.png |');
+      expect(result.markdown).toContain('| preview.png | Preview | Full-page preview screenshot | .shipstudio/assets/preview.png |');
     });
 
     it('renders Icon type for svg assets', () => {
@@ -651,10 +651,10 @@ describe('generateBrief', () => {
         }),
       });
       const result = generateBrief(input);
-      expect(result.markdown).toContain('| arrow-icon.svg | Icon | Hero Section > Header > ArrowIcon | .shipstudio/assets/arrow-icon.svg |');
+      expect(result.markdown).toContain('| arrow-icon.svg | Icon | Icon in Hero Section > Header > ArrowIcon | .shipstudio/assets/arrow-icon.svg |');
     });
 
-    it('renders -- location when nodeId has no breadcrumb match', () => {
+    it('renders plain type usage when nodeId has no breadcrumb match', () => {
       const input = makeInput({
         exportResult: makeExportResult({
           assets: [
@@ -663,10 +663,10 @@ describe('generateBrief', () => {
         }),
       });
       const result = generateBrief(input);
-      expect(result.markdown).toContain('| orphan.svg | Icon | -- | .shipstudio/assets/orphan.svg |');
+      expect(result.markdown).toContain('| orphan.svg | Icon | Icon | .shipstudio/assets/orphan.svg |');
     });
 
-    it('renders -- location when asset has no nodeId', () => {
+    it('renders "Asset" usage when asset has no nodeId and no type', () => {
       const input = makeInput({
         exportResult: makeExportResult({
           assets: [
@@ -675,8 +675,7 @@ describe('generateBrief', () => {
         }),
       });
       const result = generateBrief(input);
-      expect(result.markdown).toContain('| legacy.svg |');
-      expect(result.markdown).toContain('| -- |');
+      expect(result.markdown).toContain('| legacy.svg | File | Asset |');
     });
 
     it('strips projectPath prefix from asset paths', () => {
@@ -792,7 +791,93 @@ describe('generateBrief', () => {
       const result = generateBrief(input);
       // The child node I22:1;22:2 is NOT in the normalized tree, so direct lookup fails.
       // Fallback via parentInstanceId: breadcrumb of 22:1 -> "Hero Section > Product Card"
-      expect(result.markdown).toContain('| product-photo.png | Image | Hero Section > Product Card |');
+      expect(result.markdown).toContain('| product-photo.png | Image | Image in Hero Section > Product Card |');
+    });
+  });
+
+  // ── Asset usage context ────────────────────────────────────────
+
+  describe('asset usage context', () => {
+    it('derives "Icon in {location}" for icon assets with breadcrumb', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Header', type: 'FRAME', visible: true,
+        children: [
+          { id: '2:1', name: 'NavIcon', type: 'VECTOR', visible: true },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'nav.svg', path: '/Users/test/project/.shipstudio/assets/nav.svg', nodeId: '2:1', assetType: 'icon' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| nav.svg | Icon | Icon in Header > NavIcon |');
+    });
+
+    it('derives "Image in {location}" for image assets with breadcrumb', () => {
+      const rootNode: LayoutNode = {
+        id: '1:1', name: 'Hero', type: 'FRAME', visible: true,
+        children: [
+          { id: '2:1', name: 'Banner', type: 'RECTANGLE', visible: true },
+        ],
+      };
+      const input = makeInput({
+        extraction: makeExtraction([rootNode]),
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'banner.png', path: '/Users/test/project/.shipstudio/assets/banner.png', nodeId: '2:1', assetType: 'image' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| banner.png | Image | Image in Hero > Banner |');
+    });
+
+    it('derives "Icon" for icon assets without breadcrumb match', () => {
+      const input = makeInput({
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'close.svg', path: '/Users/test/project/.shipstudio/assets/close.svg', nodeId: 'no-match', assetType: 'icon' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| close.svg | Icon | Icon |');
+    });
+
+    it('derives "Image" for image assets without breadcrumb match', () => {
+      const input = makeInput({
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'photo.png', path: '/Users/test/project/.shipstudio/assets/photo.png', nodeId: 'no-match', assetType: 'image' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| photo.png | Image | Image |');
+    });
+
+    it('derives "Asset" for assets with no type and no breadcrumb', () => {
+      const input = makeInput({
+        exportResult: makeExportResult({
+          assets: [
+            { filename: 'unknown.bin', path: '/Users/test/project/.shipstudio/assets/unknown.bin' },
+          ],
+        }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| unknown.bin | File | Asset |');
+    });
+
+    it('preview row shows "Full-page preview screenshot" usage', () => {
+      const input = makeInput({
+        exportResult: makeExportResult({ assets: [] }),
+      });
+      const result = generateBrief(input);
+      expect(result.markdown).toContain('| preview.png | Preview | Full-page preview screenshot |');
     });
   });
 
@@ -983,7 +1068,7 @@ describe('generateBrief', () => {
         }),
       });
       const result = generateBrief(input);
-      expect(result.markdown).toContain('| star.svg | Icon | Page > Hero > Icons > StarIcon |');
+      expect(result.markdown).toContain('| star.svg | Icon | Icon in Page > Hero > Icons > StarIcon |');
     });
 
     it('maps manual asset to INSTANCE node with tree annotation', () => {
@@ -1014,8 +1099,8 @@ describe('generateBrief', () => {
         }),
       });
       const result = generateBrief(input);
-      // Assets table: location via breadcrumb
-      expect(result.markdown).toContain('| logo.png | Image | Nav Bar > Logo |');
+      // Assets table: usage via breadcrumb
+      expect(result.markdown).toContain('| logo.png | Image | Image in Nav Bar > Logo |');
       // Layout tree: instance annotation
       expect(result.markdown).toContain('Instance "Logo" -> logo.png');
     });
@@ -1085,7 +1170,7 @@ describe('generateBrief', () => {
         }),
       });
       const result = generateBrief(input);
-      expect(result.markdown).toContain('| card-bg.png | Image | -- |');
+      expect(result.markdown).toContain('| card-bg.png | Image | Image |');
     });
 
     it('shows -- for nodeId with no tree match', () => {
@@ -1106,7 +1191,7 @@ describe('generateBrief', () => {
         }),
       });
       const result = generateBrief(input);
-      expect(result.markdown).toContain('| mystery.svg | Icon | -- |');
+      expect(result.markdown).toContain('| mystery.svg | Icon | Icon |');
     });
   });
 });
