@@ -154,9 +154,6 @@ export function MainView({ token }: MainViewProps) {
         fileKey: result.fileKey,
         selectedNodeId: parsedUrl.nodeId || result.extraction.rootNodes[0]?.id || '0:0',
         projectPath: ctx?.project?.path ?? '.',
-        rootNodes: result.extraction.rootNodes,
-        imageFills: result.tokens.imageFills,
-        instancesWithText: result.instancesWithText,
         onProgress: setAssetProgress,
       });
 
@@ -541,16 +538,6 @@ export function MainView({ token }: MainViewProps) {
               </span>
             </div>
 
-            {/* Composition count -- inline stat with amber color */}
-            {(() => {
-              const compCount = exportResult.assets.filter(a => a.assetType === 'composition').length;
-              return compCount > 0 ? (
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#f59e0b' }}>
-                  {compCount} composition{compCount !== 1 ? 's' : ''} exported as PNG
-                </div>
-              ) : null;
-            })()}
-
             {/* Token warning banner */}
             {briefResult.stats.estimatedTokens > TOKEN_WARNING_THRESHOLD && (
               <div className="figma-plugin-warning" style={{ marginTop: '8px' }}>
@@ -594,9 +581,7 @@ export function MainView({ token }: MainViewProps) {
               const allWarnings: string[] = Array.from(exportResult.warnings).map(w =>
                 typeof w === 'string' ? w : JSON.stringify(w),
               );
-              // Separate composition/illustration auto-detections (already shown above) from real warnings
-              const compositionWarnings = allWarnings.filter(w => w.startsWith('Composition "') || w.startsWith('Illustration "'));
-              const actionableWarnings = allWarnings.filter(w => !w.startsWith('Composition "') && !w.startsWith('Illustration "'));
+              const actionableWarnings = allWarnings;
 
               return actionableWarnings.length > 0 ? (
                 <div style={{ marginTop: '8px', fontSize: '11px', color: '#f59e0b' }}>

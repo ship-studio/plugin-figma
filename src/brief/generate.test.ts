@@ -31,7 +31,6 @@ function makeExtraction(
     extraction: { rootNodes, nodeCount, truncated: false },
     tokens: makeTokens(tokens),
     fileKey: 'abc123',
-    instancesWithText: new Set(),
   };
 }
 
@@ -632,18 +631,6 @@ describe('generateBrief', () => {
       expect(result.markdown).toContain('| hero.png | Image |');
     });
 
-    it('renders Composition type for composition assets', () => {
-      const input = makeInput({
-        exportResult: makeExportResult({
-          assets: [
-            { filename: 'illustration.png', path: '/Users/test/project/.shipstudio/assets/illustration.png', nodeId: '5:1', assetType: 'composition' },
-          ],
-        }),
-      });
-      const result = generateBrief(input);
-      expect(result.markdown).toContain('| illustration.png | Composition |');
-    });
-
     it('renders breadcrumb location from rootNodes', () => {
       const rootNode: LayoutNode = {
         id: '1:1', name: 'Hero Section', type: 'FRAME', visible: true,
@@ -743,7 +730,7 @@ describe('generateBrief', () => {
       expect(result.markdown).toContain('-> hero-image.png');
     });
 
-    it('preserves existing behavior: instance shows -> component.png for direct asset match', () => {
+    it('preserves existing behavior: instance shows -> button.png for direct asset match', () => {
       const rootNode: LayoutNode = {
         id: '1:1', name: 'Section', type: 'FRAME', visible: true,
         children: [
@@ -765,7 +752,7 @@ describe('generateBrief', () => {
               filename: 'button.png',
               path: '/Users/test/project/.shipstudio/assets/button.png',
               nodeId: '21:1',
-              assetType: 'component',
+              assetType: 'image',
             },
           ],
         }),

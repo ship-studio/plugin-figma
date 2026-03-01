@@ -46,13 +46,9 @@ export function generateBrief(input: BriefInput): BriefResult {
 
   // Build asset node map (nodeId → filename) for tree cross-referencing
   const assetNodeMap = new Map<string, string>();
-  const compositionNodeIds = new Set<string>();
   for (const asset of exportResult.assets) {
     if (asset.nodeId) {
       assetNodeMap.set(asset.nodeId, asset.filename);
-      if (asset.assetType === 'composition') {
-        compositionNodeIds.add(asset.nodeId);
-      }
     }
     // Map parentInstanceId -> filename so INSTANCE lines show -> child-image.png
     if (asset.parentInstanceId && !assetNodeMap.has(asset.parentInstanceId)) {
@@ -68,7 +64,7 @@ export function generateBrief(input: BriefInput): BriefResult {
     buildMetadataSection(input),
     buildInstructionsSection(),
     buildPreviewSection(exportResult.previewPath, projectPath),
-    buildLayoutTreeSection(extraction.extraction.rootNodes, assetNodeMap, compositionNodeIds),
+    buildLayoutTreeSection(extraction.extraction.rootNodes, assetNodeMap),
     buildDesignTokensSection(tokens),
     buildComponentsSection(tokens.components),
     buildAssetsSection(exportResult.previewPath, exportResult.assets, projectPath, breadcrumbMap),
@@ -130,11 +126,10 @@ function buildPreviewSection(previewPath: string, projectPath: string): string {
 function buildLayoutTreeSection(
   rootNodes: LayoutNode[],
   assetNodeMap: Map<string, string>,
-  compositionNodeIds: Set<string>,
 ): string {
   const lines: string[] = [];
   for (const node of rootNodes) {
-    renderTree(node, 0, lines, assetNodeMap, compositionNodeIds);
+    renderTree(node, 0, lines, assetNodeMap);
   }
   if (lines.length === 0) return '';
   return '## Layout Tree\n\n' + lines.join('\n');
@@ -145,21 +140,8 @@ function renderTree(
   depth: number,
   lines: string[],
   assetNodeMap: Map<string, string>,
-  compositionNodeIds: Set<string>,
 ): void {
   if (node.visible === false) return;
-
-  // Composition/illustration nodes — collapse entire subtree to single line
-  if (compositionNodeIds.has(node.id)) {
-    const indent = '  '.repeat(depth);
-    const filename = assetNodeMap.get(node.id);
-    const dims = (node.width != null && node.height != null)
-      ? ` ${Math.round(node.width)}x${Math.round(node.height)}`
-      : '';
-    const ref = filename ? ` -> ${filename}` : '';
-    lines.push(`${indent}[Illustration] '${node.name}'${dims}${ref}`);
-    return;
-  }
 
   lines.push(renderNodeLine(node, depth, assetNodeMap));
 
@@ -168,7 +150,7 @@ function renderTree(
 
   if (node.children) {
     for (const child of node.children) {
-      renderTree(child, depth + 1, lines, assetNodeMap, compositionNodeIds);
+      renderTree(child, depth + 1, lines, assetNodeMap);
     }
   }
 }
@@ -540,12 +522,10 @@ function buildAssetsSection(
 /**
  * Map asset type to display label for the brief table.
  */
-function assetTypeLabel(assetType?: 'icon' | 'image' | 'composition' | 'component'): string {
+function assetTypeLabel(assetType?: 'icon' | 'image'): string {
   switch (assetType) {
     case 'icon': return 'Icon';
     case 'image': return 'Image';
-    case 'composition': return 'Composition';
-    case 'component': return 'Component';
     default: return 'File';
   }
 }
