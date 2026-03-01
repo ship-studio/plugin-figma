@@ -7,7 +7,7 @@
   "author": "",
   "repository": "",
   "min_app_version": "0.3.53",
-  "icon": "",
+  "icon": "icon.svg",
   "required_commands": [],
   "api_version": 1
 }
