@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Manual Asset Control
-status: ready_to_plan
-last_updated: "2026-03-01T14:00:00.000Z"
+status: executing
+last_updated: "2026-03-01T13:12:23.000Z"
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
 ---
 
 # Project State
@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 15 of 19 (Strip Auto-Detection) -- first of 5 v2.0 phases
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-01 -- Roadmap created for v2.0
+Plan: 1 of 1 COMPLETE
+Status: Phase 15 complete
+Last activity: 2026-03-01 -- Executed 15-01 (strip auto-detection)
 
-Progress: [..........] 0%
+Progress: [##........] 20% (1/5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4)
-- v1.3 average: ~2.75 min/plan
-- Total execution time: ~6.6 hours across 4 milestones
+- Total plans completed: 24 (v1.0: 11, v1.1: 5, v1.2: N/A, v1.3: 4, v2.0: 1)
+- v2.0 average: ~4.5 min/plan
+- Total execution time: ~6.7 hours across 5 milestones
 
 ## Accumulated Context
 
@@ -50,6 +50,8 @@ Key v2.0 decisions:
 - I-prefix node IDs cannot be rendered -- detect at add-time and warn user
 - Export pipeline accepts ManualAsset[] instead of auto-detecting
 - Node validation at add-time, not export-time
+- Removed instancesWithText from ExtractLayoutResult (only consumer was deleted identifyAssets)
+- Kept breadcrumb.ts and AssetEntry type for downstream Phases 16-18
 
 ### Pending Todos
 
@@ -62,5 +64,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Roadmap created for v2.0 milestone (5 phases, 20 requirements mapped)
-Next: `/gsd:plan-phase 15`
+Stopped at: Completed 15-01-PLAN.md (strip auto-detection)
+Next: `/gsd:plan-phase 16` (Manual Asset Types)

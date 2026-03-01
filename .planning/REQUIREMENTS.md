@@ -33,14 +33,14 @@ Requirements for Manual Asset Control milestone. Each maps to roadmap phases.
 
 - [ ] **EXPT-01**: Plugin exports all listed assets in a single batch (one fetchImages call per format)
 - [ ] **EXPT-02**: Plugin maps each exported asset to its position in the layout tree by node ID
-- [ ] **EXPT-03**: Plugin generates a brief with zero assets if the list is empty (layout + tokens + preview only)
-- [ ] **EXPT-04**: Full-page preview PNG remains auto-generated
+- [x] **EXPT-03**: Plugin generates a brief with zero assets if the list is empty (layout + tokens + preview only)
+- [x] **EXPT-04**: Full-page preview PNG remains auto-generated
 
 ### Code Cleanup
 
-- [ ] **CLEAN-01**: All automatic asset detection code is removed (identify.ts, detect-composition.ts)
-- [ ] **CLEAN-02**: All tests for removed auto-detection code are removed or replaced
-- [ ] **CLEAN-03**: Brief generator is updated to remove composition/illustration-specific logic
+- [x] **CLEAN-01**: All automatic asset detection code is removed (identify.ts, detect-composition.ts)
+- [x] **CLEAN-02**: All tests for removed auto-detection code are removed or replaced
+- [x] **CLEAN-03**: Brief generator is updated to remove composition/illustration-specific logic
 
 ## Future Requirements
 
@@ -74,11 +74,11 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLEAN-01 | Phase 15 | Pending |
-| CLEAN-02 | Phase 15 | Pending |
-| CLEAN-03 | Phase 15 | Pending |
-| EXPT-03 | Phase 15 | Pending |
-| EXPT-04 | Phase 15 | Pending |
+| CLEAN-01 | Phase 15 | Complete |
+| CLEAN-02 | Phase 15 | Complete |
+| CLEAN-03 | Phase 15 | Complete |
+| EXPT-03 | Phase 15 | Complete |
+| EXPT-04 | Phase 15 | Complete |
 | NAME-01 | Phase 16 | Pending |
 | NAME-02 | Phase 16 | Pending |
 | AINP-05 | Phase 16 | Pending |
