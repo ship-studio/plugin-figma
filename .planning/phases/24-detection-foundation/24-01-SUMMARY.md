@@ -70,7 +70,7 @@ Each task was committed atomically:
 1. **Task 1: Add DetectedAsset type and write failing tests** - `04dc45d` (test)
 2. **Task 2: Implement detectAssets to pass all tests** - `d5d6783` (feat)
 
-**Plan metadata:** (pending) (docs: complete plan)
+**Plan metadata:** `d58d293` (docs: complete plan)
 
 _Note: TDD tasks have RED (test) -> GREEN (feat) commits. No refactoring needed._
 

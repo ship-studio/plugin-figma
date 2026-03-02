@@ -249,7 +249,7 @@ describe('detectAssets', () => {
       expect(assets[0].filename).toBe('heroimage.svg');
     });
 
-    it('deduplicates identical filenames (3 @S-icon -> 1 icon.svg)', () => {
+    it('keeps all duplicate-named layers with suffixed filenames', () => {
       const tree = makeNode({
         children: [
           makeNode({ name: '@S-icon', id: 'a:1' }),
@@ -258,14 +258,17 @@ describe('detectAssets', () => {
         ],
       });
       const { assets } = detectAssets(tree);
-      expect(assets).toHaveLength(1);
+      expect(assets).toHaveLength(3);
       expect(assets[0].filename).toBe('icon.svg');
+      expect(assets[0].nodeId).toBe('a:1');
+      expect(assets[1].filename).toBe('icon-2.svg');
+      expect(assets[1].nodeId).toBe('b:1');
+      expect(assets[2].filename).toBe('icon-3.svg');
+      expect(assets[2].nodeId).toBe('c:1');
     });
 
     it('resolves collisions for different names producing same sanitized result', () => {
-      // "Icon" and "icon" both sanitize to "icon"
-      // But they are different original names so collision resolution applies
-      // after dedup. Since they have different nodeName, they are not exact dupes.
+      // "Icon" and "icon" both sanitize to "icon" -> collision resolution adds suffix
       const tree = makeNode({
         children: [
           makeNode({ name: '@S-icon', id: 'a:1' }),
@@ -273,18 +276,15 @@ describe('detectAssets', () => {
         ],
       });
       const { assets } = detectAssets(tree);
-      // Both produce "icon.svg" after sanitize -- first is kept by dedup,
-      // second either deduped or collision-resolved depending on nodeName matching.
-      // Since dedup is by sanitized filename, both produce "icon.svg" -> first wins.
-      expect(assets).toHaveLength(1);
+      expect(assets).toHaveLength(2);
       expect(assets[0].filename).toBe('icon.svg');
+      expect(assets[0].nodeId).toBe('a:1');
+      expect(assets[1].filename).toBe('icon-2.svg');
+      expect(assets[1].nodeId).toBe('b:1');
     });
 
     it('resolves collisions for genuinely different filenames that collide', () => {
-      // Two assets that produce different sanitized names that don't collide
-      // but if they DID collide, they'd be numbered.
-      // Let's create a case: @S-arrow-icon (svg) and @S-arrow/icon (svg)
-      // Both sanitize to "arrow-icon.svg" -- dedup keeps first
+      // @S-arrow-icon and @S-arrow/icon both sanitize to "arrow-icon.svg"
       const tree = makeNode({
         children: [
           makeNode({ name: '@S-arrow-icon', id: 'a:1' }),
@@ -292,9 +292,11 @@ describe('detectAssets', () => {
         ],
       });
       const { assets } = detectAssets(tree);
-      // Both names sanitize to "arrow-icon" -> dedup keeps first
-      expect(assets).toHaveLength(1);
+      expect(assets).toHaveLength(2);
       expect(assets[0].filename).toBe('arrow-icon.svg');
+      expect(assets[0].nodeId).toBe('a:1');
+      expect(assets[1].filename).toBe('arrow-icon-2.svg');
+      expect(assets[1].nodeId).toBe('b:1');
     });
 
     it('collision-resolves when deduped assets still conflict', () => {

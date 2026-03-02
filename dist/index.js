@@ -42,6 +42,12 @@ const de = "figma-plugin-styles", Ze = `
   padding: 20px;
   overflow-y: auto;
   flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.figma-plugin-modal-body::-webkit-scrollbar {
+  display: none;
 }
 
 .figma-plugin-modal-title {
@@ -1131,24 +1137,19 @@ function Ee(e, t, i, o, n, s) {
   }
 }
 function At(e) {
-  const t = /* @__PURE__ */ new Map();
-  for (const n of e) {
-    const r = `${kt(n.nameAfterPrefix)}.${n.format}`;
-    t.has(r) || t.set(r, n);
-  }
-  const i = [], o = [];
-  for (const [n, s] of t) {
-    const r = Nt(n, i);
-    i.push(r), o.push({
-      nodeId: s.nodeId,
-      nodeName: s.nodeName,
+  const t = [], i = [];
+  for (const o of e) {
+    const s = `${kt(o.nameAfterPrefix)}.${o.format}`, r = Nt(s, t);
+    t.push(r), i.push({
+      nodeId: o.nodeId,
+      nodeName: o.nodeName,
       filename: r,
-      format: s.format,
-      depth: s.depth,
-      parentPath: s.parentPath
+      format: o.format,
+      depth: o.depth,
+      parentPath: o.parentPath
     });
   }
-  return o;
+  return i;
 }
 function Rt(e) {
   const t = [], i = [];
@@ -1862,7 +1863,7 @@ function ln({ token: e }) {
         /* @__PURE__ */ a(
           "iframe",
           {
-            src: "https://www.loom.com/embed/f08ca503b99a4def9b397dd7491b98e0",
+            src: "https://www.loom.com/embed/f83f51d9d9ae4aa78fc288b01592ed1e",
             frameBorder: "0",
             allowFullScreen: !0,
             onLoad: () => ze(!0),

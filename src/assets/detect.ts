@@ -123,28 +123,18 @@ function walkForAssets(
 // ── Deduplication & Collision Resolution ─────────────────────────────
 
 /**
- * Deduplicate by sanitized filename (first wins, duplicates dropped silently),
- * then resolve remaining collisions from different original names.
+ * Resolve filename collisions so every detected layer gets a unique file.
+ *
+ * Each RawDetection becomes a DetectedAsset. When multiple layers produce the
+ * same sanitized filename, `resolveFilenameCollision` appends `-2`, `-3`, etc.
  */
 function deduplicateAndResolve(raws: RawDetection[]): DetectedAsset[] {
-  // Phase 1: Group by sanitized filename+extension for dedup (first wins)
-  const seen = new Map<string, RawDetection>();
+  const filenames: string[] = [];
+  const results: DetectedAsset[] = [];
 
   for (const raw of raws) {
     const baseName = sanitizeFilename(raw.nameAfterPrefix);
     const candidateFilename = `${baseName}.${raw.format}`;
-
-    if (!seen.has(candidateFilename)) {
-      seen.set(candidateFilename, raw);
-    }
-    // Duplicates silently dropped (per Phase 9 SVG dedup pattern)
-  }
-
-  // Phase 2: Resolve remaining collisions (different original names -> same filename)
-  const filenames: string[] = [];
-  const results: DetectedAsset[] = [];
-
-  for (const [candidateFilename, raw] of seen) {
     const filename = resolveFilenameCollision(candidateFilename, filenames);
     filenames.push(filename);
     results.push({

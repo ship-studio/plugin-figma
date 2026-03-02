@@ -541,7 +541,7 @@ export function MainView({ token }: MainViewProps) {
             </div>
           )}
           <iframe
-            src="https://www.loom.com/embed/f08ca503b99a4def9b397dd7491b98e0"
+            src="https://www.loom.com/embed/f83f51d9d9ae4aa78fc288b01592ed1e"
             frameBorder="0"
             allowFullScreen
             onLoad={() => setLoomLoaded(true)}

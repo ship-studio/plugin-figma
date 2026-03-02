@@ -37,6 +37,12 @@ export const PLUGIN_CSS = `
   padding: 20px;
   overflow-y: auto;
   flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.figma-plugin-modal-body::-webkit-scrollbar {
+  display: none;
 }
 
 .figma-plugin-modal-title {
