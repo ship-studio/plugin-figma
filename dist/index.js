@@ -1,11 +1,16 @@
-import { jsx as a, jsxs as f, Fragment as he } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;function j(t,p,k){if(k!==undefined&&p){p=Object.assign({},p);p.key=k}return R.createElement(t,p)}export const jsx=j;export const jsxs=j;export const Fragment=R.Fragment;";
-import { useEffect as oe, useCallback as I, useState as C, useMemo as Xe, useRef as Q } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
-const $e = window;
+import { jsx as a, jsxs as f, Fragment as ye } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;function j(t,p,k){if(k!==undefined&&p){p=Object.assign({},p);p.key=k}return R.createElement(t,p)}export const jsx=j;export const jsxs=j;export const Fragment=R.Fragment;";
+import { useEffect as oe, useCallback as R, useState as C, useMemo as Xe, useRef as Q } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
+const de = window;
 function se() {
-  const e = $e.__SHIPSTUDIO_REACT__, t = $e.__SHIPSTUDIO_PLUGIN_CONTEXT_REF__;
-  return t && (e != null && e.useContext) ? e.useContext(t) : null;
+  const e = de.__SHIPSTUDIO_REACT__, t = de.__SHIPSTUDIO_PLUGIN_CONTEXT_REF__;
+  if (t && (e != null && e.useContext)) {
+    const o = e.useContext(t);
+    if (o) return o;
+  }
+  const i = de.__SHIPSTUDIO_PLUGIN_CONTEXT__;
+  return i || null;
 }
-const de = "figma-plugin-styles", Ze = `
+const fe = "figma-plugin-styles", Ze = `
 .figma-plugin-overlay {
   position: fixed;
   inset: 0;
@@ -311,9 +316,9 @@ const de = "figma-plugin-styles", Ze = `
 function qe({ open: e, onClose: t, title: i, headerRight: o, children: n }) {
   oe(() => {
     if (!e) return;
-    let r = document.getElementById(de);
-    return r || (r = document.createElement("style"), r.id = de, r.textContent = Ze, document.head.appendChild(r)), () => {
-      const c = document.getElementById(de);
+    let r = document.getElementById(fe);
+    return r || (r = document.createElement("style"), r.id = fe, r.textContent = Ze, document.head.appendChild(r)), () => {
+      const c = document.getElementById(fe);
       c && c.remove();
     };
   }, [e]), oe(() => {
@@ -323,7 +328,7 @@ function qe({ open: e, onClose: t, title: i, headerRight: o, children: n }) {
     };
     return document.addEventListener("keydown", r), () => document.removeEventListener("keydown", r);
   }, [e, t]);
-  const s = I(
+  const s = R(
     (r) => {
       r.target === r.currentTarget && t();
     },
@@ -430,7 +435,7 @@ async function et(e, t, i) {
     styles: o.styles ?? {}
   };
 }
-async function fe(e, t, i, o, n = "png", s) {
+async function pe(e, t, i, o, n = "png", s) {
   const r = o.map((d) => encodeURIComponent(d)).join(",");
   let c = `/images/${i}?ids=${r}&format=${n}`;
   return s != null && (c += `&scale=${s}`), n === "svg" && (c += "&svg_outline_text=true&svg_include_id=true&svg_simplify_stroke=true"), (await ee(
@@ -441,7 +446,7 @@ async function fe(e, t, i, o, n = "png", s) {
   )).images;
 }
 function tt({ onTokenSaved: e }) {
-  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, [o, n] = C(""), [s, r] = C(!1), [c, u] = C(null), d = I(async () => {
+  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, [o, n] = C(""), [s, r] = C(!1), [c, u] = C(null), d = R(async () => {
     if (!i) return;
     const y = o.trim();
     if (!(!y || s)) {
@@ -455,7 +460,7 @@ function tt({ onTokenSaved: e }) {
         r(!1);
       }
     }
-  }, [o, s, i, e]), x = I(
+  }, [o, s, i, e]), x = R(
     (y) => {
       y.key === "Enter" && d();
     },
@@ -504,7 +509,7 @@ function tt({ onTokenSaved: e }) {
         onClick: d,
         disabled: !o.trim() || s,
         style: { width: "100%", marginTop: "4px" },
-        children: s ? /* @__PURE__ */ f(he, { children: [
+        children: s ? /* @__PURE__ */ f(ye, { children: [
           /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
           "Connecting..."
         ] }) : "Connect"
@@ -513,7 +518,7 @@ function tt({ onTokenSaved: e }) {
   ] });
 }
 function nt({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: o }) {
-  const n = se(), s = (n == null ? void 0 : n.shell) ?? null, [r, c] = C(""), [u, d] = C(!1), [x, y] = C(null), b = I(async () => {
+  const n = se(), s = (n == null ? void 0 : n.shell) ?? null, [r, c] = C(""), [u, d] = C(!1), [x, y] = C(null), b = R(async () => {
     if (!s) return;
     const v = r.trim();
     if (!(!v || u)) {
@@ -527,7 +532,7 @@ function nt({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: o })
         d(!1);
       }
     }
-  }, [r, u, s, t]), $ = I(
+  }, [r, u, s, t]), $ = R(
     (v) => {
       v.key === "Enter" && b();
     },
@@ -583,7 +588,7 @@ function nt({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: o })
           onClick: b,
           disabled: !r.trim() || u,
           style: { width: "100%", marginTop: "8px" },
-          children: u ? /* @__PURE__ */ f(he, { children: [
+          children: u ? /* @__PURE__ */ f(ye, { children: [
             /* @__PURE__ */ a("span", { className: "figma-plugin-spinner", style: { marginRight: "8px", verticalAlign: "middle" } }),
             "Validating..."
           ] }) : "Update"
@@ -700,11 +705,11 @@ function Ae(e, t, i, o) {
   }
   return s;
 }
-function ye(e) {
+function xe(e) {
   let t = 1;
   if (e.children && Array.isArray(e.children))
     for (const i of e.children)
-      t += ye(i);
+      t += xe(i);
   return t;
 }
 function lt(e) {
@@ -736,7 +741,7 @@ function ct(e) {
 function ut(e, t) {
   let i = 0;
   for (const n of e)
-    i += ye(n);
+    i += xe(n);
   return {
     rootNodes: e.map((n) => Ae(n, t, 0, null)).filter((n) => n !== null),
     nodeCount: i,
@@ -771,7 +776,7 @@ function ft(e, t) {
   const i = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), u = [], d = /* @__PURE__ */ new Map();
   let x = 0, y = 0, b = 0;
   function $(l) {
-    var m, P, z;
+    var m, L, z;
     if (l.fills && Array.isArray(l.fills)) {
       const h = gt(l, t);
       for (const g of l.fills)
@@ -780,10 +785,10 @@ function ft(e, t) {
             const S = { ...g.color };
             g.opacity != null && g.opacity !== 1 && (S.a = S.a * g.opacity);
             const N = q(S);
-            pe(i, N, l.id, "fill", h);
+            ge(i, N, l.id, "fill", h);
           } else if ((m = g.type) != null && m.startsWith("GRADIENT_")) {
-            const S = dt(g), N = S, L = o.get(N);
-            L ? (L.usageCount++, L.nodeIds.push(l.id)) : (b++, o.set(N, {
+            const S = dt(g), N = S, P = o.get(N);
+            P ? (P.usageCount++, P.nodeIds.push(l.id)) : (b++, o.set(N, {
               value: S,
               name: h ?? `gradient-${b}`,
               gradientType: g.type,
@@ -804,25 +809,25 @@ function ft(e, t) {
           const S = { ...g.color };
           g.opacity != null && g.opacity !== 1 && (S.a = S.a * g.opacity);
           const N = q(S);
-          pe(i, N, l.id, "stroke", h);
+          ge(i, N, l.id, "stroke", h);
         }
     }
     if (l.effects && Array.isArray(l.effects)) {
       const h = yt(l, t);
       for (const g of l.effects)
         if (g.visible === !0 && (g.type === "DROP_SHADOW" || g.type === "INNER_SHADOW")) {
-          const S = g.type === "DROP_SHADOW" ? "drop-shadow" : "inner-shadow", N = q(g.color), L = ((P = g.offset) == null ? void 0 : P.x) ?? 0, H = ((z = g.offset) == null ? void 0 : z.y) ?? 0, O = g.radius ?? 0, W = g.spread ?? 0, J = `${S}|${N}|${L}|${H}|${O}|${W}`, G = c.get(J);
+          const S = g.type === "DROP_SHADOW" ? "drop-shadow" : "inner-shadow", N = q(g.color), P = ((L = g.offset) == null ? void 0 : L.x) ?? 0, H = ((z = g.offset) == null ? void 0 : z.y) ?? 0, O = g.radius ?? 0, _ = g.spread ?? 0, J = `${S}|${N}|${P}|${H}|${O}|${_}`, G = c.get(J);
           G ? (G.usageCount++, G.nodeIds.push(l.id)) : (y++, c.set(J, {
             type: S,
             color: N,
-            offsetX: L,
+            offsetX: P,
             offsetY: H,
             blur: O,
-            spread: W,
+            spread: _,
             name: h ?? `shadow-${y}`,
             usageCount: 1,
             nodeIds: [l.id]
-          })), pe(i, N, l.id, "shadow", null);
+          })), ge(i, N, l.id, "shadow", null);
         }
     }
     if (l.type === "TEXT" && l.textStyle) {
@@ -840,12 +845,12 @@ function ft(e, t) {
       let S = null, N = null;
       if (l.strokes && Array.isArray(l.strokes)) {
         const O = l.strokes.find(
-          (W) => W.visible !== !1 && W.type === "SOLID"
+          (_) => _.visible !== !1 && _.type === "SOLID"
         );
         O && (S = q(O.color), N = l.strokeWeight ?? null);
       }
-      const L = `${h}|${JSON.stringify(g)}|${S}|${N}`, H = r.get(L);
-      H ? (H.usageCount++, H.nodeIds.push(l.id)) : (x++, r.set(L, {
+      const P = `${h}|${JSON.stringify(g)}|${S}|${N}`, H = r.get(P);
+      H ? (H.usageCount++, H.nodeIds.push(l.id)) : (x++, r.set(P, {
         radius: h,
         cornerRadii: g,
         strokeColor: S,
@@ -860,12 +865,12 @@ function ft(e, t) {
       if (S)
         S.usageCount += N;
       else {
-        const L = {
+        const P = {
           componentName: h.componentName,
           source: h.source,
           usageCount: N
         };
-        h.description && (L.description = h.description), h.variantProperties && (L.variantProperties = h.variantProperties), d.set(g, L);
+        h.description && (P.description = h.description), h.variantProperties && (P.variantProperties = h.variantProperties), d.set(g, P);
       }
     }
     if (l.children)
@@ -904,7 +909,7 @@ function ft(e, t) {
     components: k
   };
 }
-function pe(e, t, i, o, n) {
+function ge(e, t, i, o, n) {
   const s = e.get(t);
   if (s)
     s.usageCount++, s.nodeIds.includes(i) || s.nodeIds.push(i), s.source.add(o), n && s.name.startsWith("color-") && (s.name = n);
@@ -986,7 +991,7 @@ async function vt(e) {
   }
   let d = 0;
   for (const $ of r)
-    d += ye($);
+    d += xe($);
   let x;
   d > xt && (x = {
     nodeCount: d,
@@ -1023,7 +1028,7 @@ async function $t(e) {
   c && c({ current: 0, total: x, currentAsset: "preview.png", phase: "preview" });
   let b = `${y}/preview.png`;
   try {
-    const k = (await fe(t, i, o, [n], "png", 2))[n];
+    const k = (await pe(t, i, o, [n], "png", 2))[n];
     if (k) {
       const l = await Ne(t, k, b);
       l.success || (u.push(`Preview download failed: ${l.error}`), b = "");
@@ -1036,13 +1041,13 @@ async function $t(e) {
   let E = {}, B = {};
   if ($.length > 0)
     try {
-      E = await fe(t, i, o, $.map((w) => w.nodeId), "png", 2);
+      E = await pe(t, i, o, $.map((w) => w.nodeId), "png", 2);
     } catch (w) {
       u.push(`PNG batch render failed: ${(w == null ? void 0 : w.message) || "Unknown error"}`), E = {};
     }
   if (v.length > 0)
     try {
-      B = await fe(t, i, o, v.map((w) => w.nodeId), "svg");
+      B = await pe(t, i, o, v.map((w) => w.nodeId), "svg");
     } catch (w) {
       u.push(`SVG batch render failed: ${(w == null ? void 0 : w.message) || "Unknown error"}`), B = {};
     }
@@ -1060,14 +1065,14 @@ async function $t(e) {
       u.push(`Failed to render ${k.filename}: Figma returned no image for node ${k.nodeId}`);
       continue;
     }
-    const P = `${y}/${k.filename}`, z = await Ne(t, m, P);
+    const L = `${y}/${k.filename}`, z = await Ne(t, m, L);
     if (!z.success) {
       u.push(`Failed to download ${k.filename}: ${z.error}`);
       continue;
     }
     U.push({
       filename: k.filename,
-      path: P,
+      path: L,
       nodeId: k.nodeId,
       assetType: k.format === "svg" ? "icon" : "image"
     });
@@ -1091,14 +1096,14 @@ function Nt(e, t) {
     r++;
   return `${n}-${r}${s}`;
 }
-const Re = /^@s-/i;
+const Ie = /^@s-/i;
 function Tt(e) {
-  return Re.test(e);
+  return Ie.test(e);
 }
 function St(e) {
-  return e.replace(Re, "");
+  return e.replace(Ie, "");
 }
-function Ie(e) {
+function Re(e) {
   if (e.fills && Array.isArray(e.fills)) {
     for (const t of e.fills)
       if (t.visible !== !1 && t.type === "IMAGE")
@@ -1106,7 +1111,7 @@ function Ie(e) {
   }
   if (e.children && Array.isArray(e.children)) {
     for (const t of e.children)
-      if (Ie(t)) return !0;
+      if (Re(t)) return !0;
   }
   return !1;
 }
@@ -1117,7 +1122,7 @@ function Ee(e, t, i, o, n, s) {
       if (!r.trim())
         s.push(`Skipped layer "${e.name}": empty name after @S- prefix`);
       else {
-        const c = Ie(e) ? "png" : "svg";
+        const c = Re(e) ? "png" : "svg";
         n.push({
           nodeId: e.id,
           nodeName: e.name,
@@ -1151,11 +1156,11 @@ function At(e) {
   }
   return i;
 }
-function Rt(e) {
+function It(e) {
   const t = [], i = [];
   return Ee(e, 0, [], !1, t, i), { assets: At(t), warnings: i };
 }
-function It(e) {
+function Rt(e) {
   return e.map((t) => ({
     nodeId: t.nodeId,
     nodeName: t.nodeName,
@@ -1165,25 +1170,25 @@ function It(e) {
   }));
 }
 const Et = /^(Frame|Group|Rectangle|Ellipse|Vector|Section|Instance|Line|Star|Polygon)\s*\d*$/i;
-function Lt(e) {
+function Pt(e) {
   const t = /* @__PURE__ */ new Map();
   for (const i of e) {
-    const o = Pe(i.name) ? [] : [i.name];
-    Le(i, o, t);
+    const o = Le(i.name) ? [] : [i.name];
+    Pe(i, o, t);
   }
   return t;
 }
-function Le(e, t, i) {
-  if (i.set(e.id, Pt(t)), !!e.children)
+function Pe(e, t, i) {
+  if (i.set(e.id, Lt(t)), !!e.children)
     for (const o of e.children) {
-      const n = Pe(o.name) ? t : [...t, o.name];
-      Le(o, n, i);
+      const n = Le(o.name) ? t : [...t, o.name];
+      Pe(o, n, i);
     }
 }
-function Pt(e) {
+function Lt(e) {
   return e.length === 0 ? "" : e.length <= 4 ? e.join(" > ") : `${e[0]} > ... > ${e[e.length - 2]} > ${e[e.length - 1]}`;
 }
-function Pe(e) {
+function Le(e) {
   return Et.test(e);
 }
 const Mt = 12e3;
@@ -1194,7 +1199,7 @@ function Bt(e) {
   const { extraction: t, exportResult: i, projectPath: o } = e, n = t.tokens, s = /* @__PURE__ */ new Map();
   for (const $ of i.assets)
     $.nodeId && s.set($.nodeId, $.filename), $.parentInstanceId && !s.has($.parentInstanceId) && s.set($.parentInstanceId, $.filename);
-  const r = e.rootNodes ?? t.extraction.rootNodes, c = Lt(r), d = [
+  const r = e.rootNodes ?? t.extraction.rootNodes, c = Pt(r), d = [
     Ut(e),
     zt(e.mode, e.inspirationText),
     Ht(i.previewPath, o),
@@ -1259,7 +1264,7 @@ function zt(e, t) {
 function Ht(e, t) {
   return e ? `## Preview
 
-![Preview](${me(e, t)})` : "";
+![Preview](${he(e, t)})` : "";
 }
 function Ot(e, t) {
   const i = [];
@@ -1271,11 +1276,11 @@ function Ot(e, t) {
 `);
 }
 function Me(e, t, i, o) {
-  if (e.visible !== !1 && (i.push(_t(e, t, o)), !e.componentRef && e.children))
+  if (e.visible !== !1 && (i.push(Dt(e, t, o)), !e.componentRef && e.children))
     for (const n of e.children)
       Me(n, t + 1, i, o);
 }
-function Wt(e) {
+function _t(e) {
   return e.charAt(0).toUpperCase() + e.slice(1).toLowerCase();
 }
 function Fe(e) {
@@ -1288,7 +1293,7 @@ function Fe(e) {
     return t.trim();
   }).join(", ") : e;
 }
-function _t(e, t, i) {
+function Dt(e, t, i) {
   const o = "  ".repeat(t), n = [];
   if (e.componentRef) {
     let c = `Instance "${Fe(e.componentRef.componentName)}"`;
@@ -1303,7 +1308,7 @@ function _t(e, t, i) {
     let u = "";
     e.textStyle && (u = ` (${e.textStyle.fontFamily} ${e.textStyle.fontSize}/${e.textStyle.fontWeight})`), n.push(`Text '${c}'${u}`);
   } else
-    n.push(`${Wt(e.type)} '${e.name}'`);
+    n.push(`${_t(e.type)} '${e.name}'`);
   if (e.autoLayout) {
     const r = e.autoLayout, c = [r.flexDirection];
     r.gap > 0 && c.push(`gap: ${r.gap}`), r.justifyContent !== "flex-start" && c.push(`justify: ${r.justifyContent}`), r.alignItems !== "flex-start" && c.push(`align: ${r.alignItems}`);
@@ -1311,10 +1316,10 @@ function _t(e, t, i) {
     u && c.push(u), r.flexWrap === "wrap" && c.push("wrap"), n.push(`(${c.join(", ")})`);
   }
   e.width != null && e.height != null && n.push(`${Math.round(e.width)}x${Math.round(e.height)}`), e.positioning === "ABSOLUTE" && (e.absoluteOffset ? n.push(`[absolute] top:${e.absoluteOffset.top} left:${e.absoluteOffset.left}`) : n.push("[absolute]"));
-  const s = Dt(e);
+  const s = Wt(e);
   return s && n.push(s), `${o}${n.join(" ")}`;
 }
-function ge(e) {
+function me(e) {
   if (!e) return null;
   for (const t of e)
     if (t.visible !== !1 && t.type === "SOLID" && t.color) {
@@ -1323,19 +1328,19 @@ function ge(e) {
     }
   return null;
 }
-function Dt(e) {
+function Wt(e) {
   var i;
   const t = [];
   if (e.widthMode === "FILL" && t.push("w:fill"), e.heightMode === "FILL" && t.push("h:fill"), e.widthMode === "HUG" && t.push("w:hug"), e.heightMode === "HUG" && t.push("h:hug"), e.type !== "TEXT") {
-    const o = ge(e.fills);
+    const o = me(e.fills);
     o && o !== "#ffffff" && o !== "#000000" ? t.push(`bg:${o}`) : o && t.push(`bg:${o}`);
   }
   if (e.type === "TEXT") {
-    const o = ge(e.fills);
+    const o = me(e.fills);
     o && t.push(`color:${o}`);
   }
   if (e.cornerRadius && e.cornerRadius > 0 && t.push(`r:${Math.round(e.cornerRadius)}`), e.strokeWeight && e.strokeWeight > 0 && ((i = e.strokes) != null && i.length)) {
-    const o = ge(e.strokes);
+    const o = me(e.strokes);
     o && t.push(`border:${e.strokeWeight}px ${o}`);
   }
   return e.layoutGrow === 1 && t.push("flex-grow:1"), e.layoutAlign === "STRETCH" && t.push("align-self:stretch"), e.opacity != null && e.opacity < 1 && t.push(`opacity:${e.opacity.toFixed(2)}`), t.length === 0 ? null : `{${t.join(" ")}}`;
@@ -1437,11 +1442,11 @@ function Qt(e, t, i, o) {
   if (!e && t.length === 0) return "";
   const n = [];
   if (e) {
-    const s = me(e, i), r = s.split("/").pop() ?? s;
+    const s = he(e, i), r = s.split("/").pop() ?? s;
     n.push(`| ${r} | Preview | Full-page preview screenshot | ${s} |`);
   }
   for (const s of t) {
-    const r = me(s.path, i), c = nn(s.assetType);
+    const r = he(s.path, i), c = nn(s.assetType);
     let u = "--";
     s.nodeId && (u = o.get(s.nodeId) || s.parentInstanceId && o.get(s.parentInstanceId) || "--");
     const d = tn(s.assetType, u);
@@ -1515,7 +1520,7 @@ function nn(e) {
       return "File";
   }
 }
-function me(e, t) {
+function he(e, t) {
   return e.startsWith(t + "/") ? e.slice(t.length + 1) : e;
 }
 function Be({ nodes: e, depth: t = 0, maxDepth: i = 2 }) {
@@ -1675,23 +1680,23 @@ function an(e) {
   return e.forEach(o), t.components = Array.from(i.entries()).map(([n, s]) => ({ name: n, count: s })).sort((n, s) => s.count - n.count), t;
 }
 function ln({ token: e }) {
-  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, o = (t == null ? void 0 : t.actions) ?? null, [n, s] = C(""), [r, c] = C(null), u = r != null && r.nodeId ? "node" : "page", [d, x] = C(null), [y, b] = C(!1), [$, v] = C(null), [E, B] = C(!1), [U, M] = C(null), [w, k] = C(null), [l, m] = C(!1), [P, z] = C(!1), [h, g] = C(null), [S, N] = C(null), [L, H] = C(!1), [O, W] = C(null), [J, G] = C(null), [xe, V] = C(!1), [Ue, re] = C(0), [be, ze] = C(!1), [K, ve] = C("best"), [ae, He] = C(""), we = Xe(
+  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, o = (t == null ? void 0 : t.actions) ?? null, [n, s] = C(""), [r, c] = C(null), u = r != null && r.nodeId ? "node" : "page", [d, x] = C(null), [y, b] = C(!1), [$, v] = C(null), [E, B] = C(!1), [U, M] = C(null), [w, k] = C(null), [l, m] = C(!1), [L, z] = C(!1), [h, g] = C(null), [S, N] = C(null), [P, H] = C(!1), [O, _] = C(null), [J, G] = C(null), [be, V] = C(!1), [Ue, re] = C(0), [ve, ze] = C(!1), [K, we] = C("best"), [ae, He] = C(""), Ce = Xe(
     () => U ? an(U.rootNodes) : null,
     [U]
-  ), D = Q(null), X = Q(null), _ = Q(i);
-  _.current = i;
-  const le = Q(0), te = Q(0), ne = I(async (p, T) => {
-    var R, Ce;
-    if (!_.current || !r) return;
+  ), W = Q(null), X = Q(null), D = Q(i);
+  D.current = i;
+  const le = Q(0), te = Q(0), ne = R(async (p, T) => {
+    var I, $e;
+    if (!D.current || !r) return;
     z(!0), g(null), N(null);
-    const A = T ? It(T.assets) : [];
+    const A = T ? Rt(T.assets) : [];
     try {
       const j = await $t({
-        shell: _.current,
+        shell: D.current,
         token: e,
         fileKey: p.fileKey,
-        selectedNodeId: r.nodeId || ((R = p.extraction.rootNodes[0]) == null ? void 0 : R.id) || "0:0",
-        projectPath: ((Ce = t == null ? void 0 : t.project) == null ? void 0 : Ce.path) ?? ".",
+        selectedNodeId: r.nodeId || ((I = p.extraction.rootNodes[0]) == null ? void 0 : I.id) || "0:0",
+        projectPath: (($e = t == null ? void 0 : t.project) == null ? void 0 : $e.path) ?? ".",
         manualAssets: A,
         onProgress: g
       });
@@ -1699,7 +1704,7 @@ function ln({ token: e }) {
         const Y = j.assets.length, F = j.warnings.length, ue = `Exported ${Y} asset${Y !== 1 ? "s" : ""}${F > 0 ? ` (${F} warning${F !== 1 ? "s" : ""})` : ""}`;
         o.showToast(ue, F > 0 ? "info" : "success");
       }
-      H(!0), W(null), G(null), setTimeout(() => {
+      H(!0), _(null), G(null), setTimeout(() => {
         var Y;
         try {
           const F = Bt({
@@ -1712,7 +1717,7 @@ function ln({ token: e }) {
             mode: K,
             inspirationText: K === "inspiration" ? ae : void 0
           });
-          W(F), H(!1), _.current && sn(_.current, j.assetsDir, F.markdown).catch((ue) => {
+          _(F), H(!1), D.current && sn(D.current, j.assetsDir, F.markdown).catch((ue) => {
             console.error("Brief save failed:", ue);
           }), o && o.showToast(
             `Brief ready: ${F.stats.nodeCount} layers, ${F.stats.assetCount} assets, ~${Math.round(F.stats.estimatedTokens / 1e3)}K tokens`,
@@ -1727,18 +1732,18 @@ function ln({ token: e }) {
     } finally {
       z(!1), g(null);
     }
-  }, [e, r, t, o, d, n, K, ae]), ie = I(async (p) => {
-    const T = p.rawRootNodes.length === 1 ? p.rawRootNodes[0] : { name: "__root__", children: p.rawRootNodes, visible: !0 }, A = Rt(T);
+  }, [e, r, t, o, d, n, K, ae]), ie = R(async (p) => {
+    const T = p.rawRootNodes.length === 1 ? p.rawRootNodes[0] : { name: "__root__", children: p.rawRootNodes, visible: !0 }, A = It(T);
     if (X.current = A, A.assets.length === 0) {
-      D.current = p, V(!0), B(!1);
+      W.current = p, V(!0), B(!1);
       return;
     }
     M(p.extraction), o && o.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, A);
-  }, [o, ne]), Oe = I(
+  }, [o, ne]), Oe = R(
     (p) => {
       const T = p.target.value;
       if (s(T), !T.trim()) {
-        c(null), x(null), v(null), b(!1), M(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), W(null), H(!1), G(null), V(!1), re(0), X.current = null;
+        c(null), x(null), v(null), b(!1), M(null), k(null), m(!1), W.current = null, N(null), z(!1), g(null), _(null), H(!1), G(null), V(!1), re(0), X.current = null;
         return;
       }
       const A = it(T);
@@ -1746,30 +1751,30 @@ function ln({ token: e }) {
         c(null), x(null), v("Please paste a valid Figma URL (file, design, proto, or board link)"), b(!1);
         return;
       }
-      c(A), v(null), x(null), M(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), W(null), H(!1), G(null), V(!1), re(0), X.current = null;
+      c(A), v(null), x(null), M(null), k(null), m(!1), W.current = null, N(null), z(!1), g(null), _(null), H(!1), G(null), V(!1), re(0), X.current = null;
     },
     []
   );
   oe(() => {
-    if (!r || !_.current) return;
-    const p = ++le.current, T = _.current;
+    if (!r || !D.current) return;
+    const p = ++le.current, T = D.current;
     b(!0), x(null), v(null), (async () => {
       try {
         const A = await Ye(T, e, r.fileKey);
         le.current === p && (x(A), b(!1));
       } catch (A) {
         if (le.current === p) {
-          const R = (A == null ? void 0 : A.message) || "Failed to validate file access.";
-          R.includes("403") || R.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : R.includes("404") || R.includes("not found") ? v("File not found. Check that the URL is correct.") : R.includes("429") || R.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : v(R), b(!1);
+          const I = (A == null ? void 0 : A.message) || "Failed to validate file access.";
+          I.includes("403") || I.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : I.includes("404") || I.includes("not found") ? v("File not found. Check that the URL is correct.") : I.includes("429") || I.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : v(I), b(!1);
         }
       }
     })();
   }, [r, e]);
-  const ce = I(() => {
-    const p = _.current;
+  const ce = R(() => {
+    const p = D.current;
     if (!p || !r) return;
     const T = ++te.current;
-    B(!0), M(null), v(null), k(null), m(!1), D.current = null, N(null), z(!1), g(null), W(null), H(!1), G(null), V(!1), X.current = null, (async () => {
+    B(!0), M(null), v(null), k(null), m(!1), W.current = null, N(null), z(!1), g(null), _(null), H(!1), G(null), V(!1), X.current = null, (async () => {
       try {
         const A = await vt({
           shell: p,
@@ -1780,44 +1785,44 @@ function ln({ token: e }) {
         });
         if (te.current !== T) return;
         if (A.largeTreeWarning) {
-          D.current = A, k(A.largeTreeWarning), m(!0), B(!1);
+          W.current = A, k(A.largeTreeWarning), m(!0), B(!1);
           return;
         }
         ie(A);
       } catch (A) {
         if (te.current !== T) return;
-        const R = (A == null ? void 0 : A.message) || "Extraction failed.";
-        R.includes("403") || R.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : R.includes("404") || R.includes("not found") ? v("File not found. Check that the URL is correct.") : R.includes("429") || R.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : R.includes("timeout") || R.includes("timed out") ? v("Request timed out. Try a smaller selection or check your connection.") : v(R);
+        const I = (A == null ? void 0 : A.message) || "Extraction failed.";
+        I.includes("403") || I.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : I.includes("404") || I.includes("not found") ? v("File not found. Check that the URL is correct.") : I.includes("429") || I.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : I.includes("timeout") || I.includes("timed out") ? v("Request timed out. Try a smaller selection or check your connection.") : v(I);
       } finally {
         te.current === T && B(!1);
       }
     })();
-  }, [r, e, u, o, ie]), We = I(() => {
-    const p = D.current;
+  }, [r, e, u, o, ie]), _e = R(() => {
+    const p = W.current;
     p && (m(!1), k(null), ie(p));
-  }, [ie]), _e = I(() => {
-    m(!1), k(null), D.current = null;
-  }, []), De = I(() => {
-    V(!1), re((p) => p + 1), D.current = null, X.current = null, ce();
-  }, [ce]), je = I(() => {
-    const p = D.current;
-    p && (V(!1), D.current = null, M(p.extraction), o && o.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, X.current ?? void 0));
-  }, [o, ne]), Ge = I(async () => {
-    if (!(!O || !_.current))
+  }, [ie]), De = R(() => {
+    m(!1), k(null), W.current = null;
+  }, []), We = R(() => {
+    V(!1), re((p) => p + 1), W.current = null, X.current = null, ce();
+  }, [ce]), je = R(() => {
+    const p = W.current;
+    p && (V(!1), W.current = null, M(p.extraction), o && o.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, X.current ?? void 0));
+  }, [o, ne]), Ge = R(async () => {
+    if (!(!O || !D.current))
       try {
-        await Te(_.current, O.markdown), o && o.showToast("Brief copied to clipboard", "success");
+        await Te(D.current, O.markdown), o && o.showToast("Brief copied to clipboard", "success");
       } catch (p) {
         o && o.showToast(`Copy failed: ${(p == null ? void 0 : p.message) || "Unknown error"}`, "error");
       }
-  }, [O, o]), Ve = I(() => {
-    W(null), M(null), N(null);
-  }, []), Ke = !r || !d || y || E || P || L || xe;
-  return O && U && we && S ? /* @__PURE__ */ a(
+  }, [O, o]), Ve = R(() => {
+    _(null), M(null), N(null);
+  }, []), Ke = !r || !d || y || E || L || P || be;
+  return O && U && Ce && S ? /* @__PURE__ */ a(
     on,
     {
       briefResult: O,
       extractionResult: U,
-      extractionStats: we,
+      extractionStats: Ce,
       exportResult: S,
       onCopyBrief: Ge,
       onNewBrief: Ve
@@ -1836,7 +1841,7 @@ function ln({ token: e }) {
           className: "btn-secondary",
           style: { fontSize: "11px", padding: "4px 10px" },
           onClick: () => {
-            _.current && Te(_.current, "@S-").then(() => {
+            D.current && Te(D.current, "@S-").then(() => {
               o && o.showToast("Copied @S- to clipboard", "success");
             }).catch(() => {
             });
@@ -1846,7 +1851,7 @@ function ln({ token: e }) {
       ) }),
       /* @__PURE__ */ a("div", { style: { marginTop: "10px", fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }, children: "Watch this video before you start!" }),
       /* @__PURE__ */ f("div", { style: { marginTop: "6px", borderRadius: "6px", overflow: "hidden", position: "relative" }, children: [
-        !be && /* @__PURE__ */ f("div", { style: {
+        !ve && /* @__PURE__ */ f("div", { style: {
           width: "100%",
           aspectRatio: "16/9",
           background: "var(--bg-tertiary)",
@@ -1867,7 +1872,7 @@ function ln({ token: e }) {
             frameBorder: "0",
             allowFullScreen: !0,
             onLoad: () => ze(!0),
-            style: { width: "100%", aspectRatio: "16/9", display: be ? "block" : "none" }
+            style: { width: "100%", aspectRatio: "16/9", display: ve ? "block" : "none" }
           }
         )
       ] })
@@ -1921,12 +1926,12 @@ function ln({ token: e }) {
         "div",
         {
           className: `figma-plugin-mode-card${K === p.id ? " selected" : ""}`,
-          onClick: () => ve(p.id),
+          onClick: () => we(p.id),
           role: "radio",
           "aria-checked": K === p.id,
           tabIndex: 0,
           onKeyDown: (T) => {
-            (T.key === "Enter" || T.key === " ") && (T.preventDefault(), ve(p.id));
+            (T.key === "Enter" || T.key === " ") && (T.preventDefault(), we(p.id));
           },
           children: [
             /* @__PURE__ */ a("div", { className: "figma-plugin-mode-card-name", children: p.name }),
@@ -1953,11 +1958,11 @@ function ln({ token: e }) {
       ] }),
       /* @__PURE__ */ a("p", { children: "Large selections may take longer and produce verbose output. Continue?" }),
       /* @__PURE__ */ f("div", { className: "figma-plugin-warning-actions", children: [
-        /* @__PURE__ */ a("button", { className: "btn-primary", onClick: We, children: "Continue" }),
-        /* @__PURE__ */ a("button", { className: "btn-secondary", onClick: _e, children: "Cancel" })
+        /* @__PURE__ */ a("button", { className: "btn-primary", onClick: _e, children: "Continue" }),
+        /* @__PURE__ */ a("button", { className: "btn-secondary", onClick: De, children: "Cancel" })
       ] })
     ] }) }),
-    xe && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-warning", children: [
+    be && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ f("div", { className: "figma-plugin-warning", children: [
       /* @__PURE__ */ a("strong", { children: "No @S- asset layers found" }),
       /* @__PURE__ */ f("p", { children: [
         "Prefix layer names with ",
@@ -1974,13 +1979,13 @@ function ln({ token: e }) {
       ] }),
       Ue > 0 && /* @__PURE__ */ a("p", { style: { fontStyle: "italic", marginTop: "4px" }, children: "Still no @S- layers found. Check your layer names in Figma." }),
       /* @__PURE__ */ f("div", { className: "figma-plugin-warning-actions", children: [
-        /* @__PURE__ */ a("button", { className: "btn-primary", onClick: De, children: "Try again" }),
+        /* @__PURE__ */ a("button", { className: "btn-primary", onClick: We, children: "Try again" }),
         /* @__PURE__ */ a("button", { className: "btn-secondary", onClick: je, children: "Continue anyway" })
       ] })
     ] }) }),
     J && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: J }) }),
     (() => {
-      const p = E || P || L, T = E ? "Extracting layout..." : P ? (h == null ? void 0 : h.phase) === "preview" ? "Rendering preview..." : `Exporting assets${h != null && h.total ? ` (${h.current ?? 0}/${h.total})` : ""}...` : L ? "Generating brief..." : "Get Brief";
+      const p = E || L || P, T = E ? "Extracting layout..." : L ? (h == null ? void 0 : h.phase) === "preview" ? "Rendering preview..." : `Exporting assets${h != null && h.total ? ` (${h.current ?? 0}/${h.total})` : ""}...` : P ? "Generating brief..." : "Get Brief";
       return /* @__PURE__ */ f(
         "button",
         {
@@ -2050,28 +2055,28 @@ function un() {
       l = !0;
     };
   }, [t]);
-  const $ = I(() => n(!0), []), v = I(() => {
+  const $ = R(() => n(!0), []), v = R(() => {
     n(!1), b("main");
-  }, []), E = I(async (l, m) => {
+  }, []), E = R(async (l, m) => {
     if (!(!t || !i))
       try {
-        const P = await t.read();
-        await t.write({ ...P, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Connected as ${m.handle}`, "success");
+        const L = await t.read();
+        await t.write({ ...L, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Connected as ${m.handle}`, "success");
       } catch {
         i.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [t, i]), B = I(async (l, m) => {
+  }, [t, i]), B = R(async (l, m) => {
     if (!(!t || !i))
       try {
-        const P = await t.read();
-        await t.write({ ...P, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Token updated — connected as ${m.handle}`, "success");
+        const L = await t.read();
+        await t.write({ ...L, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Token updated — connected as ${m.handle}`, "success");
       } catch {
         i.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [t, i]), U = I(async () => {
+  }, [t, i]), U = R(async () => {
     if (!(!t || !i))
       try {
-        const l = await t.read(), { figmaToken: m, figmaUserHandle: P, ...z } = l;
+        const l = await t.read(), { figmaToken: m, figmaUserHandle: L, ...z } = l;
         await t.write(z), r(null), u(null), b("main"), i.showToast("Disconnected from Figma", "info");
       } catch {
         i.showToast("Failed to remove token. Please try again.", "error");
@@ -2086,7 +2091,7 @@ function un() {
       onTokenRemoved: U,
       onBack: () => b("main")
     }
-  ) : k = /* @__PURE__ */ a(ln, { token: s }) : k = /* @__PURE__ */ a(tt, { onTokenSaved: E })), /* @__PURE__ */ f(he, { children: [
+  ) : k = /* @__PURE__ */ a(ln, { token: s }) : k = /* @__PURE__ */ a(tt, { onTokenSaved: E })), /* @__PURE__ */ f(ye, { children: [
     /* @__PURE__ */ a(
       "button",
       {
