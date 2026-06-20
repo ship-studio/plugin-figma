@@ -53,7 +53,7 @@ export async function figmaApiCall<T>(
       throw new Error('Rate limited by Figma API. Try again in a moment.');
     }
     if (data.status === 403) {
-      throw new Error('Invalid or expired token. Please update your Figma token.');
+      throw new Error('Token rejected (403). Check it is valid and has both "File content (Read)" and "Current user (Read)" scopes enabled.');
     }
     if (data.status === 404) {
       throw new Error('File not found. Check that the URL is correct and you have access.');

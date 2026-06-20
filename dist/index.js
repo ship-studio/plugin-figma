@@ -1,5 +1,5 @@
 import { jsx as a, jsxs as f, Fragment as ye } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;function j(t,p,k){if(k!==undefined&&p){p=Object.assign({},p);p.key=k}return R.createElement(t,p)}export const jsx=j;export const jsxs=j;export const Fragment=R.Fragment;";
-import { useEffect as oe, useCallback as R, useState as C, useMemo as Xe, useRef as Q } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
+import { useEffect as oe, useCallback as I, useState as C, useMemo as Xe, useRef as Q } from "data:text/javascript,const R=window.__SHIPSTUDIO_REACT__;export default R;export const{useState,useEffect,useCallback,useRef,useMemo,useContext,createContext,createElement,Fragment}=R;";
 const de = window;
 function se() {
   const e = de.__SHIPSTUDIO_REACT__, t = de.__SHIPSTUDIO_PLUGIN_CONTEXT_REF__;
@@ -328,7 +328,7 @@ function qe({ open: e, onClose: t, title: i, headerRight: o, children: n }) {
     };
     return document.addEventListener("keydown", r), () => document.removeEventListener("keydown", r);
   }, [e, t]);
-  const s = R(
+  const s = I(
     (r) => {
       r.target === r.currentTarget && t();
     },
@@ -382,7 +382,7 @@ async function ee(e, t, i, o) {
     throw new Error(`Invalid JSON from Figma API: ${c.stdout.slice(0, 200)}`);
   }
   if (u.status && u.err)
-    throw u.status === 429 ? new Error("Rate limited by Figma API. Try again in a moment.") : u.status === 403 ? new Error("Invalid or expired token. Please update your Figma token.") : u.status === 404 ? new Error("File not found. Check that the URL is correct and you have access.") : new Error(`Figma API error: ${u.err}`);
+    throw u.status === 429 ? new Error("Rate limited by Figma API. Try again in a moment.") : u.status === 403 ? new Error('Token rejected (403). Check it is valid and has both "File content (Read)" and "Current user (Read)" scopes enabled.') : u.status === 404 ? new Error("File not found. Check that the URL is correct and you have access.") : new Error(`Figma API error: ${u.err}`);
   return u;
 }
 async function Se(e, t) {
@@ -446,7 +446,7 @@ async function pe(e, t, i, o, n = "png", s) {
   )).images;
 }
 function tt({ onTokenSaved: e }) {
-  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, [o, n] = C(""), [s, r] = C(!1), [c, u] = C(null), d = R(async () => {
+  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, [o, n] = C(""), [s, r] = C(!1), [c, u] = C(null), d = I(async () => {
     if (!i) return;
     const y = o.trim();
     if (!(!y || s)) {
@@ -460,7 +460,7 @@ function tt({ onTokenSaved: e }) {
         r(!1);
       }
     }
-  }, [o, s, i, e]), x = R(
+  }, [o, s, i, e]), x = I(
     (y) => {
       y.key === "Enter" && d();
     },
@@ -482,7 +482,7 @@ function tt({ onTokenSaved: e }) {
             children: "Generate one here"
           }
         ),
-        '. Make sure "File content (Read)" scope is enabled.'
+        '. Make sure both "File content (Read)" and "Current user (Read)" scopes are enabled.'
       ] })
     ] }),
     /* @__PURE__ */ f("div", { className: "figma-plugin-section", children: [
@@ -518,7 +518,7 @@ function tt({ onTokenSaved: e }) {
   ] });
 }
 function nt({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: o }) {
-  const n = se(), s = (n == null ? void 0 : n.shell) ?? null, [r, c] = C(""), [u, d] = C(!1), [x, y] = C(null), b = R(async () => {
+  const n = se(), s = (n == null ? void 0 : n.shell) ?? null, [r, c] = C(""), [u, d] = C(!1), [x, y] = C(null), b = I(async () => {
     if (!s) return;
     const v = r.trim();
     if (!(!v || u)) {
@@ -532,7 +532,7 @@ function nt({ currentUser: e, onTokenUpdated: t, onTokenRemoved: i, onBack: o })
         d(!1);
       }
     }
-  }, [r, u, s, t]), $ = R(
+  }, [r, u, s, t]), $ = I(
     (v) => {
       v.key === "Enter" && b();
     },
@@ -776,7 +776,7 @@ function ft(e, t) {
   const i = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), u = [], d = /* @__PURE__ */ new Map();
   let x = 0, y = 0, b = 0;
   function $(l) {
-    var m, L, z;
+    var m, P, z;
     if (l.fills && Array.isArray(l.fills)) {
       const h = gt(l, t);
       for (const g of l.fills)
@@ -787,8 +787,8 @@ function ft(e, t) {
             const N = q(S);
             ge(i, N, l.id, "fill", h);
           } else if ((m = g.type) != null && m.startsWith("GRADIENT_")) {
-            const S = dt(g), N = S, P = o.get(N);
-            P ? (P.usageCount++, P.nodeIds.push(l.id)) : (b++, o.set(N, {
+            const S = dt(g), N = S, L = o.get(N);
+            L ? (L.usageCount++, L.nodeIds.push(l.id)) : (b++, o.set(N, {
               value: S,
               name: h ?? `gradient-${b}`,
               gradientType: g.type,
@@ -816,11 +816,11 @@ function ft(e, t) {
       const h = yt(l, t);
       for (const g of l.effects)
         if (g.visible === !0 && (g.type === "DROP_SHADOW" || g.type === "INNER_SHADOW")) {
-          const S = g.type === "DROP_SHADOW" ? "drop-shadow" : "inner-shadow", N = q(g.color), P = ((L = g.offset) == null ? void 0 : L.x) ?? 0, H = ((z = g.offset) == null ? void 0 : z.y) ?? 0, O = g.radius ?? 0, _ = g.spread ?? 0, J = `${S}|${N}|${P}|${H}|${O}|${_}`, G = c.get(J);
+          const S = g.type === "DROP_SHADOW" ? "drop-shadow" : "inner-shadow", N = q(g.color), L = ((P = g.offset) == null ? void 0 : P.x) ?? 0, H = ((z = g.offset) == null ? void 0 : z.y) ?? 0, O = g.radius ?? 0, _ = g.spread ?? 0, J = `${S}|${N}|${L}|${H}|${O}|${_}`, G = c.get(J);
           G ? (G.usageCount++, G.nodeIds.push(l.id)) : (y++, c.set(J, {
             type: S,
             color: N,
-            offsetX: P,
+            offsetX: L,
             offsetY: H,
             blur: O,
             spread: _,
@@ -849,8 +849,8 @@ function ft(e, t) {
         );
         O && (S = q(O.color), N = l.strokeWeight ?? null);
       }
-      const P = `${h}|${JSON.stringify(g)}|${S}|${N}`, H = r.get(P);
-      H ? (H.usageCount++, H.nodeIds.push(l.id)) : (x++, r.set(P, {
+      const L = `${h}|${JSON.stringify(g)}|${S}|${N}`, H = r.get(L);
+      H ? (H.usageCount++, H.nodeIds.push(l.id)) : (x++, r.set(L, {
         radius: h,
         cornerRadii: g,
         strokeColor: S,
@@ -865,12 +865,12 @@ function ft(e, t) {
       if (S)
         S.usageCount += N;
       else {
-        const P = {
+        const L = {
           componentName: h.componentName,
           source: h.source,
           usageCount: N
         };
-        h.description && (P.description = h.description), h.variantProperties && (P.variantProperties = h.variantProperties), d.set(g, P);
+        h.description && (L.description = h.description), h.variantProperties && (L.variantProperties = h.variantProperties), d.set(g, L);
       }
     }
     if (l.children)
@@ -1065,14 +1065,14 @@ async function $t(e) {
       u.push(`Failed to render ${k.filename}: Figma returned no image for node ${k.nodeId}`);
       continue;
     }
-    const L = `${y}/${k.filename}`, z = await Ne(t, m, L);
+    const P = `${y}/${k.filename}`, z = await Ne(t, m, P);
     if (!z.success) {
       u.push(`Failed to download ${k.filename}: ${z.error}`);
       continue;
     }
     U.push({
       filename: k.filename,
-      path: L,
+      path: P,
       nodeId: k.nodeId,
       assetType: k.format === "svg" ? "icon" : "image"
     });
@@ -1096,14 +1096,14 @@ function Nt(e, t) {
     r++;
   return `${n}-${r}${s}`;
 }
-const Ie = /^@s-/i;
+const Re = /^@s-/i;
 function Tt(e) {
-  return Ie.test(e);
+  return Re.test(e);
 }
 function St(e) {
-  return e.replace(Ie, "");
+  return e.replace(Re, "");
 }
-function Re(e) {
+function Ie(e) {
   if (e.fills && Array.isArray(e.fills)) {
     for (const t of e.fills)
       if (t.visible !== !1 && t.type === "IMAGE")
@@ -1111,7 +1111,7 @@ function Re(e) {
   }
   if (e.children && Array.isArray(e.children)) {
     for (const t of e.children)
-      if (Re(t)) return !0;
+      if (Ie(t)) return !0;
   }
   return !1;
 }
@@ -1122,7 +1122,7 @@ function Ee(e, t, i, o, n, s) {
       if (!r.trim())
         s.push(`Skipped layer "${e.name}": empty name after @S- prefix`);
       else {
-        const c = Re(e) ? "png" : "svg";
+        const c = Ie(e) ? "png" : "svg";
         n.push({
           nodeId: e.id,
           nodeName: e.name,
@@ -1156,11 +1156,11 @@ function At(e) {
   }
   return i;
 }
-function It(e) {
+function Rt(e) {
   const t = [], i = [];
   return Ee(e, 0, [], !1, t, i), { assets: At(t), warnings: i };
 }
-function Rt(e) {
+function It(e) {
   return e.map((t) => ({
     nodeId: t.nodeId,
     nodeName: t.nodeName,
@@ -1170,25 +1170,25 @@ function Rt(e) {
   }));
 }
 const Et = /^(Frame|Group|Rectangle|Ellipse|Vector|Section|Instance|Line|Star|Polygon)\s*\d*$/i;
-function Pt(e) {
+function Lt(e) {
   const t = /* @__PURE__ */ new Map();
   for (const i of e) {
-    const o = Le(i.name) ? [] : [i.name];
-    Pe(i, o, t);
+    const o = Pe(i.name) ? [] : [i.name];
+    Le(i, o, t);
   }
   return t;
 }
-function Pe(e, t, i) {
-  if (i.set(e.id, Lt(t)), !!e.children)
+function Le(e, t, i) {
+  if (i.set(e.id, Pt(t)), !!e.children)
     for (const o of e.children) {
-      const n = Le(o.name) ? t : [...t, o.name];
-      Pe(o, n, i);
+      const n = Pe(o.name) ? t : [...t, o.name];
+      Le(o, n, i);
     }
 }
-function Lt(e) {
+function Pt(e) {
   return e.length === 0 ? "" : e.length <= 4 ? e.join(" > ") : `${e[0]} > ... > ${e[e.length - 2]} > ${e[e.length - 1]}`;
 }
-function Le(e) {
+function Pe(e) {
   return Et.test(e);
 }
 const Mt = 12e3;
@@ -1199,7 +1199,7 @@ function Bt(e) {
   const { extraction: t, exportResult: i, projectPath: o } = e, n = t.tokens, s = /* @__PURE__ */ new Map();
   for (const $ of i.assets)
     $.nodeId && s.set($.nodeId, $.filename), $.parentInstanceId && !s.has($.parentInstanceId) && s.set($.parentInstanceId, $.filename);
-  const r = e.rootNodes ?? t.extraction.rootNodes, c = Pt(r), d = [
+  const r = e.rootNodes ?? t.extraction.rootNodes, c = Lt(r), d = [
     Ut(e),
     zt(e.mode, e.inspirationText),
     Ht(i.previewPath, o),
@@ -1680,22 +1680,22 @@ function an(e) {
   return e.forEach(o), t.components = Array.from(i.entries()).map(([n, s]) => ({ name: n, count: s })).sort((n, s) => s.count - n.count), t;
 }
 function ln({ token: e }) {
-  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, o = (t == null ? void 0 : t.actions) ?? null, [n, s] = C(""), [r, c] = C(null), u = r != null && r.nodeId ? "node" : "page", [d, x] = C(null), [y, b] = C(!1), [$, v] = C(null), [E, B] = C(!1), [U, M] = C(null), [w, k] = C(null), [l, m] = C(!1), [L, z] = C(!1), [h, g] = C(null), [S, N] = C(null), [P, H] = C(!1), [O, _] = C(null), [J, G] = C(null), [be, V] = C(!1), [Ue, re] = C(0), [ve, ze] = C(!1), [K, we] = C("best"), [ae, He] = C(""), Ce = Xe(
+  const t = se(), i = (t == null ? void 0 : t.shell) ?? null, o = (t == null ? void 0 : t.actions) ?? null, [n, s] = C(""), [r, c] = C(null), u = r != null && r.nodeId ? "node" : "page", [d, x] = C(null), [y, b] = C(!1), [$, v] = C(null), [E, B] = C(!1), [U, M] = C(null), [w, k] = C(null), [l, m] = C(!1), [P, z] = C(!1), [h, g] = C(null), [S, N] = C(null), [L, H] = C(!1), [O, _] = C(null), [J, G] = C(null), [be, V] = C(!1), [Ue, re] = C(0), [ve, ze] = C(!1), [K, we] = C("best"), [ae, He] = C(""), Ce = Xe(
     () => U ? an(U.rootNodes) : null,
     [U]
   ), W = Q(null), X = Q(null), D = Q(i);
   D.current = i;
-  const le = Q(0), te = Q(0), ne = R(async (p, T) => {
-    var I, $e;
+  const le = Q(0), te = Q(0), ne = I(async (p, T) => {
+    var R, $e;
     if (!D.current || !r) return;
     z(!0), g(null), N(null);
-    const A = T ? Rt(T.assets) : [];
+    const A = T ? It(T.assets) : [];
     try {
       const j = await $t({
         shell: D.current,
         token: e,
         fileKey: p.fileKey,
-        selectedNodeId: r.nodeId || ((I = p.extraction.rootNodes[0]) == null ? void 0 : I.id) || "0:0",
+        selectedNodeId: r.nodeId || ((R = p.extraction.rootNodes[0]) == null ? void 0 : R.id) || "0:0",
         projectPath: (($e = t == null ? void 0 : t.project) == null ? void 0 : $e.path) ?? ".",
         manualAssets: A,
         onProgress: g
@@ -1732,14 +1732,14 @@ function ln({ token: e }) {
     } finally {
       z(!1), g(null);
     }
-  }, [e, r, t, o, d, n, K, ae]), ie = R(async (p) => {
-    const T = p.rawRootNodes.length === 1 ? p.rawRootNodes[0] : { name: "__root__", children: p.rawRootNodes, visible: !0 }, A = It(T);
+  }, [e, r, t, o, d, n, K, ae]), ie = I(async (p) => {
+    const T = p.rawRootNodes.length === 1 ? p.rawRootNodes[0] : { name: "__root__", children: p.rawRootNodes, visible: !0 }, A = Rt(T);
     if (X.current = A, A.assets.length === 0) {
       W.current = p, V(!0), B(!1);
       return;
     }
     M(p.extraction), o && o.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, A);
-  }, [o, ne]), Oe = R(
+  }, [o, ne]), Oe = I(
     (p) => {
       const T = p.target.value;
       if (s(T), !T.trim()) {
@@ -1764,13 +1764,13 @@ function ln({ token: e }) {
         le.current === p && (x(A), b(!1));
       } catch (A) {
         if (le.current === p) {
-          const I = (A == null ? void 0 : A.message) || "Failed to validate file access.";
-          I.includes("403") || I.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : I.includes("404") || I.includes("not found") ? v("File not found. Check that the URL is correct.") : I.includes("429") || I.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : v(I), b(!1);
+          const R = (A == null ? void 0 : A.message) || "Failed to validate file access.";
+          R.includes("403") || R.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : R.includes("404") || R.includes("not found") ? v("File not found. Check that the URL is correct.") : R.includes("429") || R.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : v(R), b(!1);
         }
       }
     })();
   }, [r, e]);
-  const ce = R(() => {
+  const ce = I(() => {
     const p = D.current;
     if (!p || !r) return;
     const T = ++te.current;
@@ -1791,32 +1791,32 @@ function ln({ token: e }) {
         ie(A);
       } catch (A) {
         if (te.current !== T) return;
-        const I = (A == null ? void 0 : A.message) || "Extraction failed.";
-        I.includes("403") || I.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : I.includes("404") || I.includes("not found") ? v("File not found. Check that the URL is correct.") : I.includes("429") || I.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : I.includes("timeout") || I.includes("timed out") ? v("Request timed out. Try a smaller selection or check your connection.") : v(I);
+        const R = (A == null ? void 0 : A.message) || "Extraction failed.";
+        R.includes("403") || R.includes("Invalid or expired") ? v("Cannot access this file. Check that your token has File content (Read) scope.") : R.includes("404") || R.includes("not found") ? v("File not found. Check that the URL is correct.") : R.includes("429") || R.includes("Rate limited") ? v("Rate limited by Figma. Please wait a moment and try again.") : R.includes("timeout") || R.includes("timed out") ? v("Request timed out. Try a smaller selection or check your connection.") : v(R);
       } finally {
         te.current === T && B(!1);
       }
     })();
-  }, [r, e, u, o, ie]), _e = R(() => {
+  }, [r, e, u, o, ie]), _e = I(() => {
     const p = W.current;
     p && (m(!1), k(null), ie(p));
-  }, [ie]), De = R(() => {
+  }, [ie]), De = I(() => {
     m(!1), k(null), W.current = null;
-  }, []), We = R(() => {
+  }, []), We = I(() => {
     V(!1), re((p) => p + 1), W.current = null, X.current = null, ce();
-  }, [ce]), je = R(() => {
+  }, [ce]), je = I(() => {
     const p = W.current;
     p && (V(!1), W.current = null, M(p.extraction), o && o.showToast(`Extracted ${p.extraction.nodeCount} layers`, "success"), ne(p, X.current ?? void 0));
-  }, [o, ne]), Ge = R(async () => {
+  }, [o, ne]), Ge = I(async () => {
     if (!(!O || !D.current))
       try {
         await Te(D.current, O.markdown), o && o.showToast("Brief copied to clipboard", "success");
       } catch (p) {
         o && o.showToast(`Copy failed: ${(p == null ? void 0 : p.message) || "Unknown error"}`, "error");
       }
-  }, [O, o]), Ve = R(() => {
+  }, [O, o]), Ve = I(() => {
     _(null), M(null), N(null);
-  }, []), Ke = !r || !d || y || E || L || P || be;
+  }, []), Ke = !r || !d || y || E || P || L || be;
   return O && U && Ce && S ? /* @__PURE__ */ a(
     on,
     {
@@ -1985,7 +1985,7 @@ function ln({ token: e }) {
     ] }) }),
     J && /* @__PURE__ */ a("div", { className: "figma-plugin-section", children: /* @__PURE__ */ a("div", { className: "figma-plugin-error", children: J }) }),
     (() => {
-      const p = E || L || P, T = E ? "Extracting layout..." : L ? (h == null ? void 0 : h.phase) === "preview" ? "Rendering preview..." : `Exporting assets${h != null && h.total ? ` (${h.current ?? 0}/${h.total})` : ""}...` : P ? "Generating brief..." : "Get Brief";
+      const p = E || P || L, T = E ? "Extracting layout..." : P ? (h == null ? void 0 : h.phase) === "preview" ? "Rendering preview..." : `Exporting assets${h != null && h.total ? ` (${h.current ?? 0}/${h.total})` : ""}...` : L ? "Generating brief..." : "Get Brief";
       return /* @__PURE__ */ f(
         "button",
         {
@@ -2055,28 +2055,28 @@ function un() {
       l = !0;
     };
   }, [t]);
-  const $ = R(() => n(!0), []), v = R(() => {
+  const $ = I(() => n(!0), []), v = I(() => {
     n(!1), b("main");
-  }, []), E = R(async (l, m) => {
+  }, []), E = I(async (l, m) => {
     if (!(!t || !i))
       try {
-        const L = await t.read();
-        await t.write({ ...L, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Connected as ${m.handle}`, "success");
+        const P = await t.read();
+        await t.write({ ...P, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Connected as ${m.handle}`, "success");
       } catch {
         i.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [t, i]), B = R(async (l, m) => {
+  }, [t, i]), B = I(async (l, m) => {
     if (!(!t || !i))
       try {
-        const L = await t.read();
-        await t.write({ ...L, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Token updated — connected as ${m.handle}`, "success");
+        const P = await t.read();
+        await t.write({ ...P, figmaToken: l, figmaUserHandle: m.handle }), r(l), u(m), b("main"), i.showToast(`Token updated — connected as ${m.handle}`, "success");
       } catch {
         i.showToast("Failed to save token. Please try again.", "error");
       }
-  }, [t, i]), U = R(async () => {
+  }, [t, i]), U = I(async () => {
     if (!(!t || !i))
       try {
-        const l = await t.read(), { figmaToken: m, figmaUserHandle: L, ...z } = l;
+        const l = await t.read(), { figmaToken: m, figmaUserHandle: P, ...z } = l;
         await t.write(z), r(null), u(null), b("main"), i.showToast("Disconnected from Figma", "info");
       } catch {
         i.showToast("Failed to remove token. Please try again.", "error");

@@ -63,7 +63,7 @@ export function SetupView({ onTokenSaved }: SetupViewProps) {
           >
             Generate one here
           </a>
-          . Make sure "File content (Read)" scope is enabled.
+          . Make sure both "File content (Read)" and "Current user (Read)" scopes are enabled.
         </p>
       </div>
 
